@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<!-- saved from url=(0129)file:///Users/oulei/Downloads/%E7%9F%A5%E6%98%9F%E6%8A%95%E6%94%BE%E5%91%A8%E6%8A%A5_5.18-5.24_%E5%AE%8C%E6%95%B4%E7%89%88_1.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>知星投放周报 5.25-5.31</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F4F6FA;--w:#fff;--bd:#E3E8F0;
+  --t:#0F172A;--s:#475569;--m:#94A3B8;
+  --blue:#2563EB;--bl:#EFF6FF;--bb:#BFDBFE;
+  --green:#059669;--gl:#ECFDF5;--gb:#6EE7B7;
+  --red:#DC2626;--rl:#FEF2F2;--rb:#FECACA;
+  --amber:#D97706;--al:#FFFBEB;--ab:#FDE68A;
+  --violet:#7C3AED;--vl:#F5F3FF;--vb:#DDD6FE;
+  --teal:#0D9488;--rose:#E11D48;--indigo:#6366F1;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t);font-family:'Noto Sans SC',sans-serif;font-size:14px}
+.hdr{background:linear-gradient(135deg,#1E3A8A,#1D4ED8 50%,#2563EB);color:#fff;padding:0 28px;box-shadow:0 4px 16px rgba(37,99,235,.25)}
+.hi{height:60px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-size:18px;font-weight:700}.logo em{font-style:normal;opacity:.7;font-weight:400}
+.wpill{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);font-size:12px;font-weight:600;padding:3px 12px;border-radius:20px}
+.hdr-sub{font-size:11px;opacity:.6;margin-left:auto}
+.nav{background:var(--w);border-bottom:2px solid var(--bd);padding:0 28px;display:flex;overflow-x:auto;gap:0}
+.tab{height:46px;display:flex;align-items:center;gap:6px;padding:0 20px;font-size:13px;font-weight:500;color:var(--m);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap;user-select:none;margin-bottom:-2px}
+.tab:hover{color:var(--t);background:#F8FAFF}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;background:#F0F6FF}
+.main{max-width:1380px;margin:0 auto;padding:24px 28px}
+.panel{display:none}.panel.active{display:block}
+.stl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--m);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.stl::before{content:'';width:3px;height:13px;background:var(--blue);border-radius:2px}
+.stl.g::before{background:var(--green)}.stl.a::before{background:var(--amber)}.stl.v::before{background:var(--violet)}.stl.r::before{background:var(--red)}
+.ins{border-radius:var(--r);padding:13px 16px;font-size:12.5px;color:var(--s);line-height:1.9;margin-bottom:16px;border:1px solid}
+.ins.b{background:var(--bl);border-color:var(--bb)}.ins.b b{color:var(--blue)}
+.ins.g{background:var(--gl);border-color:var(--gb)}.ins.g b{color:var(--green)}
+.ins.a{background:var(--al);border-color:var(--ab)}.ins.a b{color:var(--amber)}
+.ins.r{background:var(--rl);border-color:var(--rb)}.ins.r b{color:var(--red)}
+.kr{display:grid;gap:10px;margin-bottom:14px}
+.kr8{grid-template-columns:repeat(8,1fr)}.kr6{grid-template-columns:repeat(6,1fr)}.kr5{grid-template-columns:repeat(5,1fr)}.kr4{grid-template-columns:repeat(4,1fr)}
+.kpi{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:14px 15px;position:relative;overflow:hidden;transition:box-shadow .15s}
+.kpi:hover{box-shadow:0 4px 16px rgba(0,0,0,.07)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.c1::after{background:linear-gradient(90deg,#2563EB,#60A5FA)}.c2::after{background:linear-gradient(90deg,#059669,#34D399)}
+.c3::after{background:linear-gradient(90deg,#D97706,#FCD34D)}.c4::after{background:linear-gradient(90deg,#7C3AED,#A78BFA)}
+.c5::after{background:linear-gradient(90deg,#0D9488,#5EEAD4)}.c6::after{background:linear-gradient(90deg,#E11D48,#FB7185)}
+.c7::after{background:linear-gradient(90deg,#6366F1,#A5B4FC)}.c8::after{background:linear-gradient(90deg,#16A34A,#4ADE80)}
+.kl{font-size:10px;color:var(--m);font-weight:600;margin-bottom:6px;letter-spacing:.3px}
+.kv{font-size:21px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-.5px;line-height:1}
+.kd{font-size:11px;margin-top:6px;font-weight:500}
+.kd.up{color:var(--green)}.kd.dn{color:var(--red)}.kd.neu{color:var(--m)}.kd.pend{color:var(--amber)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g1{margin-bottom:14px}
+.card{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px}
+.ct{font-size:13px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cs{font-size:11px;color:var(--m);margin-bottom:14px}
+.chip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;border:1px solid}
+.cb2{background:var(--bl);color:var(--blue);border-color:var(--bb)}
+.cg2{background:var(--gl);color:var(--green);border-color:var(--gb)}
+.ca2{background:var(--al);color:var(--amber);border-color:var(--ab)}
+.cv2{background:var(--vl);color:var(--violet);border-color:var(--vb)}
+.tw{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.tw-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--m);text-align:right;border-bottom:1px solid var(--bd);white-space:nowrap;background:#F8FAFD;position:sticky;top:0;z-index:1}
+thead th:first-child{text-align:left;min-width:60px}
+tbody tr{border-bottom:1px solid #F1F5F9;transition:background .1s}
+tbody tr:last-child{border:none}
+tbody tr:hover{background:#FAFBFE}
+tbody tr.tot{background:#EFF6FF}
+tbody td{padding:8px 12px;font-size:12px;text-align:right;font-family:'DM Mono',monospace;color:var(--s);white-space:nowrap}
+tbody td:first-child{font-family:'Noto Sans SC',sans-serif;text-align:left;color:var(--t);font-weight:500;font-size:12.5px}
+.g{color:var(--green)!important;font-weight:600}.r{color:var(--red)!important;font-weight:600}
+.b{color:var(--blue)!important;font-weight:600}.a{color:var(--amber)!important;font-weight:500}
+.v{color:var(--violet)!important;font-weight:600}.pnd{color:var(--amber)!important;font-weight:600}
+.sec-gap{margin-top:24px}
+@media(max-width:1200px){.kr8{grid-template-columns:repeat(4,1fr)}.kr6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}.kr8,.kr6{grid-template-columns:repeat(2,1fr)}.main{padding:14px 12px}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hi">
+    <div class="logo">知星投放 <em>·</em> 周报</div>
+    <div class="wpill">5.25 — 5.31</div>
+    <span style="font-size:11px;opacity:.5">|</span>
+    <span style="font-size:11px;opacity:.75">数据截至 2026-05-31 · 环比 5.18-5.24</span>
+    <div class="hdr-sub">巨量引擎 · 全账户汇总</div>
+  </div>
+</header>
+
+<nav class="nav" id="navBar">
+  <div class="tab active" data-tab="overview">📊 总览</div>
+  <div class="tab" data-tab="detail">📋 明细数据</div>
+  <div class="tab" data-tab="roi">💰 ROI 分析</div>
+  <div class="tab" data-tab="hourly">⏰ 分时数据</div>
+  <div class="tab" data-tab="channel">📡 分渠道</div>
+</nav>
+
+<div class="main">
+
+<!-- ══════════════════ 总览 ══════════════════ -->
+<div id="panel-overview" class="panel active">
+
+  <div class="stl" style="margin-bottom:12px">本周核心指标 · 5.25-5.31</div>
+  <div class="kr kr8" style="margin-bottom:12px">
+    <div class="kpi c1"><div class="kl">总消耗 (元)</div><div class="kv" style="color:var(--blue)">55,607</div><div class="kd dn">▼ -27.5% vs上周</div></div>
+    <div class="kpi c2"><div class="kl">激活数</div><div class="kv" style="color:var(--teal)">3,423</div><div class="kd dn">▼ -12.3%</div></div>
+    <div class="kpi c3"><div class="kl">注册数</div><div class="kv" style="color:var(--green)">2,860</div><div class="kd dn">▼ -14.2%</div></div>
+    <div class="kpi c4"><div class="kl">注册成本 (元)</div><div class="kv" style="color:var(--green)">¥19.44</div><div class="kd up">▼ -¥3.57 优化</div></div>
+    <div class="kpi c5"><div class="kl">付费人数</div><div class="kv" style="color:var(--teal)">170</div><div class="kd dn">▼ -9.1%</div></div>
+    <div class="kpi c6"><div class="kl">充值金额 (元)</div><div class="kv" style="color:var(--rose)">12,662</div><div class="kd up">▲ +19.5%</div></div>
+    <div class="kpi c7"><div class="kl">ROI0</div><div class="kv" style="color:var(--green)">22.8%</div><div class="kd up">▲ +9.0pp</div></div>
+    <div class="kpi c8"><div class="kl">ROI3 均值</div><div class="kv" style="color:var(--amber)">32.18%</div><div class="kd up">▲ +5.3pp（4天）</div></div>
+  </div>
+  <div class="kr kr6">
+    <div class="kpi c1"><div class="kl">付费成本 (元)</div><div class="kv" style="color:var(--green)">¥327</div><div class="kd up">▼ -83 优化</div></div>
+    <div class="kpi c2"><div class="kl">付费率</div><div class="kv" style="color:var(--amber)">5.94%</div><div class="kd up">▲ +0.33pp</div></div>
+    <div class="kpi c3"><div class="kl">次留率</div><div class="kv" style="color:var(--amber)">15.05%</div><div class="kd up">▲ +0.7pp</div></div>
+    <div class="kpi c4"><div class="kl">付费次留率</div><div class="kv" style="color:var(--green)">42.03%</div><div class="kd up">▲ +6.9pp</div></div>
+    <div class="kpi c5"><div class="kl">进房率</div><div class="kv" style="color:var(--teal)">40.45%</div><div class="kd up">▲ +3.0pp</div></div>
+    <div class="kpi c6"><div class="kl">上麦率</div><div class="kv" style="color:var(--amber)">9.76%</div><div class="kd up">▲ +0.39pp</div></div>
+  </div>
+
+  <div class="ins b"><b>本周结论：</b>消耗收缩至 <b>¥55,607</b>（-27.5%），但质量大幅改善。注册成本优化至 <b>¥19.44</b>（-¥3.57），ROI0 回升至 <b>22.8%</b>（+9.0pp）。充值 <b>¥12,662</b>（+19.5%），付费成本 ¥327（-83）大幅优化。进房率 40.45%（+3.0pp）、付费次留率 42.03%（+6.9pp）均回升。</div>
+  <div class="ins r"><b>需关注：</b>规模收缩，消耗和注册量分别下降 27.5% 和 14.2%，付费人数 170（-9.1%）。5/26 单日 ROI0 仅 <b>12.51%</b>，5/27 仅 <b>12.30%</b>，周一周二效率偏弱。5/31 次留率尚待补充。ROI3（5/29-5/31）和全周 ROI7 积累中，待7日后更新。</div>
+
+  <div class="stl g sec-gap">近 7 周趋势数据（4.6-4.12 → 5.18-5.24）</div>
+  <div class="tw" style="margin-bottom:16px">
+    <div class="tw-scroll">
+      <table id="tWeekly" style="min-width:960px">
+        <thead>
+          <tr>
+            <th style="text-align:left;min-width:90px">指标</th>
+            <th>4.20-4.26</th><th>4.27-5.3</th><th>5.4-5.10</th>
+            <th>5.11-5.17</th><th>5.18-5.24</th>
+            <th style="background:#EFF6FF;color:var(--blue);font-weight:700">5.25-5.31</th>
+          </tr>
+        </thead>
+        <tbody id="tbWeekly"><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">消耗(¥)</td><td class="a">¥50,366</td><td class="a">¥54,554</td><td class="g">¥35,435</td><td class="g">¥27,928</td><td class="a">¥53,648</td><td class="r" style="background:#EFF6FF">¥76,710</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">注册数</td><td class="g">2,153</td><td class="g">2,142</td><td class="a">1,589</td><td class="a">1,624</td><td class="g">2,109</td><td class="g" style="background:#EFF6FF">3,348</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">注册成本</td><td class="g">¥23.4</td><td class="a">¥25.5</td><td class="g">¥22.3</td><td class="g">¥17.2</td><td class="a">¥25.4</td><td class="g" style="background:#EFF6FF">¥22.9</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">付费人数</td><td class="g">132</td><td class="a">118</td><td class="a">87</td><td class="r">68</td><td class="g">131</td><td class="g" style="background:#EFF6FF">187</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">付费率</td><td class="a">6.13%</td><td class="a">5.51%</td><td class="a">5.48%</td><td class="r">4.19%</td><td class="a">6.21%</td><td class="a" style="background:#EFF6FF">5.59%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">付费成本</td><td class="a">¥382</td><td class="a">¥462</td><td class="a">¥407</td><td class="a">¥411</td><td class="a">¥410</td><td class="a" style="background:#EFF6FF">¥410</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">充值(¥)</td><td class="a">¥11,732</td><td class="a">¥11,105</td><td class="r">¥6,409</td><td class="r">¥4,378</td><td class="a">¥9,793</td><td class="a" style="background:#EFF6FF">¥10,595</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">ROI0(%)</td><td class="a">23.3%</td><td class="a">20.4%</td><td class="a">18.1%</td><td class="r">15.7%</td><td class="a">18.3%</td><td class="r" style="background:#EFF6FF">13.8%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">ROI3(%)</td><td class="a">43.6%</td><td class="a">40.0%</td><td class="r">33.1%</td><td class="r">31.3%</td><td class="a">45.6%</td><td class="r" style="background:#EFF6FF">26.9%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">ROI7(%)</td><td class="a">72.9%</td><td class="a">50.6%</td><td class="r">43.8%</td><td class="r">39.8%</td><td class="a">66.5%</td><td class="" style="background:#EFF6FF">积累中</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">次留率</td><td class="a">17.9%</td><td class="r">15.6%</td><td class="r">15.6%</td><td class="a">18.4%</td><td class="a">18.2%</td><td class="r" style="background:#EFF6FF">14.4%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">付费次留</td><td class="a">47.5%</td><td class="a">48.1%</td><td class="a">45.5%</td><td class="a">46.8%</td><td class="a">51.1%</td><td class="r" style="background:#EFF6FF">35.1%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">进房率</td><td class="a">29.1%</td><td class="a">29.6%</td><td class="a">28.8%</td><td class="a">28.8%</td><td class="g">36.7%</td><td class="g" style="background:#EFF6FF">37.3%</td></tr><tr><td style="font-family:&#39;Noto Sans SC&#39;;font-weight:600;color:var(--t);font-size:12px">上麦率</td><td class="a">6.50%</td><td class="a">6.62%</td><td class="a">6.73%</td><td class="a">6.73%</td><td class="g">9.10%</td><td class="g" style="background:#EFF6FF">9.32%</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card"><div class="ct">消耗 &amp; 注册量 周对比</div><div class="cs">蓝柱=消耗（左轴），绿柱=注册数（右轴）</div><canvas id="cOvMain" height="820" style="display: block; box-sizing: border-box; height: 410px; width: 615px;" width="1231"></canvas></div>
+    <div class="card"><div class="ct">关键率指标对比</div><div class="cs">ROI0 / 付费率 / 进房率 / 注册成本(÷100)</div><canvas id="cOvKpi" height="820" width="1231" style="display: block; box-sizing: border-box; height: 410px; width: 615px;"></canvas></div>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="ct">近6周消耗趋势</div><canvas id="cOv8Sp" height="524" width="786" style="display: block; box-sizing: border-box; height: 262px; width: 393px;"></canvas></div>
+    <div class="card"><div class="ct">近6周注册成本 &amp; 付费成本</div><canvas id="cOv8Cst" height="524" width="786" style="display: block; box-sizing: border-box; height: 262px; width: 393px;"></canvas></div>
+    <div class="card"><div class="ct">近6周 ROI0 &amp; ROI3</div><canvas id="cOv8Roi" height="524" width="786" style="display: block; box-sizing: border-box; height: 262px; width: 393px;"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════ 明细数据 ══════════════════ -->
+<div id="panel-detail" class="panel">
+  <div class="ins b"><b>明细说明：</b>付费成本 = 当日消耗 ÷ 当日付费人数，绿色代表指标优秀，红色代表指标偏差，金色为中间区间。</div>
+
+  <div class="stl">本周日度明细 · 5.25-5.31</div>
+  <div class="tw">
+    <div class="tw-scroll">
+      <table style="min-width:1100px">
+        <thead><tr>
+          <th>日期</th><th>消耗</th><th>激活</th><th>注册</th><th>注册成本</th>
+          <th>AI提问</th><th>付费数</th><th>付费率</th><th>付费成本</th><th>充值金额</th>
+          <th>ROI0</th><th>ARPU</th><th>ARPPU</th><th>进房率</th><th>上麦率</th><th>次留率</th><th>付费次留</th>
+        </tr></thead>
+        <tbody id="tbThis"><tr>
+      <td class="b">5/25 周日</td>
+      <td>8,803</td><td>671</td><td>557</td>
+      <td class="g">15.81</td><td>394</td>
+      <td class="">30</td><td class="a">5.4%</td>
+      <td class="g">293.5</td><td>1,869.0</td>
+      <td class="a">21.2%</td>
+      <td class="a">3.36</td>
+      <td>62.30</td>
+      <td class="g">37.7%</td>
+      <td class="g">10.6%</td>
+      <td class="r">11.6%</td><td class="a">33.3%</td></tr><tr>
+      <td class="b">5/26 周一</td>
+      <td>11,506</td><td>718</td><td>602</td>
+      <td class="g">19.11</td><td>433</td>
+      <td class="">23</td><td class="r">3.8%</td>
+      <td class="a">500.3</td><td>1,439.7</td>
+      <td class="a">12.5%</td>
+      <td class="r">2.39</td>
+      <td>62.60</td>
+      <td class="g">38.4%</td>
+      <td class="g">8.1%</td>
+      <td class="a">15.4%</td><td class="g">54.5%</td></tr><tr>
+      <td class="b">5/27 周二</td>
+      <td>4,567</td><td>388</td><td>315</td>
+      <td class="g">14.50</td><td>234</td>
+      <td class="">13</td><td class="r">4.1%</td>
+      <td class="g">351.3</td><td>561.8</td>
+      <td class="a">12.3%</td>
+      <td class="r">1.78</td>
+      <td>43.22</td>
+      <td class="g">40.3%</td>
+      <td class="g">7.6%</td>
+      <td class="a">19.2%</td><td class="g">63.6%</td></tr><tr>
+      <td class="b">5/28 周三</td>
+      <td>4,882</td><td>308</td><td>249</td>
+      <td class="g">19.61</td><td>180</td>
+      <td class="">17</td><td class="g">6.8%</td>
+      <td class="g">287.2</td><td>1,071.2</td>
+      <td class="a">21.9%</td>
+      <td class="a">4.30</td>
+      <td>63.01</td>
+      <td class="g">44.6%</td>
+      <td class="g">11.2%</td>
+      <td class="g">21.4%</td><td class="a">46.7%</td></tr><tr>
+      <td class="b">5/29 周四</td>
+      <td>7,552</td><td>457</td><td>397</td>
+      <td class="g">19.02</td><td>286</td>
+      <td class="">27</td><td class="g">6.8%</td>
+      <td class="g">279.7</td><td>2,729.4</td>
+      <td class="g">36.1%</td>
+      <td class="a">6.88</td>
+      <td>101.09</td>
+      <td class="g">38.5%</td>
+      <td class="g">9.3%</td>
+      <td class="r">11.3%</td><td class="a">32.0%</td></tr><tr>
+      <td class="b">5/30 周五</td>
+      <td>10,686</td><td>521</td><td>437</td>
+      <td class="g">24.45</td><td>345</td>
+      <td class="">37</td><td class="g">8.5%</td>
+      <td class="g">288.8</td><td>3,412.7</td>
+      <td class="g">31.9%</td>
+      <td class="g">7.81</td>
+      <td>92.24</td>
+      <td class="g">43.5%</td>
+      <td class="g">11.0%</td>
+      <td class="a">15.8%</td><td class="a">38.9%</td></tr><tr>
+      <td class="b">5/31 周六</td>
+      <td>7,606</td><td>360</td><td>303</td>
+      <td class="a">25.10</td><td>223</td>
+      <td class="">23</td><td class="g">7.6%</td>
+      <td class="g">330.7</td><td>1,578.3</td>
+      <td class="a">20.8%</td>
+      <td class="a">5.21</td>
+      <td>68.62</td>
+      <td class="g">44.6%</td>
+      <td class="g">11.2%</td>
+      <td class="pnd">积累中⏳</td><td class="pnd">积累中⏳</td></tr><tr class="tot"><td class="b">合计/均值</td>
+    <td class="b">55,607</td><td>3423</td><td>2860</td>
+    <td class="g">19.44</td><td>2095</td>
+    <td class="">170</td><td class="a">5.9%</td>
+    <td class="g">327.1</td><td>12,662.1</td>
+    <td class="a">22.8%</td>
+    <td>4.43</td><td>74.48</td>
+    <td>40.5%</td><td>9.8%</td><td class="a">15.0%</td><td class="a">42.0%</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="stl a sec-gap">上周日度明细 · 5.18-5.24（参考对比）</div>
+  <div class="tw">
+    <div class="tw-scroll">
+      <table style="min-width:1100px">
+        <thead><tr>
+          <th>日期</th><th>消耗</th><th>激活</th><th>注册</th><th>注册成本</th>
+          <th>AI提问</th><th>付费数</th><th>付费率</th><th>付费成本</th><th>充值金额</th>
+          <th>ROI0</th><th>ARPU</th><th>ARPPU</th><th>进房率</th><th>上麦率</th><th>次留率</th><th>付费次留</th>
+        </tr></thead>
+        <tbody id="tbLast"><tr>
+      <td class="b">5/18 周日</td>
+      <td>16,339</td><td>744</td><td>661</td>
+      <td class="g">24.72</td><td>464</td>
+      <td class="">40</td><td class="a">6.1%</td>
+      <td class="a">408.5</td><td>2,600.6</td>
+      <td class="a">15.9%</td>
+      <td class="a">3.93</td>
+      <td>65.02</td>
+      <td class="g">39.3%</td>
+      <td class="g">10.1%</td>
+      <td class="a">16.6%</td><td class="g">52.5%</td></tr><tr>
+      <td class="b">5/19 周一</td>
+      <td>12,396</td><td>594</td><td>523</td>
+      <td class="g">23.70</td><td>357</td>
+      <td class="">32</td><td class="a">6.1%</td>
+      <td class="g">387.4</td><td>1,071.5</td>
+      <td class="r">8.6%</td>
+      <td class="r">2.05</td>
+      <td>33.48</td>
+      <td class="g">36.1%</td>
+      <td class="g">9.6%</td>
+      <td class="a">16.6%</td><td class="a">37.5%</td></tr><tr>
+      <td class="b">5/20 周二</td>
+      <td>11,767</td><td>576</td><td>489</td>
+      <td class="g">24.06</td><td>338</td>
+      <td class="">34</td><td class="g">7.0%</td>
+      <td class="g">346.1</td><td>3,249.1</td>
+      <td class="g">27.6%</td>
+      <td class="a">6.64</td>
+      <td>95.56</td>
+      <td class="g">39.5%</td>
+      <td class="g">9.2%</td>
+      <td class="r">12.7%</td><td class="r">26.5%</td></tr><tr>
+      <td class="b">5/21 周三</td>
+      <td>11,107</td><td>551</td><td>468</td>
+      <td class="g">23.73</td><td>306</td>
+      <td class="">32</td><td class="g">6.8%</td>
+      <td class="g">347.1</td><td>1,484.8</td>
+      <td class="a">13.4%</td>
+      <td class="a">3.17</td>
+      <td>46.40</td>
+      <td class="g">37.4%</td>
+      <td class="g">10.9%</td>
+      <td class="a">17.2%</td><td class="a">38.7%</td></tr><tr>
+      <td class="b">5/22 周四</td>
+      <td>8,879</td><td>428</td><td>365</td>
+      <td class="g">24.33</td><td>238</td>
+      <td class="">15</td><td class="r">4.1%</td>
+      <td class="r">592.0</td><td>1,139.4</td>
+      <td class="a">12.8%</td>
+      <td class="a">3.12</td>
+      <td>75.96</td>
+      <td class="g">41.4%</td>
+      <td class="g">11.5%</td>
+      <td class="r">11.2%</td><td class="a">35.7%</td></tr><tr>
+      <td class="b">5/23 周五</td>
+      <td>7,685</td><td>411</td><td>334</td>
+      <td class="g">23.01</td><td>221</td>
+      <td class="">19</td><td class="a">5.7%</td>
+      <td class="a">404.5</td><td>751.8</td>
+      <td class="r">9.8%</td>
+      <td class="r">2.25</td>
+      <td>39.57</td>
+      <td class="g">33.2%</td>
+      <td class="a">6.9%</td>
+      <td class="r">13.7%</td><td class="r">26.3%</td></tr><tr>
+      <td class="b">5/24 周六</td>
+      <td>8,539</td><td>599</td><td>493</td>
+      <td class="g">17.32</td><td>315</td>
+      <td class="">15</td><td class="r">3.0%</td>
+      <td class="r">569.3</td><td>297.4</td>
+      <td class="r">3.5%</td>
+      <td class="r">0.60</td>
+      <td>19.83</td>
+      <td class="g">34.5%</td>
+      <td class="a">6.9%</td>
+      <td class="r">10.9%</td><td class="r">6.7%</td></tr><tr class="tot"><td class="b">合计/均值</td>
+    <td class="b">76,716</td><td>3903</td><td>3333</td>
+    <td class="g">23.02</td><td>2239</td>
+    <td class="">187</td><td class="a">5.6%</td>
+    <td class="a">410.2</td><td>10,594.6</td>
+    <td class="a">13.8%</td>
+    <td>3.18</td><td>56.66</td>
+    <td>37.5%</td><td>9.4%</td><td class="r">14.4%</td><td class="a">35.2%</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec-gap">
+    <div class="g2">
+      <div class="card"><div class="ct">每日消耗对比</div><div class="cs">蓝=本周，橙=上周</div><canvas id="cDetSp" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+      <div class="card"><div class="ct">每日付费数对比</div><div class="cs">绿=本周，橙=上周</div><canvas id="cDetPay" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ct">每日 ROI0 对比</div><div class="cs">蓝=本周，橙=上周</div><canvas id="cDetRoi" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+      <div class="card"><div class="ct">每日次留率 &amp; 付费次留率（本周）</div><div class="cs">蓝=次留率，紫=付费次留率</div><canvas id="cDetRet" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ROI ══════════════════ -->
+<div id="panel-roi" class="panel">
+  <div class="g2">
+    <div class="card"><div class="ct">本周 ROI0 &amp; ROI3 <span class="chip cb2">5.25-5.31</span></div><div class="cs">5/29-5/31 ROI3 积累中（虚线），5/25-5/28 ROI3 均已出</div><canvas id="cRoiThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周 ROI0 / ROI3 / ROI7 <span class="chip ca2">5.18-5.24 · 已完整</span></div><div class="cs">ROI3 最高 144.8%（5/14），ROI7 最高 228.3%（5/14）</div><canvas id="cRoiLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">本周 ARPU &amp; 消耗 <span class="chip cg2">5.25-5.31</span></div><div class="cs">绿线=ARPU（左轴），蓝柱=消耗（右轴）</div><canvas id="cArpuThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周 ARPU &amp; 消耗 <span class="chip ca2">5.18-5.24</span></div><div class="cs">橙线=ARPU（左轴），橙柱=消耗（右轴）</div><canvas id="cArpuLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+
+  <div class="stl v">ROI 明细表</div>
+  <div class="g2">
+    <div class="tw">
+      <table>
+        <thead><tr><th>日期</th><th>消耗(元)</th><th>ARPU</th><th>ROI0</th><th>ROI3</th></tr></thead>
+        <tbody id="tbRoiThis"><tr><td>5/25</td><td class="a">8,803.63</td>
+      <td class="a">3.36</td>
+      <td class="a">21.2%</td><td class="g">44.0%</td></tr><tr><td>5/26</td><td class="a">11,506.99</td>
+      <td class="r">2.39</td>
+      <td class="a">12.5%</td><td class="a">23.2%</td></tr><tr><td>5/27</td><td class="a">4,567.44</td>
+      <td class="r">1.78</td>
+      <td class="a">12.3%</td><td class="a">19.5%</td></tr><tr><td>5/28</td><td class="a">4,882.76</td>
+      <td class="a">4.30</td>
+      <td class="a">21.9%</td><td class="g">44.0%</td></tr><tr><td>5/29</td><td class="a">7,552.68</td>
+      <td class="a">6.88</td>
+      <td class="g">36.1%</td><td class="a">积累中⏳</td></tr><tr><td>5/30</td><td class="a">10,686.67</td>
+      <td class="g">7.81</td>
+      <td class="g">31.9%</td><td class="a">积累中⏳</td></tr><tr><td>5/31</td><td class="a">7,606.69</td>
+      <td class="a">5.21</td>
+      <td class="a">20.8%</td><td class="a">积累中⏳</td></tr><tr class="tot"><td class="b">均值</td><td>55,607</td><td>4.43</td><td class="a">22.8%</td><td class="a">32.18%（4天）</td></tr></tbody>
+      </table>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>日期</th><th>消耗(元)</th><th>ARPU</th><th>ROI0</th><th>ROI3</th><th>ROI7</th></tr></thead>
+        <tbody id="tbRoiLast"><tr><td>5/18</td><td class="a">16,339.84</td>
+      <td class="a">3.93</td>
+      <td class="a">15.9%</td>
+      <td class="g">40.1%</td><td class="g">70.9%</td></tr><tr><td>5/19</td><td class="a">12,396.72</td>
+      <td class="r">2.05</td>
+      <td class="r">8.6%</td>
+      <td class="a">17.8%</td><td class="g">29.7%</td></tr><tr><td>5/20</td><td class="a">11,767.40</td>
+      <td class="a">6.64</td>
+      <td class="g">27.6%</td>
+      <td class="g">29.0%</td><td class="g">29.4%</td></tr><tr><td>5/21</td><td class="a">11,107.31</td>
+      <td class="a">3.17</td>
+      <td class="a">13.4%</td>
+      <td class="a">20.4%</td><td class="a">22.6%</td></tr><tr><td>5/22</td><td class="a">8,879.99</td>
+      <td class="a">3.12</td>
+      <td class="a">12.8%</td>
+      <td class="a">18.1%</td><td class="a">18.9%</td></tr><tr><td>5/23</td><td class="a">7,685.66</td>
+      <td class="r">2.25</td>
+      <td class="r">9.8%</td>
+      <td class="a">23.2%</td><td class="g">35.4%</td></tr><tr><td>5/24</td><td class="a">8,539.40</td>
+      <td class="r">0.60</td>
+      <td class="r">3.5%</td>
+      <td class="r">7.4%</td><td class="a">11.6%</td></tr><tr class="tot"><td class="b">均值</td><td>76,716</td><td>3.18</td><td class="a">13.8%</td><td class="a">24.1%</td><td class="g">34.7%</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 分时 ══════════════════ -->
+<div id="panel-hourly" class="panel">
+  <div class="ins b"><b>分时规律（本周 5.25-5.31）：</b>本周消耗高峰在 19h（<b>¥3,348</b>），18-19h 消耗也集中（¥3,091/¥3,348）。<b>最低注册成本时段：7h（¥17.42）</b>，5-11h 注册成本 ¥17-20 区间相对高效。付费金额高峰：21h（<b>¥826</b>），晚间 18-22h 付费金额合计 <b>¥2,975（占全天 33%）</b>。与上周（5.18-5.24）相比，本周消耗规模收缩，但注册成本明显优化（最低仅 ¥17.42）。</div>
+
+  <div class="g2">
+    <div class="card"><div class="ct">本周分时消耗 &amp; 注册成本 <span class="chip cb2">5.25-5.31</span></div><div class="cs">蓝柱=消耗，橙线=注册成本（右轴）</div><canvas id="cHspThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周分时消耗 &amp; 注册成本 <span class="chip ca2">5.18-5.24</span></div><div class="cs">橙柱=消耗，紫线=注册成本（右轴）</div><canvas id="cHspLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">本周分时注册量 <span class="chip cg2">5.25-5.31</span></div><canvas id="cHregThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周分时注册量 <span class="chip ca2">5.18-5.24</span></div><canvas id="cHregLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">本周分时付费金额 &amp; 消耗 <span class="chip cv2">5.25-5.31</span></div><div class="cs">紫柱=付费数，红线=付费成本（右轴）</div><canvas id="cHcvtThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周分时付费数 &amp; 付费成本 <span class="chip ca2">5.18-5.24</span></div><div class="cs">橙柱=付费数，红线=付费成本（右轴）</div><canvas id="cHcvtLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">本周分时付费金额 <span class="chip cg2">5.25-5.31</span></div><div class="cs">绿柱=付费金额，橙线=消耗（右轴）</div><canvas id="cHpayThis" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周分时付费金额 <span class="chip ca2">5.18-5.24</span></div><div class="cs">橙柱=付费金额，紫线=消耗（右轴）</div><canvas id="cHpayLast" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="stl v sec-gap">本周 vs 上周 双周分时对比</div>
+  <div class="g2">
+    <div class="card"><div class="ct">注册量双周对比</div><div class="cs">蓝=本周，橙=上周</div><canvas id="cHcmpReg" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">付费金额双周对比</div><div class="cs">绿=本周，橙=上周</div><canvas id="cHcmpPay" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════ 渠道 ══════════════════ -->
+<div id="panel-channel" class="panel">
+  <div class="ins g"><b>渠道结论：</b>信息流代理本周消耗 ¥38,636（-9.1%），ROI0 21.14%（较上周 14.03% 大幅回升），付费 118 单，是消耗主力（70%）。商店代理 ROI0 <b>23.97%</b>，注册成本 ¥13.69 最低，性价比优秀，建议继续加预算。信息流自理 ROI0 仅 10.96%，付费 17 单，效率偏低，建议优化素材定向。上周（5.18-5.24）及本周渠道级 ROI3/ROI7 缓存中，待补充。</div>
+
+  <div class="stl">分渠道核心指标</div>
+  <div class="tw">
+    <div class="tw-scroll">
+      <table style="min-width:1100px">
+        <thead><tr>
+          <th>周次</th><th>渠道</th><th>方式</th><th>消耗</th><th>注册</th><th>注册成本</th>
+          <th>付费数</th><th>付费率</th><th>付费成本</th><th>充值</th><th>ROI0</th><th>ROI3</th><th>ROI7</th>
+          <th>ARPU</th><th>ARPPU</th><th>次留率</th><th>付费次留</th>
+        </tr></thead>
+        <tbody id="tbCh"><tr><td class="">上周</td><td>信息流</td><td>代理</td>
+      <td class="">42,515.70</td><td>1505</td>
+      <td class="a">28.25</td><td>103</td>
+      <td class="g">6.8%</td>
+      <td class="a">412.8</td><td>5,964.3</td>
+      <td class="a">14.0%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="a">3.96</td><td>57.91</td>
+      <td class="a">16.3%</td><td class="a">42.7%</td></tr><tr><td class="">上周</td><td>信息流</td><td>自理</td>
+      <td class="">24,688.38</td><td>799</td>
+      <td class="a">30.90</td><td>57</td>
+      <td class="g">7.1%</td>
+      <td class="a">433.1</td><td>1,620.8</td>
+      <td class="r">6.6%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="r">2.03</td><td>28.44</td>
+      <td class="r">12.3%</td><td class="r">21.1%</td></tr><tr><td class="">上周</td><td>商店</td><td>代理</td>
+      <td class="">9,512.25</td><td>717</td>
+      <td class="g">13.27</td><td>24</td>
+      <td class="r">3.4%</td>
+      <td class="g">396.3</td><td>2,889.5</td>
+      <td class="g">30.4%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="a">4.03</td><td>120.40</td>
+      <td class="pnd">待补⚠</td><td class="pnd">待补⚠</td></tr><tr><td class="b">本周</td><td>信息流</td><td>代理</td>
+      <td class="b">38,636.09</td><td>1704</td>
+      <td class="g">22.67</td><td>118</td>
+      <td class="g">6.9%</td>
+      <td class="g">327.4</td><td>8,165.9</td>
+      <td class="a">21.1%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="a">4.79</td><td>69.20</td>
+      <td class="pnd">待补⚠</td><td class="pnd">待补⚠</td></tr><tr><td class="b">本周</td><td>信息流</td><td>自理</td>
+      <td class="b">9,156.81</td><td>277</td>
+      <td class="a">33.06</td><td>17</td>
+      <td class="a">6.1%</td>
+      <td class="a">538.6</td><td>1,003.5</td>
+      <td class="a">11.0%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="a">3.62</td><td>59.03</td>
+      <td class="pnd">待补⚠</td><td class="pnd">待补⚠</td></tr><tr><td class="b">本周</td><td>商店</td><td>代理</td>
+      <td class="b">7,814.32</td><td>571</td>
+      <td class="g">13.69</td><td>17</td>
+      <td class="r">3.0%</td>
+      <td class="a">459.7</td><td>1,873.1</td>
+      <td class="a">24.0%</td>
+      <td class="pnd">缓存中⏳</td><td class="pnd">缓存中⏳</td>
+      <td class="a">3.28</td><td>110.20</td>
+      <td class="pnd">待补⚠</td><td class="pnd">待补⚠</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:4px">
+    <div class="card"><div class="ct">渠道消耗对比 <span class="chip cb2">两周</span></div><canvas id="cChSp" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">渠道 ROI0 对比 <span class="chip cg2">两周</span></div><canvas id="cChRoi" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">渠道注册成本对比 <span class="chip ca2">两周</span></div><canvas id="cChCst" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">渠道注册量对比 <span class="chip cv2">两周</span></div><canvas id="cChReg" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">渠道付费成本对比 <span class="chip cb2">两周</span></div><canvas id="cChPayCst" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    <div class="card"><div class="ct">上周渠道 ROI3 &amp; ROI7 <span class="chip ca2">5.18-5.24 · 已完整</span></div><div class="cs">本周 ROI3/ROI7 缓存中，待更新</div><canvas id="cChRoi37" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════
+const THIS_ROWS=[
+  {d:'5/25 周日',sp:8803.63,act:671,reg:557,ai:394,pay:30,pr:0.0539,rev:1869.0,r0:0.2123,arpu:3.36,arppu:62.30,room:0.3770,mic:0.1059,ret:0.1157,pret:0.3333},
+  {d:'5/26 周一',sp:11506.99,act:718,reg:602,ai:433,pay:23,pr:0.0382,rev:1439.7,r0:0.1251,arpu:2.39,arppu:62.60,room:0.3837,mic:0.0814,ret:0.1537,pret:0.5455},
+  {d:'5/27 周二',sp:4567.44,act:388,reg:315,ai:234,pay:13,pr:0.0413,rev:561.8,r0:0.123,arpu:1.78,arppu:43.22,room:0.4032,mic:0.0762,ret:0.1923,pret:0.6364},
+  {d:'5/28 周三',sp:4882.76,act:308,reg:249,ai:180,pay:17,pr:0.0683,rev:1071.2,r0:0.2194,arpu:4.30,arppu:63.01,room:0.4458,mic:0.1124,ret:0.2136,pret:0.4667},
+  {d:'5/29 周四',sp:7552.68,act:457,reg:397,ai:286,pay:27,pr:0.0680,rev:2729.4,r0:0.3614,arpu:6.88,arppu:101.09,room:0.3854,mic:0.0932,ret:0.1133,pret:0.32},
+  {d:'5/30 周五',sp:10686.67,act:521,reg:437,ai:345,pay:37,pr:0.0847,rev:3412.7,r0:0.3193,arpu:7.81,arppu:92.24,room:0.4348,mic:0.1098,ret:0.158,pret:0.3889},
+  {d:'5/31 周六',sp:7606.69,act:360,reg:303,ai:223,pay:23,pr:0.0759,rev:1578.3,r0:0.2075,arpu:5.21,arppu:68.62,room:0.4455,mic:0.1122,ret:null,pret:null},
+];
+const THIS_TOT={d:'合计/均值',sp:55606.86,act:3423,reg:2860,ai:2095,pay:170,pr:0.0594,rev:12662.10,r0:0.2277,arpu:4.43,arppu:74.48,room:0.4045,mic:0.0976,ret:0.1505,pret:0.4203};
+
+const LAST_ROWS=[
+  {d:'5/18 周日',sp:16339.84,act:744,reg:661,ai:464,pay:40,pr:0.0605,rev:2600.6,r0:0.1592,arpu:3.93,arppu:65.02,room:0.3933,mic:0.1014,ret:0.1664,pret:0.525},
+  {d:'5/19 周一',sp:12396.72,act:594,reg:523,ai:357,pay:32,pr:0.0612,rev:1071.5,r0:0.0864,arpu:2.05,arppu:33.48,room:0.3614,mic:0.0956,ret:0.1657,pret:0.375},
+  {d:'5/20 周二',sp:11767.4,act:576,reg:489,ai:338,pay:34,pr:0.0695,rev:3249.1,r0:0.2761,arpu:6.64,arppu:95.56,room:0.3947,mic:0.0920,ret:0.1269,pret:0.2647},
+  {d:'5/21 周三',sp:11107.31,act:551,reg:468,ai:306,pay:32,pr:0.0684,rev:1484.8,r0:0.1337,arpu:3.17,arppu:46.40,room:0.3739,mic:0.1090,ret:0.1719,pret:0.3871},
+  {d:'5/22 周四',sp:8879.99,act:428,reg:365,ai:238,pay:15,pr:0.0411,rev:1139.4,r0:0.1283,arpu:3.12,arppu:75.96,room:0.4137,mic:0.1151,ret:0.1121,pret:0.3571},
+  {d:'5/23 周五',sp:7685.66,act:411,reg:334,ai:221,pay:19,pr:0.0569,rev:751.8,r0:0.0978,arpu:2.25,arppu:39.57,room:0.3323,mic:0.0689,ret:0.1373,pret:0.2632},
+  {d:'5/24 周六',sp:8539.4,act:599,reg:493,ai:315,pay:15,pr:0.0304,rev:297.4,r0:0.0348,arpu:0.60,arppu:19.83,room:0.3448,mic:0.0690,ret:0.109,pret:0.0667},
+];
+const LAST_TOT={d:'合计/均值',sp:76716.32,act:3903,reg:3333,ai:2239,pay:187,pr:0.0561,rev:10594.60,r0:0.1381,arpu:3.18,arppu:56.66,room:0.3747,mic:0.0936,ret:0.1439,pret:0.3516};
+
+const ROI_T=[
+  {d:'5/25',sp:8803.63,arpu:3.36,r0:0.2123, r3:0.4401, acc:false},
+  {d:'5/26',sp:11506.99,arpu:2.39,r0:0.1251, r3:0.2315, acc:false},
+  {d:'5/27',sp:4567.44,arpu:1.78,r0:0.123, r3:0.1947, acc:false},
+  {d:'5/28',sp:4882.76,arpu:4.30,r0:0.2194, r3:0.44, acc:false},
+  {d:'5/29',sp:7552.68,arpu:6.88,r0:0.3614, r3:null, acc:true},
+  {d:'5/30',sp:10686.67,arpu:7.81,r0:0.3193, r3:null, acc:true},
+  {d:'5/31',sp:7606.69,arpu:5.21,r0:0.2075, r3:null, acc:true},
+];
+const ROI_L=[
+  {d:'5/18',sp:16339.84,arpu:3.93,r0:0.1592, r3:0.4014, r7:0.7087},
+  {d:'5/19',sp:12396.72,arpu:2.05,r0:0.0864, r3:0.1776, r7:0.2967},
+  {d:'5/20',sp:11767.4,arpu:6.64,r0:0.2761, r3:0.2897, r7:0.2936},
+  {d:'5/21',sp:11107.31,arpu:3.17,r0:0.1337, r3:0.2039, r7:0.2264},
+  {d:'5/22',sp:8879.99,arpu:3.12,r0:0.1283, r3:0.1806, r7:0.1887},
+  {d:'5/23',sp:7685.66,arpu:2.25,r0:0.0978, r3:0.2318, r7:0.3541},
+  {d:'5/24',sp:8539.4,arpu:0.60,r0:0.0348, r3:0.0744, r7:0.1163},
+];
+
+// Hourly aggregated (sum of all accounts, all days in the week, by hour 0-23)
+const HT={
+  sp:[2851.04,1516.06,1196.52,1056.27,1028.11,1473.36,2201.01,1637.52,1346.27,1632.53,1934.79,2259.56,1404.67,1452.39,1820.2,1863.81,1842.87,2355.13,3090.71,3347.9,2764.46,2390.81,2866.05,2480.6],
+  reg:[68,55,46,44,54,80,106,94,57,65,93,128,66,58,92,89,86,105,96,102,82,87,117,89],
+  cst:[41.93,27.56,26.01,24.01,19.04,18.42,20.76,17.42,23.62,25.12,20.8,17.65,21.28,25.04,19.78,20.94,21.43,22.43,32.19,32.82,33.71,27.48,24.5,27.87],
+  cvt:[3,2,2,1,2,3,6,4,4,7,6,10,2,3,8,7,5,6,4,11,10,14,6,9],
+  cvc:[950.35,758.03,598.26,1056.27,514.05,491.12,366.84,409.38,336.57,233.22,322.46,225.96,702.33,484.13,227.53,266.26,368.57,392.52,772.68,304.35,276.45,170.77,477.68,275.62],
+  pay:[126.0,63.9,36.0,6.0,33.9,107.8,335.5,489.7,227.9,669.9,471.9,377.7,123.8,316.0,333.6,658.0,523.8,523.5,507.7,283.9,673.7,825.8,683.8,715.6],
+};
+const HL={
+  sp:[4312.91,2316.84,1671.64,1511.95,1637.67,1933.41,2205.16,1746.88,1374.65,1382.99,1484.53,1384.38,2091.04,2345.89,2051.22,2583.95,2667.99,3045.74,4444.23,5267.88,5740.71,5354.09,4747.27,3901.06],
+  reg:[108,91,65,52,62,73,91,63,71,61,62,53,72,97,89,112,122,112,100,164,147,133,131,115],
+  cst:[39.93,25.46,25.72,29.08,26.41,26.49,24.23,27.73,19.36,22.67,23.94,26.12,29.04,24.18,23.05,23.07,21.87,27.19,44.44,32.12,39.05,40.26,36.24,33.92],
+  cvt:[9,7,4,4,8,3,4,4,4,9,8,4,5,6,9,6,7,5,7,7,14,9,10,8],
+  cvc:[479.21,330.98,417.91,377.99,204.71,644.47,551.29,436.72,343.66,153.67,185.57,346.1,418.21,390.98,227.91,430.66,381.14,609.15,634.89,752.55,410.05,594.9,474.73,487.63],
+  pay:[303.9,385.8,60.0,63.8,361.8,77.9,49.8,93.9,101.9,317.6,317.6,75.9,87.9,303.9,783.7,279.8,275.7,169.7,357.8,327.9,915.7,889.6,593.6,395.9],
+};
+
+const CH=[
+  {wk:'上周',ch:'信息流',m:'代理',sp:42515.70,reg:1505,cst:28.25,pay:103,pr:.0684,rev:5964.3,r0:.1403,r3:null,r7:null,arpu:3.96,arppu:57.91,ret:.1628,pret:.4272},
+  {wk:'上周',ch:'信息流',m:'自理',sp:24688.38,reg:799, cst:30.90,pay:57, pr:.0713,rev:1620.8,r0:.0657,r3:null,r7:null,arpu:2.03,arppu:28.44,ret:.1227,pret:.2105},
+  {wk:'上周',ch:'商店', m:'代理',sp:9512.25, reg:717, cst:13.27,pay:24, pr:.0335,rev:2889.5,r0:.3038,r3:null,r7:null,arpu:4.03,arppu:120.4,ret:null,pret:null},
+  {wk:'本周',ch:'信息流',m:'代理',sp:38636.09,reg:1704,cst:22.67,pay:118,pr:.0692,rev:8165.9,r0:.2114,r3:null,r7:null,arpu:4.79,arppu:69.20,ret:null,pret:null},
+  {wk:'本周',ch:'信息流',m:'自理',sp:9156.81, reg:277, cst:33.06,pay:17, pr:.0614,rev:1003.5,r0:.1096,r3:null,r7:null,arpu:3.62,arppu:59.03,ret:null,pret:null},
+  {wk:'本周',ch:'商店', m:'代理',sp:7814.32, reg:571, cst:13.69,pay:17, pr:.0298,rev:1873.1,r0:.2397,r3:null,r7:null,arpu:3.28,arppu:110.2,ret:null,pret:null},
+];
+
+const W8=[
+  {w:'4.20-4.26',sp:54554, reg:2142,cst:25.47,pay:118,pr:.0551,paycst:462.3,rev:11105,r0:20.36,r3:40.03, r7:50.58, ret:15.61,pret:48.11,room:.2963,mic:.0662},
+  {w:'4.27-5.3', sp:35435, reg:1589,cst:22.30,pay:87, pr:.0548,paycst:407.3,rev:6409, r0:18.09,r3:33.15, r7:43.81, ret:15.61,pret:45.45,room:.2876,mic:.0673},
+  {w:'5.4-5.10', sp:27928, reg:1624,cst:17.20,pay:68, pr:.0419,paycst:410.7,rev:4378, r0:15.68,r3:31.34, r7:39.76, ret:18.37,pret:46.77,room:.2876,mic:.0673},
+  {w:'5.11-5.17',sp:53648, reg:2109,cst:25.44,pay:131,pr:.0621,paycst:409.5,rev:9793, r0:18.26,r3:45.63, r7:66.51, ret:18.18,pret:51.09,room:.3670,mic:.0910},
+  {w:'5.18-5.24',sp:76710, reg:3333,cst:23.02,pay:187,pr:.0561,paycst:410.2,rev:10595,r0:13.81,r3:26.89, r7:null,  ret:14.39,pret:35.16,room:.3748,mic:.0936},
+  {w:'5.25-5.31',sp:55607, reg:2860,cst:19.44,pay:170,pr:0.0594,paycst:327.1,rev:12662,r0:22.77,r3:32.18, r7:null,  ret:15.05,pret:42.03,room:0.4045,mic:0.0976},
+];
+
+// ════════════════════════════════════════
+// CHART HELPERS
+// ════════════════════════════════════════
+Chart.defaults.font.family="'Noto Sans SC',sans-serif";
+Chart.defaults.font.size=11;
+const GR='#E8ECF4',TX='#94A3B8';
+const sX=()=>({grid:{display:false},ticks:{color:TX,font:{size:10},maxTicksLimit:14}});
+const sY=(cb,mn,mx)=>{const o={grid:{color:GR},ticks:{color:TX,font:{size:10}}};if(cb)o.ticks.callback=cb;if(mn!=null)o.min=mn;if(mx!=null)o.max=mx;return o};
+const leg={labels:{color:'#64748B',boxWidth:10,padding:12,font:{size:11}}};
+const HL24=Array.from({length:24},(_,i)=>i+'h');
+const DAYS_T=THIS_ROWS.map(r=>r.d.split(' ')[0]);
+const DAYS_L=LAST_ROWS.map(r=>r.d.split(' ')[0]);
+function hColor(arr,base,lo,hi){const mn=Math.min(...arr.filter(v=>v!=null)),mx=Math.max(...arr.filter(v=>v!=null)||[1]);return arr.map(v=>{if(v==null)return 'rgba(156,163,175,.2)';const t=(v-mn)/(mx-mn||1);const a=lo+t*(hi-lo);return `rgba(${base},${a})`});}
+function pct(v,d=1){return v==null?'—':(v*100).toFixed(d)+'%'}
+function fmt(v,d=0){return v==null?'—':v.toLocaleString(undefined,{maximumFractionDigits:d})}
+
+// ════════════════════════════════════════
+// TABLE BUILDERS
+// ════════════════════════════════════════
+function buildDetailTb(rows,tot,id){
+  const tb=document.getElementById(id);
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const payCst=(r.sp/r.pay);
+    const rcls=r.ret==null?'pnd':(r.ret>=.2?'g':r.ret<.15?'r':'a');
+    const pcls=r.pret==null?'pnd':(r.pret>=.5?'g':r.pret<.3?'r':'a');
+    const retTd=r.ret==null?`<td class="pnd">待补⚠</td>`:`<td class="${rcls}">${pct(r.ret)}</td>`;
+    const pretTd=r.pret==null?`<td class="pnd">待补⚠</td>`:`<td class="${pcls}">${pct(r.pret)}</td>`;
+    tr.innerHTML=`
+      <td class="b">${r.d}</td>
+      <td>${fmt(r.sp,0)}</td>
+      <td>${r.act}</td>
+      <td>${r.reg}</td>
+      <td class="${(r.sp/r.reg)<25?'g':(r.sp/r.reg)>35?'r':'a'}">${(r.sp/r.reg).toFixed(2)}</td>
+      <td>${r.ai}</td>
+      <td class="${r.pay>=20?'g':r.pay<10?'r':''}">${r.pay}</td>
+      <td class="${r.pr>=.065?'g':r.pr<.045?'r':'a'}">${pct(r.pr)}</td>
+      <td class="${payCst<400?'g':payCst>550?'r':'a'}">${payCst.toFixed(1)}</td>
+      <td>${fmt(r.rev,1)}</td>
+      <td class="${r.r0>=.25?'g':r.r0<.1?'r':'a'}">${pct(r.r0)}</td>
+      <td class="${r.arpu>=7?'g':r.arpu<3?'r':'a'}">${r.arpu.toFixed(2)}</td>
+      <td>${r.arppu.toFixed(2)}</td>
+      <td class="${r.room>=.3?'g':r.room<.25?'r':'a'}">${pct(r.room)}</td>
+      <td class="${r.mic>=.07?'g':r.mic<.05?'r':'a'}">${pct(r.mic)}</td>
+      ${retTd}${pretTd}`;
+    tb.appendChild(tr);
+  });
+  // Total row
+  const totPc=(tot.sp/tot.pay).toFixed(1);
+  const tr=document.createElement('tr');tr.className='tot';
+  const rTot=tot.ret==null?`<td class="pnd">待补⚠</td>`:`<td class="a">${pct(tot.ret)}</td>`;
+  const pTot=tot.pret==null?`<td class="pnd">待补⚠</td>`:`<td class="g">${pct(tot.pret)}</td>`;
+  tr.innerHTML=`<td class="b">${tot.d}</td>
+    <td class="b">${fmt(tot.sp,0)}</td><td>${tot.act}</td><td>${tot.reg}</td>
+    <td class="g">${(tot.sp/tot.reg).toFixed(2)}</td>
+    <td>${tot.ai}</td><td class="g">${tot.pay}</td><td class="a">${pct(tot.pr)}</td>
+    <td class="${tot.sp/tot.pay<400?'g':tot.sp/tot.pay>550?'r':'a'}">${totPc}</td>
+    <td>${fmt(tot.rev,0)}</td><td class="g">${pct(tot.r0)}</td>
+    <td>${tot.arpu.toFixed(2)}</td><td>${tot.arppu.toFixed(2)}</td>
+    <td>${pct(tot.room)}</td><td>${pct(tot.mic)}</td>${rTot}${pTot}`;
+  tb.appendChild(tr);
+}
+buildDetailTb(THIS_ROWS,THIS_TOT,'tbThis');
+buildDetailTb(LAST_ROWS,LAST_TOT,'tbLast');
+
+// 8-Week table
+const METRICS=[
+  {key:'sp',   label:'消耗(¥)',   fmt:v=>'¥'+Math.round(v).toLocaleString(), better:'low',  th:[38000,60000]},
+  {key:'reg',  label:'注册数',    fmt:v=>v.toLocaleString(),                  better:'high', th:[1200,2000]},
+  {key:'cst',  label:'注册成本',  fmt:v=>'¥'+v.toFixed(1),                   better:'low',  th:[24,35]},
+  {key:'pay',  label:'付费人数',  fmt:v=>v,                                   better:'high', th:[80,130]},
+  {key:'pr',   label:'付费率',    fmt:v=>(v*100).toFixed(2)+'%',             better:'high', th:[.05,.08]},
+  {key:'paycst',label:'付费成本', fmt:v=>'¥'+v.toFixed(0),                   better:'low',  th:[380,550]},
+  {key:'rev',  label:'充值(¥)',   fmt:v=>'¥'+Math.round(v).toLocaleString(), better:'high', th:[7000,13000]},
+  {key:'r0',   label:'ROI0(%)',   fmt:v=>v.toFixed(1)+'%',                   better:'high', th:[17,24]},
+  {key:'r3',   label:'ROI3(%)',   fmt:v=>v!=null?v.toFixed(1)+'%':'—',       better:'high', th:[35,65]},
+  {key:'r7',   label:'ROI7(%)',   fmt:v=>v!=null?v.toFixed(1)+'%':'积累中',  better:'high', th:[50,100]},
+  {key:'ret',  label:'次留率',    fmt:v=>v!=null?v.toFixed(1)+'%':'—',       better:'high', th:[17,22]},
+  {key:'pret', label:'付费次留',  fmt:v=>v!=null?v.toFixed(1)+'%':'—',       better:'high', th:[44,56]},
+  {key:'room', label:'进房率',    fmt:v=>(v*100).toFixed(1)+'%',             better:'high', th:[.28,.34]},
+  {key:'mic',  label:'上麦率',    fmt:v=>(v*100).toFixed(2)+'%',             better:'high', th:[.055,.072]},
+];
+(function(){
+  const tb=document.getElementById('tbWeekly');
+  METRICS.forEach(m=>{
+    const tr=document.createElement('tr');
+    let html=`<td style="font-family:'Noto Sans SC';font-weight:600;color:var(--t);font-size:12px">${m.label}</td>`;
+    W8.forEach((w,i)=>{
+      const v=w[m.key];const isLast=i===W8.length-1;
+      let cls='';
+      if(v!=null&&m.th){
+        const[lo,hi]=m.th;
+        // r0,r3,r7 stored as %, room/mic stored as ratio — handle both
+        cls=m.better==='high'?(v>=hi?'g':v<lo?'r':'a'):(v<=lo?'g':v>hi?'r':'a');
+      }
+      html+=`<td class="${cls}"${isLast?' style="background:#EFF6FF"':''}>${m.fmt(v)}</td>`;
+    });
+    tr.innerHTML=html;tb.appendChild(tr);
+  });
+})();
+
+// ROI tables
+['This','Last'].forEach(key=>{
+  const rows=key==='This'?ROI_T:ROI_L;
+  const tb=document.getElementById('tbRoi'+key);
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const r3c=key==='This'?(r.r3!=null?`<td class="${r.r3>=.4?'g':r.r3<.2?'r':'a'}">${(r.r3*100).toFixed(2)}%</td>`:'<td class="a">积累中⏳</td>'):`<td class="${r.r3>=.3?'g':r.r3<.15?'r':'a'}">${(r.r3*100).toFixed(2)}%</td>`;
+    const r7c=key==='Last'?`<td class="${r.r7>=.3?'g':r.r7<.15?'r':'a'}">${(r.r7*100).toFixed(2)}%</td>`:'';
+    tr.innerHTML=`<td>${r.d}</td><td class="a">${r.sp.toLocaleString()}</td>
+      <td class="${r.arpu>=7?'g':r.arpu<3?'r':'a'}">${r.arpu}</td>
+      <td class="${r.r0>=.25?'g':r.r0<.1?'r':'a'}">${(r.r0*100).toFixed(2)}%</td>${r3c}${r7c}`;
+    tb.appendChild(tr);
+  });
+  const tot=document.createElement('tr');tot.className='tot';
+  if(key==='This') tot.innerHTML=`<td class="b">均值</td><td>76,710</td><td>3.16</td><td class="a">13.81%</td><td class="a">26.89%（4天）</td>`;
+  else tot.innerHTML=`<td class="b">均值</td><td>53,648</td><td>4.65</td><td class="g">18.26%</td><td class="g">45.63%</td><td class="g">66.51%</td>`;
+  tb.appendChild(tot);
+});
+
+// Channel table
+(function(){
+  const tb=document.getElementById('tbCh');
+  CH.forEach(r=>{
+    const tr=document.createElement('tr');
+    const isTh=r.wk==='本周';
+    const payCst=r.sp/r.pay;
+    const r3c=r.r3==null?`<td class="pnd">缓存中⏳</td>`:`<td class="${r.r3>=.4?'g':r.r3<.2?'r':'a'}">${(r.r3*100).toFixed(1)}%</td>`;
+    const r7c=r.r7==null?`<td class="pnd">缓存中⏳</td>`:`<td class="${r.r7>=.5?'g':r.r7<.3?'r':'a'}">${(r.r7*100).toFixed(1)}%</td>`;
+    const retc=r.ret==null?`<td class="pnd">待补⚠</td>`:`<td class="${r.ret>=.2?'g':r.ret<.16?'r':'a'}">${(r.ret*100).toFixed(1)}%</td>`;
+    const pretc=r.pret==null?`<td class="pnd">待补⚠</td>`:`<td class="${r.pret>=.5?'g':r.pret<.3?'r':'a'}">${(r.pret*100).toFixed(1)}%</td>`;
+    tr.innerHTML=`<td class="${isTh?'b':''}">${r.wk}</td><td>${r.ch}</td><td>${r.m}</td>
+      <td class="${isTh?'b':''}">${r.sp.toLocaleString()}</td>
+      <td>${r.reg}</td>
+      <td class="${r.cst<=20?'g':r.cst>=80?'r':'a'}">${r.cst.toFixed(2)}</td>
+      <td>${r.pay}</td>
+      <td class="${r.pr>=.09?'g':r.pr<.03?'r':'a'}">${(r.pr*100).toFixed(1)}%</td>
+      <td class="${payCst<400?'g':payCst>580?'r':'a'}">${payCst.toFixed(1)}</td>
+      <td>${r.rev.toLocaleString()}</td>
+      <td class="${r.r0>=.25?'g':r.r0<.1?'r':'a'}">${(r.r0*100).toFixed(1)}%</td>
+      ${r3c}${r7c}
+      <td class="${r.arpu>=7?'g':r.arpu<3?'r':'a'}">${r.arpu.toFixed(2)}</td>
+      <td>${r.arppu.toFixed(2)}</td>
+      ${retc}${pretc}`;
+    tb.appendChild(tr);
+  });
+})();
+
+// ════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════
+
+// ── 总览 ──
+new Chart('cOvMain',{data:{labels:['上周 5.18-5.24','本周 5.25-5.31'],datasets:[
+  {type:'bar',label:'消耗(¥)',data:[76716,55607],backgroundColor:['rgba(37,99,235,.3)','rgba(37,99,235,.85)'],borderRadius:6,yAxisID:'y'},
+  {type:'bar',label:'注册数',data:[3333,2860],backgroundColor:['rgba(5,150,105,.3)','rgba(5,150,105,.85)'],borderRadius:6,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{
+  x:{grid:{display:false},ticks:{color:TX}},
+  y:{grid:{color:GR},ticks:{color:TX,callback:v=>'¥'+v.toLocaleString()},position:'left'},
+  y2:{grid:{display:false},ticks:{color:'#059669'},position:'right'},
+}}});
+
+new Chart('cOvKpi',{type:'bar',data:{labels:['ROI0(%)','付费率(%)','进房率(%)','注册成本/100'],datasets:[
+  {label:'上周',data:[18.26,6.21,36.70,0.2544],backgroundColor:'rgba(156,163,175,.55)',borderRadius:4},
+  {label:'本周',data:[13.81,5.59,37.31,0.2291],backgroundColor:['rgba(220,38,38,.7)','rgba(220,38,38,.7)','rgba(5,150,105,.8)','rgba(5,150,105,.8)'],borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX}}}}});
+
+const w8Labels=W8.map(w=>w.w);
+new Chart('cOv8Sp',{type:'line',data:{labels:w8Labels,datasets:[
+  {label:'周消耗(¥)',data:W8.map(w=>w.sp),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.07)',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2563EB'},
+]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{...sX()},y:{...sY(v=>'¥'+v.toLocaleString())}}}});
+
+new Chart('cOv8Cst',{type:'line',data:{labels:w8Labels,datasets:[
+  {label:'注册成本',data:W8.map(w=>w.cst),borderColor:'#7C3AED',tension:.3,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#7C3AED'},
+  {label:'付费成本(÷10)',data:W8.map(w=>+(w.paycst/10).toFixed(1)),borderColor:'#E11D48',tension:.3,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#E11D48'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v)}}}});
+
+new Chart('cOv8Roi',{type:'line',data:{labels:w8Labels,datasets:[
+  {label:'ROI0(%)',data:W8.map(w=>w.r0),borderColor:'#2563EB',tension:.3,borderWidth:2.5,pointRadius:4},
+  {label:'ROI3(%)',data:W8.map(w=>w.r3),borderColor:'#059669',tension:.3,borderWidth:2.5,pointRadius:4,spanGaps:true},
+  {label:'次留率(%)',data:W8.map(w=>w.ret),borderColor:'#D97706',tension:.3,borderWidth:2,pointRadius:3,borderDash:[4,3],spanGaps:true},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v+'%',0)}}}});
+
+// ── 明细 ──
+new Chart('cDetSp',{type:'bar',data:{labels:DAYS_T,datasets:[
+  {label:'本周消耗',data:THIS_ROWS.map(r=>r.sp),backgroundColor:'rgba(37,99,235,.75)',borderRadius:4},
+  {label:'上周消耗',data:LAST_ROWS.map(r=>r.sp),backgroundColor:'rgba(217,119,6,.4)',borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>'¥'+v.toLocaleString())}}}});
+
+new Chart('cDetPay',{type:'bar',data:{labels:DAYS_T,datasets:[
+  {label:'本周付费数',data:THIS_ROWS.map(r=>r.pay),backgroundColor:'rgba(5,150,105,.75)',borderRadius:4},
+  {label:'上周付费数',data:LAST_ROWS.map(r=>r.pay),backgroundColor:'rgba(217,119,6,.4)',borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(null,0)}}}});
+
+new Chart('cDetRoi',{type:'line',data:{labels:DAYS_T,datasets:[
+  {label:'本周ROI0',data:THIS_ROWS.map(r=>+(r.r0*100).toFixed(2)),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.07)',fill:true,tension:.35,pointRadius:5,borderWidth:2.5},
+  {label:'上周ROI0',data:LAST_ROWS.map(r=>+(r.r0*100).toFixed(2)),borderColor:'#D97706',tension:.35,pointRadius:4,borderWidth:2,borderDash:[4,3]},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v+'%',0)}}}});
+
+new Chart('cDetRet',{type:'line',data:{labels:DAYS_T,datasets:[
+  {label:'次留率',data:THIS_ROWS.map(r=>r.ret!=null?+(r.ret*100).toFixed(1):null),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,tension:.35,pointRadius:5,borderWidth:2.5},
+  {label:'付费次留率',data:THIS_ROWS.map(r=>r.pret!=null?+(r.pret*100).toFixed(1):null),borderColor:'#7C3AED',tension:.35,pointRadius:5,borderWidth:2.5},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v+'%',0)}}}});
+
+// ── ROI ──
+new Chart('cRoiThis',{type:'line',data:{labels:ROI_T.map(d=>d.d),datasets:[
+  {label:'ROI0',data:ROI_T.map(d=>+(d.r0*100).toFixed(2)),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.07)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#2563EB',borderWidth:2.5},
+  {label:'ROI3',data:ROI_T.map(d=>d.r3!=null?+(d.r3*100).toFixed(2):null),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:ROI_T.map(d=>d.acc?'#fff':'#059669'),borderWidth:2.5,
+   segment:{borderDash:ctx=>ROI_T[ctx.p1DataIndex]?.acc?[5,4]:undefined}},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v+'%',0,110)}}}});
+
+new Chart('cRoiLast',{type:'line',data:{labels:ROI_L.map(d=>d.d),datasets:[
+  {label:'ROI0',data:ROI_L.map(d=>+(d.r0*100).toFixed(2)),borderColor:'#2563EB',tension:.35,pointRadius:4,borderWidth:2},
+  {label:'ROI3',data:ROI_L.map(d=>+(d.r3*100).toFixed(2)),borderColor:'#059669',tension:.35,pointRadius:4,borderWidth:2},
+  {label:'ROI7',data:ROI_L.map(d=>+(d.r7*100).toFixed(2)),borderColor:'#D97706',tension:.35,pointRadius:4,borderWidth:2},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},y:{...sY(v=>v+'%',0,200)}}}});
+
+new Chart('cArpuThis',{data:{labels:ROI_T.map(d=>d.d),datasets:[
+  {type:'line',label:'ARPU',data:ROI_T.map(d=>d.arpu),borderColor:'#059669',pointRadius:5,pointBackgroundColor:'#059669',tension:.3,borderWidth:2.5,yAxisID:'y'},
+  {type:'bar',label:'消耗',data:ROI_T.map(d=>d.sp),backgroundColor:'rgba(37,99,235,.35)',borderRadius:4,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},
+  y:{grid:{color:GR},ticks:{color:'#059669'},title:{display:true,text:'ARPU(¥)',color:TX,font:{size:10}}},
+  y2:{grid:{display:false},position:'right',ticks:{color:'#2563EB',callback:v=>v.toLocaleString()},title:{display:true,text:'消耗(¥)',color:TX,font:{size:10}}},
+}}});
+
+new Chart('cArpuLast',{data:{labels:ROI_L.map(d=>d.d),datasets:[
+  {type:'line',label:'ARPU',data:ROI_L.map(d=>d.arpu),borderColor:'#D97706',pointRadius:5,pointBackgroundColor:'#D97706',tension:.3,borderWidth:2.5,yAxisID:'y'},
+  {type:'bar',label:'消耗',data:ROI_L.map(d=>d.sp),backgroundColor:'rgba(217,119,6,.3)',borderRadius:4,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{...sX()},
+  y:{grid:{color:GR},ticks:{color:'#D97706'},title:{display:true,text:'ARPU(¥)',color:TX,font:{size:10}}},
+  y2:{grid:{display:false},position:'right',ticks:{color:'#2563EB'},title:{display:true,text:'消耗(¥)',color:TX,font:{size:10}}},
+}}});
+
+// ── 分时 ──
+new Chart('cHspThis',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'消耗',data:HT.sp,backgroundColor:hColor(HT.sp,'37,99,235',.25,.85),borderRadius:2,yAxisID:'y'},
+  {type:'line',label:'注册成本',data:HT.cst,borderColor:'#D97706',borderWidth:2,tension:.3,pointRadius:2,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(v=>'¥'+v),y2:{grid:{display:false},position:'right',ticks:{color:'#D97706',callback:v=>v+'元'}}}}});
+
+new Chart('cHspLast',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'消耗',data:HL.sp,backgroundColor:hColor(HL.sp,'217,119,6',.25,.8),borderRadius:2,yAxisID:'y'},
+  {type:'line',label:'注册成本',data:HL.cst,borderColor:'#7C3AED',borderWidth:2,tension:.3,pointRadius:2,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(v=>'¥'+v),y2:{grid:{display:false},position:'right',ticks:{color:'#7C3AED',callback:v=>v+'元'}}}}});
+
+new Chart('cHregThis',{type:'bar',data:{labels:HL24,datasets:[{label:'注册数',data:HT.reg,backgroundColor:hColor(HT.reg,'5,150,105',.3,.88),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:sX(),y:sY(null,0,100)}}});
+new Chart('cHregLast',{type:'bar',data:{labels:HL24,datasets:[{label:'注册数',data:HL.reg,backgroundColor:hColor(HL.reg,'217,119,6',.3,.85),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:sX(),y:sY(null,0,110)}}});
+
+new Chart('cHcvtThis',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'付费数',data:HT.cvt,backgroundColor:hColor(HT.cvt,'124,58,237',.3,.85),borderRadius:3,yAxisID:'y'},
+  {type:'line',label:'付费成本',data:HT.cvc,borderColor:'#DC2626',borderWidth:2,tension:.3,pointRadius:2.5,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(null,0,10),y2:{grid:{display:false},position:'right',ticks:{color:'#DC2626',callback:v=>v==null?'':'¥'+v}}}}});
+
+new Chart('cHcvtLast',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'付费数',data:HL.cvt,backgroundColor:hColor(HL.cvt,'217,119,6',.3,.8),borderRadius:3,yAxisID:'y'},
+  {type:'line',label:'付费成本',data:HL.cvc,borderColor:'#DC2626',borderWidth:2,tension:.3,pointRadius:2.5,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(null,0,16),y2:{grid:{display:false},position:'right',ticks:{color:'#DC2626',callback:v=>v==null?'':'¥'+v}}}}});
+
+new Chart('cHpayThis',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'付费金额',data:HT.pay,backgroundColor:hColor(HT.pay,'5,150,105',.3,.88),borderRadius:3,yAxisID:'y'},
+  {type:'line',label:'消耗',data:HT.sp,borderColor:'#D97706',borderWidth:1.5,tension:.3,pointRadius:0,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(v=>'¥'+v),y2:{grid:{display:false},position:'right',ticks:{color:'#D97706',callback:v=>'¥'+v.toLocaleString()}}}}});
+
+new Chart('cHpayLast',{data:{labels:HL24,datasets:[
+  {type:'bar',label:'付费金额',data:HL.pay,backgroundColor:hColor(HL.pay,'217,119,6',.3,.85),borderRadius:3,yAxisID:'y'},
+  {type:'line',label:'消耗',data:HL.sp,borderColor:'#7C3AED',borderWidth:1.5,tension:.3,pointRadius:0,fill:false,yAxisID:'y2'},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:sY(v=>'¥'+v),y2:{grid:{display:false},position:'right',ticks:{color:'#7C3AED',callback:v=>'¥'+v.toLocaleString()}}}}});
+
+new Chart('cHcmpReg',{type:'line',data:{labels:HL24,datasets:[
+  {label:'本周注册',data:HT.reg,borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.07)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
+  {label:'上周注册',data:HL.reg,borderColor:'#D97706',backgroundColor:'rgba(217,119,6,.07)',fill:true,tension:.4,borderWidth:2,pointRadius:2},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:{grid:{color:GR},ticks:{color:TX},min:0}}}});
+
+new Chart('cHcmpPay',{type:'line',data:{labels:HL24,datasets:[
+  {label:'本周付费金额',data:HT.pay,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.07)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
+  {label:'上周付费金额',data:HL.pay,borderColor:'#D97706',backgroundColor:'rgba(217,119,6,.07)',fill:true,tension:.4,borderWidth:2,pointRadius:2},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:sX(),y:{grid:{color:GR},ticks:{color:TX,callback:v=>'¥'+v},min:0}}}});
+
+// ── 渠道 ──
+const chL=['信息流-代理','信息流-自理','商店-代理'];
+const spL=[22716.29,24866.26,6065.65],spT=[42515.60,24688.38,9506.48];
+const r0L=[11.97,17.48,26.50],r0T=[14.03,6.57,31.66];
+const r3L=[22.82,63.51,35.04],r7L=[37.89,90.74,38.96];
+const cstL=[40.42,44.09,9.86],cstT=[28.25,30.90,15.46];
+const regL=[562,564,615],regT=[1505,799,615];
+const paycstL=[378.60,460.49,356.80],paycstT=[412.77,433.13,352.05];
+
+const chOpts=(yf)=>({responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX,callback:yf}}}});
+new Chart('cChSp',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周消耗',data:spL,backgroundColor:'rgba(156,163,175,.5)',borderRadius:4},
+  {label:'本周消耗',data:spT,backgroundColor:'rgba(37,99,235,.75)',borderRadius:4},
+]},options:chOpts(v=>'¥'+v.toLocaleString())});
+
+new Chart('cChRoi',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周ROI0',data:r0L,backgroundColor:'rgba(217,119,6,.45)',borderRadius:4},
+  {label:'本周ROI0',data:r0T,backgroundColor:['rgba(5,150,105,.75)','rgba(220,38,38,.7)','rgba(5,150,105,.6)'],borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX,callback:v=>v+'%'},min:0,max:35}}}});
+
+new Chart('cChCst',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周注册成本',data:cstL,backgroundColor:'rgba(217,119,6,.45)',borderRadius:4},
+  {label:'本周注册成本',data:cstT,backgroundColor:'rgba(124,58,237,.7)',borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX,callback:v=>'¥'+v},min:0,max:75}}}});
+
+new Chart('cChReg',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周注册',data:regL,backgroundColor:'rgba(156,163,175,.5)',borderRadius:4},
+  {label:'本周注册',data:regT,backgroundColor:'rgba(37,99,235,.7)',borderRadius:4},
+]},options:chOpts(v=>v)});
+
+new Chart('cChPayCst',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周付费成本',data:paycstL,backgroundColor:'rgba(217,119,6,.45)',borderRadius:4},
+  {label:'本周付费成本',data:paycstT,backgroundColor:['rgba(5,150,105,.7)','rgba(220,38,38,.75)','rgba(220,38,38,.7)'],borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX,callback:v=>'¥'+v},min:0,max:700}}}});
+
+new Chart('cChRoi37',{type:'bar',data:{labels:chL,datasets:[
+  {label:'上周ROI3',data:r3L,backgroundColor:'rgba(5,150,105,.55)',borderRadius:4},
+  {label:'上周ROI7',data:r7L,backgroundColor:'rgba(37,99,235,.75)',borderRadius:4},
+]},options:{responsive:true,plugins:{legend:leg},scales:{x:{grid:{display:false},ticks:{color:TX}},y:{grid:{color:GR},ticks:{color:TX,callback:v=>v+'%'},min:0,max:80}}}});
+
+// ════════════════════════════════════════
+// TAB NAVIGATION
+// ════════════════════════════════════════
+document.getElementById('navBar').addEventListener('click',e=>{
+  const t=e.target.closest('.tab');if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+});
+</script>
+
+
+</body></html>
