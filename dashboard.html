@@ -175,6 +175,10 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
       用户概览
     </a>
+    <a class="nav-item" href="#" onclick="switchPage('adusers',this);return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      投放用户画像
+    </a>
   </div>
 
   <div class="sb-section">
@@ -424,6 +428,89 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       </div>
 
     </div><!-- /users-content -->
+  </div>
+
+  <!-- ═══ PAGE: 投放用户画像 ═══ -->
+  <div id="page-adusers" class="page">
+
+    <!-- UID 查询 -->
+    <div class="section-header" style="margin-top:0"><h3>投放用户查询</h3></div>
+    <div class="trend-card" style="margin-bottom:16px">
+      <div class="uid-search-bar">
+        <input class="uid-input" id="ad-uid-input" type="text" placeholder="输入用户 UID 查询投放用户信息…" onkeydown="if(event.key==='Enter')doAdUidSearch()">
+        <button class="uid-btn" onclick="doAdUidSearch()">查询</button>
+      </div>
+      <div class="uid-result-card" id="ad-uid-result-card">
+        <div class="uid-result-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a7cf0" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+          <span id="ad-uid-nick">—</span>
+          <span style="font-size:11px;color:#8892a4;font-weight:400" id="ad-uid-label"></span>
+        </div>
+        <div class="uid-result-grid" id="ad-uid-grid"></div>
+        <div id="ad-uid-orders" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div id="ad-uid-not-found" class="uid-not-found" style="display:none">该 UID 不在投放付费用户名单中</div>
+    </div>
+
+    <!-- Loading -->
+    <div id="adusers-spinner" class="users-spinner">
+      <div style="font-size:24px;margin-bottom:8px;opacity:.4">⏳</div>
+      加载投放用户数据中…
+    </div>
+
+    <!-- Content -->
+    <div id="adusers-content" style="display:none">
+
+      <div class="section-header"><h3>投放付费用户概览</h3></div>
+      <div class="metric-grid" style="margin-bottom:16px">
+        <div class="mc"><div class="mc-head"><span class="mc-label">投放付费用户</span></div><div class="mc-val" id="ad-total">—</div><div class="mc-deltas"><div class="mc-delta">ROI表中全部付费用户</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">订单数据匹配率</span></div><div class="mc-val" id="ad-match">—</div><div class="mc-deltas"><div class="mc-delta">与订单库UID匹配</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">平均总消费</span><span class="mc-badge">匹配用户</span></div><div class="mc-val" id="ad-avg">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-median-label">中位数 —</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">女性占比</span><span class="mc-badge">已知性别</span></div><div class="mc-val" id="ad-female">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-gender-detail">—</div></div></div>
+      </div>
+
+      <div class="section-header"><h3>用户画像</h3></div>
+      <div class="chart-2col">
+        <div class="chart-half">
+          <div class="chart-half-title">性别分布</div>
+          <div class="chart-half-wrap"><canvas id="adGenderChart"></canvas></div>
+        </div>
+        <div class="chart-half">
+          <div class="chart-half-title">年龄分布（已知 <span id="ad-age-known">—</span> 人）</div>
+          <div class="chart-half-wrap"><canvas id="adAgeChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header"><h3>消费分析</h3></div>
+      <div class="chart-2col">
+        <div class="chart-half">
+          <div class="chart-half-title">充值金额分布（投放首充）</div>
+          <div class="chart-half-wrap"><canvas id="adAmtChart"></canvas></div>
+        </div>
+        <div class="chart-half">
+          <div class="chart-half-title">订单类型分布</div>
+          <div class="chart-half-wrap"><canvas id="adOrderTypeChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="full-chart-card" style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="full-chart-card-title">每日新增投放付费用户（2026-04-09 起）</div>
+          <div class="trend-tabs" style="margin:0">
+            <button class="trend-tab active" onclick="switchAdDaily('cnt',this)">人数</button>
+            <button class="trend-tab" onclick="switchAdDaily('amt',this)">首充金额(¥)</button>
+            <button class="trend-tab" onclick="switchAdDaily('gender',this)">性别分拆</button>
+          </div>
+        </div>
+        <div style="position:relative;height:180px"><canvas id="adDailyChart"></canvas></div>
+      </div>
+
+      <div class="section-header" style="margin-top:16px"><h3>承接咨询师 Top10</h3></div>
+      <div class="trend-card">
+        <div id="ad-consultant-bars"></div>
+      </div>
+
+    </div><!-- /adusers-content -->
   </div>
 
   <!-- ═══ PAGE: 空耗预警 ═══ -->
@@ -773,10 +860,11 @@ function switchPage(id, el){
   if(el) el.classList.add('active');
 
   // Lazy-render page content
-  if(id === 'roi')   renderRoiPage(elFrom.value, elTo.value);
-  if(id === 'trend') renderTrendPage(elFrom.value, elTo.value);
-  if(id === 'users') renderUsersPage();
-  if(id === 'alert') renderAlertPage(elFrom.value, elTo.value);
+  if(id === 'roi')     renderRoiPage(elFrom.value, elTo.value);
+  if(id === 'trend')   renderTrendPage(elFrom.value, elTo.value);
+  if(id === 'users')   renderUsersPage();
+  if(id === 'adusers') renderAdUsersPage();
+  if(id === 'alert')   renderAlertPage(elFrom.value, elTo.value);
 }
 
 // ──── ROI PAGE ────
@@ -1074,6 +1162,171 @@ function doUidSearch(){
   if(u[7]>0) orders.innerHTML += `<span class="uid-tag uid-tag-q">提问 ${u[7]}</span>`;
   if(u[8]>0) orders.innerHTML += `<span class="uid-tag uid-tag-lm">连麦 ${u[8]}</span>`;
   if(u[9]>0) orders.innerHTML += `<span class="uid-tag uid-tag-zx">咨询 ${u[9]}</span>`;
+  card.classList.add('show');
+}
+
+// ──── AD USERS PAGE ────
+let _adData = null, _adMap = null, _adDailyChart = null, _adDailyMode = 'cnt';
+let _adGenderC = null, _adAgeC = null, _adAmtC = null, _adOrderTypeC = null;
+
+function renderAdUsersPage(){
+  if(_adData){ _renderAdContent(); return; }
+  document.getElementById('adusers-spinner').style.display = 'block';
+  document.getElementById('adusers-content').style.display = 'none';
+  fetch('ad_users.json')
+    .then(r=>r.json())
+    .then(data=>{
+      _adData = data;
+      _adMap = {};
+      data.users.forEach(u => _adMap[String(u[0])] = u);
+      document.getElementById('adusers-spinner').style.display = 'none';
+      document.getElementById('adusers-content').style.display = 'block';
+      _renderAdContent();
+    })
+    .catch(e=>{ document.getElementById('adusers-spinner').textContent = '加载失败: '+e.message; });
+}
+
+function _renderAdContent(){
+  const s = _adData.stats;
+  const [gUnk,gMale,gFemale] = s.gender;
+  const knownG = gMale + gFemale;
+  document.getElementById('ad-total').textContent = s.total.toLocaleString();
+  document.getElementById('ad-match').textContent = (s.matched/s.total*100).toFixed(1)+'%';
+  document.getElementById('ad-avg').textContent = '¥'+s.avg_amt.toLocaleString('zh-CN',{maximumFractionDigits:0});
+  document.getElementById('ad-median-label').textContent = '中位数 ¥'+s.median_amt;
+  document.getElementById('ad-female').textContent = knownG>0 ? (gFemale/knownG*100).toFixed(1)+'%' : '—';
+  document.getElementById('ad-gender-detail').textContent = `男 ${gMale.toLocaleString()} / 女 ${gFemale.toLocaleString()} / 未知 ${gUnk.toLocaleString()}`;
+  document.getElementById('ad-age-known').textContent = s.age_known.toLocaleString();
+
+  // 性别饼
+  if(_adGenderC){ _adGenderC.destroy(); _adGenderC=null; }
+  _adGenderC = new Chart(document.getElementById('adGenderChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['未知','男','女'],datasets:[{
+      data:[gUnk,gMale,gFemale],
+      backgroundColor:['rgba(203,213,225,0.8)','rgba(99,102,241,0.85)','rgba(236,72,153,0.8)'],
+      borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}人`}}}}
+  });
+
+  // 年龄柱
+  if(_adAgeC){ _adAgeC.destroy(); _adAgeC=null; }
+  _adAgeC = new Chart(document.getElementById('adAgeChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:['<18','18-24','25-30','31-40','41+'],
+      datasets:[{label:'人数',data:s.age_buckets,backgroundColor:'rgba(74,124,240,0.8)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.raw.toLocaleString()}人`}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}}}
+  });
+
+  // 金额分布
+  if(_adAmtC){ _adAmtC.destroy(); _adAmtC=null; }
+  _adAmtC = new Chart(document.getElementById('adAmtChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:s.amt_dist.map(d=>d[0]),
+      datasets:[{label:'人数',data:s.amt_dist.map(d=>d[1]),backgroundColor:'rgba(245,158,11,0.75)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}}}
+  });
+
+  // 订单类型
+  if(_adOrderTypeC){ _adOrderTypeC.destroy(); _adOrderTypeC=null; }
+  const ot = s.order_type;
+  _adOrderTypeC = new Chart(document.getElementById('adOrderTypeChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['提问','连麦','咨询'],datasets:[{
+      data:[ot.q,ot.lm,ot.zx],
+      backgroundColor:['rgba(59,130,246,0.8)','rgba(16,185,129,0.8)','rgba(147,51,234,0.8)'],
+      borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}次`}}}}
+  });
+
+  // 每日趋势
+  _renderAdDailyChart('cnt');
+
+  // 咨询师 Top10 条形图（手动渲染）
+  const topCons = s.top_consultants.filter(c=>c[0]!=='未知').slice(0,8);
+  const maxN = topCons[0]?.[1] || 1;
+  document.getElementById('ad-consultant-bars').innerHTML = topCons.map(([name,cnt]) => {
+    const pct = (cnt/maxN*100).toFixed(1);
+    const cleanName = name.replace(/\n/g,' / ');
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:100px;font-size:12px;color:#4a5068;text-align:right;flex-shrink:0">${cleanName}</div>
+      <div style="flex:1;background:#f0f2f7;border-radius:4px;height:20px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:rgba(74,124,240,0.75);border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="width:40px;font-size:12px;color:#8892a4;flex-shrink:0">${cnt}</div>
+    </div>`;
+  }).join('');
+}
+
+function switchAdDaily(mode, btn){
+  document.querySelectorAll('#page-adusers .trend-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  _adDailyMode = mode;
+  _renderAdDailyChart(mode);
+}
+
+function _renderAdDailyChart(mode){
+  if(!_adData) return;
+  const daily = _adData.stats.daily;
+  const dk = Object.keys(daily).sort();
+  const labels = dk.map(d=>d.slice(5));
+  if(_adDailyChart){ _adDailyChart.destroy(); _adDailyChart=null; }
+  let datasets;
+  if(mode==='cnt'){
+    datasets=[{label:'新增付费用户',data:dk.map(d=>daily[d].cnt),backgroundColor:'rgba(74,124,240,0.7)',borderRadius:2}];
+  } else if(mode==='amt'){
+    datasets=[{label:'首充金额(¥)',data:dk.map(d=>daily[d].amt),backgroundColor:'rgba(245,158,11,0.7)',borderRadius:2}];
+  } else {
+    datasets=[
+      {label:'女',data:dk.map(d=>daily[d].g2||0),backgroundColor:'rgba(236,72,153,0.75)',borderRadius:2},
+      {label:'男',data:dk.map(d=>daily[d].g1||0),backgroundColor:'rgba(99,102,241,0.75)',borderRadius:2},
+      {label:'未知',data:dk.map(d=>daily[d].g0||0),backgroundColor:'rgba(203,213,225,0.7)',borderRadius:2}
+    ];
+  }
+  _adDailyChart = new Chart(document.getElementById('adDailyChart').getContext('2d'),{
+    type:'bar', data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}}},
+      scales:{x:{grid:{display:false},stacked:mode==='gender',ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:20}},
+        y:{grid:{color:'#f0f2f7'},stacked:mode==='gender',ticks:{color:'#aab0be',font:{size:9}}}}}
+  });
+}
+
+function doAdUidSearch(){
+  const uid = document.getElementById('ad-uid-input').value.trim();
+  const card = document.getElementById('ad-uid-result-card');
+  const notFound = document.getElementById('ad-uid-not-found');
+  card.classList.remove('show'); notFound.style.display='none';
+  if(!uid) return;
+  if(!_adMap){ renderAdUsersPage(); setTimeout(doAdUidSearch,1500); return; }
+  const u = _adMap[uid];
+  if(!u){ notFound.style.display='block'; return; }
+  // u=[uid,gender_code,age,roi_pay_amt,total_amt,order_cnt,q,lm,zx,consultant]
+  const G=['未知','男','女'], gIcon=[' ？',' ♂',' ♀'][u[1]||0];
+  document.getElementById('ad-uid-nick').textContent = 'UID '+uid + gIcon;
+  document.getElementById('ad-uid-label').textContent = '投放付费用户';
+  const field=(label,val)=>`<div class="uid-field"><div class="uid-field-label">${label}</div><div class="uid-field-val">${val}</div></div>`;
+  document.getElementById('ad-uid-grid').innerHTML =
+    field('性别', G[u[1]||0]) +
+    field('年龄', u[2]!=null ? Math.floor(u[2])+'岁' : '未知') +
+    field('首充金额', '¥'+u[3].toLocaleString('zh-CN',{maximumFractionDigits:2})) +
+    field('总消费', '¥'+u[4].toLocaleString('zh-CN',{maximumFractionDigits:2})) +
+    field('总订单数', u[5].toLocaleString()) +
+    field('承接咨询师', (u[9]||'未知').replace(/\n/g,' / '));
+  const orders = document.getElementById('ad-uid-orders');
+  orders.innerHTML = '';
+  if(u[6]>0) orders.innerHTML+=`<span class="uid-tag uid-tag-q">提问 ${u[6]}</span>`;
+  if(u[7]>0) orders.innerHTML+=`<span class="uid-tag uid-tag-lm">连麦 ${u[7]}</span>`;
+  if(u[8]>0) orders.innerHTML+=`<span class="uid-tag uid-tag-zx">咨询 ${u[8]}</span>`;
   card.classList.add('show');
 }
 
