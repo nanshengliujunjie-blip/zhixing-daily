@@ -580,9 +580,10 @@ function onRangeChange(){
   if(elFrom.value > elTo.value) elTo.value = elFrom.value;
   const pid = (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-','');
   if(pid === 'overview' || pid === '') renderRange(elFrom.value, elTo.value);
-  if(pid === 'roi')   renderRoiPage(elFrom.value, elTo.value);
-  if(pid === 'trend') renderTrendPage(elFrom.value, elTo.value);
-  if(pid === 'alert') renderAlertPage(elFrom.value, elTo.value);
+  if(pid === 'roi')     renderRoiPage(elFrom.value, elTo.value);
+  if(pid === 'trend')   renderTrendPage(elFrom.value, elTo.value);
+  if(pid === 'alert')   renderAlertPage(elFrom.value, elTo.value);
+  if(pid === 'adusers') renderAdUsersPage(elFrom.value, elTo.value);
   if(pid === 'users') {} // users page is static
 }
 
@@ -863,7 +864,7 @@ function switchPage(id, el){
   if(id === 'roi')     renderRoiPage(elFrom.value, elTo.value);
   if(id === 'trend')   renderTrendPage(elFrom.value, elTo.value);
   if(id === 'users')   renderUsersPage();
-  if(id === 'adusers') renderAdUsersPage();
+  if(id === 'adusers') renderAdUsersPage(elFrom.value, elTo.value);
   if(id === 'alert')   renderAlertPage(elFrom.value, elTo.value);
 }
 
@@ -1169,8 +1170,10 @@ function doUidSearch(){
 let _adData = null, _adMap = null, _adDailyChart = null, _adDailyMode = 'cnt';
 let _adGenderC = null, _adAgeC = null, _adAmtC = null, _adOrderTypeC = null;
 
-function renderAdUsersPage(){
-  if(_adData){ _renderAdContent(); return; }
+function renderAdUsersPage(dateFrom, dateTo){
+  dateFrom = dateFrom || elFrom.value;
+  dateTo   = dateTo   || elTo.value;
+  if(_adData){ _renderAdContent(_adData.users, dateFrom, dateTo); return; }
   document.getElementById('adusers-spinner').style.display = 'block';
   document.getElementById('adusers-content').style.display = 'none';
   fetch('ad_users.json')
@@ -1181,13 +1184,47 @@ function renderAdUsersPage(){
       data.users.forEach(u => _adMap[String(u[0])] = u);
       document.getElementById('adusers-spinner').style.display = 'none';
       document.getElementById('adusers-content').style.display = 'block';
-      _renderAdContent();
+      _renderAdContent(data.users, dateFrom, dateTo);
     })
     .catch(e=>{ document.getElementById('adusers-spinner').textContent = '加载失败: '+e.message; });
 }
 
-function _renderAdContent(){
-  const s = _adData.stats;
+// 动态计算过滤后的聚合统计
+function _calcAdStats(users){
+  const g = [0,1,2].map(i => users.filter(u=>(u[1]||0)===i).length);
+  const ages = users.map(u=>u[2]).filter(a=>a!=null);
+  const buckets = [0,0,0,0,0];
+  ages.forEach(a=>{ if(a<18)buckets[0]++; else if(a<=24)buckets[1]++; else if(a<=30)buckets[2]++; else if(a<=40)buckets[3]++; else buckets[4]++; });
+  const amts = users.map(u=>u[3]).filter(a=>a>0).sort((a,b)=>a-b);
+  const amt_dist=[['≤9.9',0],['10-30',0],['31-100',0],['101-500',0],['501-2000',0],['>2000',0]];
+  amts.forEach(a=>{ if(a<=9.9)amt_dist[0][1]++; else if(a<=30)amt_dist[1][1]++; else if(a<=100)amt_dist[2][1]++; else if(a<=500)amt_dist[3][1]++; else if(a<=2000)amt_dist[4][1]++; else amt_dist[5][1]++; });
+  const ot={q:users.reduce((s,u)=>s+(u[6]||0),0),lm:users.reduce((s,u)=>s+(u[7]||0),0),zx:users.reduce((s,u)=>s+(u[8]||0),0)};
+  const cons={};
+  users.forEach(u=>{ const c=u[9]||'未知'; cons[c]=(cons[c]||0)+1; });
+  const top_cons=Object.entries(cons).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  return {
+    total:users.length, matched:users.filter(u=>u[5]>0).length,
+    gender:g, age_buckets:buckets, age_known:ages.length,
+    avg_amt:amts.length?Math.round(amts.reduce((s,a)=>s+a,0)/amts.length*100)/100:0,
+    median_amt:amts.length?amts[Math.floor(amts.length/2)]:0,
+    amt_dist, order_type:ot, top_consultants:top_cons
+  };
+}
+
+function _renderAdContent(allUsers, dateFrom, dateTo){
+  // 按日期区间过滤（reg_date 在 index 10）
+  const filtered = (dateFrom && dateTo)
+    ? allUsers.filter(u => { const d=u[10]; return d && d>=dateFrom && d<=dateTo; })
+    : allUsers;
+  const s = _calcAdStats(filtered.length > 0 ? filtered : allUsers);
+  const isFiltered = filtered.length > 0 && filtered.length < allUsers.length;
+
+  // 标题补充显示范围
+  const rangeNote = isFiltered ? ` · ${dateFrom} 至 ${dateTo}（${filtered.length} 人）` : `（全周期 ${allUsers.length} 人）`;
+  document.querySelector('#page-adusers .section-header h3') && (()=>{
+    const h = document.querySelectorAll('#page-adusers .section-header h3')[1];
+    if(h) h.textContent = '投放付费用户概览' + rangeNote;
+  })();
   const [gUnk,gMale,gFemale] = s.gender;
   const knownG = gMale + gFemale;
   document.getElementById('ad-total').textContent = s.total.toLocaleString();
@@ -1248,8 +1285,8 @@ function _renderAdContent(){
         tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}次`}}}}
   });
 
-  // 每日趋势
-  _renderAdDailyChart('cnt');
+  // 每日趋势（从过滤后的用户动态聚合）
+  _renderAdDailyChart(_adDailyMode, filtered);
 
   // 咨询师 Top10 条形图（手动渲染）
   const topCons = s.top_consultants.filter(c=>c[0]!=='未知').slice(0,8);
@@ -1271,12 +1308,25 @@ function switchAdDaily(mode, btn){
   document.querySelectorAll('#page-adusers .trend-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   _adDailyMode = mode;
-  _renderAdDailyChart(mode);
+  // re-render with current filter
+  const pid = (document.querySelector('.page.active')||{id:''}).id;
+  if(pid === 'page-adusers' && _adData){
+    const filtered = _adData.users.filter(u=>{ const d=u[10]; return d && d>=elFrom.value && d<=elTo.value; });
+    _renderAdDailyChart(mode, filtered.length>0 ? filtered : _adData.users);
+  }
 }
 
-function _renderAdDailyChart(mode){
-  if(!_adData) return;
-  const daily = _adData.stats.daily;
+function _renderAdDailyChart(mode, users){
+  if(!users) return;
+  // 从用户列表动态聚合每日数据
+  const daily = {};
+  users.forEach(u => {
+    const d = u[10]; if(!d || d < '2026-04') return;
+    if(!daily[d]) daily[d]={cnt:0,amt:0,g0:0,g1:0,g2:0};
+    daily[d].cnt++;
+    daily[d].amt = Math.round((daily[d].amt + (u[3]||0))*100)/100;
+    daily[d][`g${u[1]||0}`]++;
+  });
   const dk = Object.keys(daily).sort();
   const labels = dk.map(d=>d.slice(5));
   if(_adDailyChart){ _adDailyChart.destroy(); _adDailyChart=null; }
