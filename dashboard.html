@@ -38,9 +38,18 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .topbar-sub{font-size:12px;color:#8892a4;margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .topbar-date-label{font-size:12px;color:#8892a4;white-space:nowrap}
-.date-select-wrap{position:relative}
-.date-select-wrap select{appearance:none;-webkit-appearance:none;background:#fff;border:1px solid #d0d5e0;color:#0f1628;padding:7px 32px 7px 12px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;min-width:140px}
-.date-select-wrap::after{content:'';position:absolute;right:10px;top:50%;transform:translateY(-50%);border:4px solid transparent;border-top:5px solid #8892a4;pointer-events:none}
+
+/* ─── Date Range Picker ─── */
+.drp-wrap{display:flex;align-items:center;gap:8px}
+.drp-box{display:flex;align-items:center;gap:0;background:#fff;border:1px solid #d0d5e0;border-radius:8px;padding:0 12px;height:36px;transition:border-color .15s}
+.drp-box:focus-within{border-color:#4a7cf0;box-shadow:0 0 0 2px rgba(74,124,240,.12)}
+.drp-icon{width:15px;height:15px;color:#8892a4;flex-shrink:0;margin-right:8px}
+.drp-input{border:none;outline:none;font-size:13px;font-weight:500;color:#0f1628;background:transparent;width:108px;cursor:pointer}
+.drp-input::-webkit-calendar-picker-indicator{opacity:.45;cursor:pointer}
+.drp-sep{font-size:12px;color:#8892a4;padding:0 8px;white-space:nowrap}
+.drp-presets{display:flex;gap:4px}
+.drp-preset{padding:4px 10px;border:1px solid #d0d5e0;background:#fff;border-radius:6px;font-size:11px;color:#4a5068;cursor:pointer;font-weight:500;transition:all .15s}
+.drp-preset:hover,.drp-preset.active{background:#4a7cf0;border-color:#4a7cf0;color:#fff}
 
 /* ─── Content ─── */
 .content{padding:24px 28px;flex:1}
@@ -177,9 +186,17 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       </div>
     </div>
     <div class="topbar-right">
-      <span class="topbar-date-label">业务日期</span>
-      <div class="date-select-wrap">
-        <select id="dateSelect"></select>
+      <div class="drp-presets">
+        <button class="drp-preset" onclick="setPreset(1)">今日</button>
+        <button class="drp-preset" onclick="setPreset(7)">近7日</button>
+        <button class="drp-preset" onclick="setPreset(30)">近30日</button>
+        <button class="drp-preset" onclick="setPreset(0)">全周期</button>
+      </div>
+      <div class="drp-box">
+        <svg class="drp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <input type="date" id="dateFrom" class="drp-input">
+        <span class="drp-sep">至</span>
+        <input type="date" id="dateTo" class="drp-input">
       </div>
     </div>
   </div>
@@ -291,11 +308,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
     <div class="trend-card" style="margin-bottom:16px">
       <div class="trend-header">
         <div class="trend-title">消耗 · 注册 · 付费 趋势</div>
-        <div class="trend-tabs">
-          <button class="trend-tab active" id="tt-30" onclick="switchTrendDays(30,this)">近30日</button>
-          <button class="trend-tab" id="tt-60" onclick="switchTrendDays(60,this)">近60日</button>
-          <button class="trend-tab" id="tt-all" onclick="switchTrendDays(999,this)">全周期</button>
-        </div>
+        <div style="font-size:11px;color:#aab0be">时间范围由顶部选择器控制</div>
       </div>
       <div class="chart-wrap" style="height:220px"><canvas id="trendSpendChart"></canvas></div>
     </div>
@@ -412,26 +425,48 @@ const dates = FALLBACK.map(e => e.date).sort();
 let chart = null;
 let currentChartMode = 'roi';
 
-// Build date select
-const sel = document.getElementById('dateSelect');
-[...dates].reverse().forEach(d => {
-  const o = document.createElement('option');
-  o.value = d;
-  o.textContent = d.replace(/-/g,'–');
-  sel.appendChild(o);
-});
-sel.value = dates[dates.length-1];
-sel.addEventListener('change', () => {
-  render(sel.value);
-  // Re-render active sub-page if needed
-  const activePage = document.querySelector('.page.active');
-  if(activePage){
-    const pid = activePage.id.replace('page-','');
-    if(pid === 'roi') renderRoiPage(sel.value);
-    if(pid === 'alert') renderAlertPage(sel.value);
+// ── Date range init ──
+const minDate = dates[0], maxDate = dates[dates.length-1];
+const elFrom = document.getElementById('dateFrom');
+const elTo   = document.getElementById('dateTo');
+elFrom.min = elTo.min = minDate;
+elFrom.max = elTo.max = maxDate;
+
+function setPreset(n){
+  document.querySelectorAll('.drp-preset').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  elTo.value = maxDate;
+  if(n === 0){ elFrom.value = minDate; }
+  else {
+    const idx = Math.max(0, dates.length - n);
+    elFrom.value = dates[idx];
   }
-});
-render(sel.value);
+  onRangeChange();
+}
+
+function onRangeChange(){
+  if(elFrom.value > elTo.value) elTo.value = elFrom.value;
+  const pid = (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-','');
+  if(pid === 'overview' || pid === '') renderRange(elFrom.value, elTo.value);
+  if(pid === 'roi')   renderRoiPage(elFrom.value, elTo.value);
+  if(pid === 'trend') renderTrendPage(elFrom.value, elTo.value);
+  if(pid === 'alert') renderAlertPage(elFrom.value, elTo.value);
+  if(pid === 'users') {} // users page is static
+}
+
+elFrom.addEventListener('change', onRangeChange);
+elTo.addEventListener('change', onRangeChange);
+
+// Default: last 7 days
+(function(){
+  const idx = Math.max(0, dates.length - 7);
+  elFrom.value = dates[idx];
+  elTo.value   = maxDate;
+  // activate "近7日" preset button
+  document.querySelectorAll('.drp-preset')[1].classList.add('active');
+})();
+
+renderRange(elFrom.value, elTo.value);
 
 // ════════ HELPERS ════════
 function fmt(v, dp=2){ if(v==null) return '—'; return v.toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:dp}); }
@@ -456,120 +491,157 @@ function avg7(field, beforeDate){
   return slice.reduce((a,b)=>a+b,0)/slice.length;
 }
 
-function setCard(id, valHtml, prevDelta, avg7Delta){
+function setCard(id, valHtml, label1, delta1, label2, delta2){
   document.getElementById('v-'+id).innerHTML = valHtml;
   document.getElementById('d-'+id).innerHTML =
-    `<div class="mc-delta"><span class="dlabel">较前日</span>${prevDelta||'<span class="flat">—</span>'}</div>`+
-    `<div class="mc-delta"><span class="dlabel">近7日均值</span>${avg7Delta||'<span class="flat">—</span>'}</div>`;
+    `<div class="mc-delta"><span class="dlabel">${label1||'较前期'}</span>${delta1||'<span class="flat">—</span>'}</div>`+
+    `<div class="mc-delta"><span class="dlabel">${label2||'日均值'}</span>${delta2||'<span class="flat">—</span>'}</div>`;
+}
+
+// ════════ AGGREGATE HELPER ════════
+function aggregateRange(dateFrom, dateTo){
+  const slice = dates.filter(d => d >= dateFrom && d <= dateTo).map(d => byDate[d]);
+  if(!slice.length) return null;
+  const sum = f => slice.reduce((a,e) => a + (e[f]||0), 0);
+  const avg = f => { const vals = slice.map(e=>e[f]).filter(v=>v!=null); return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null; };
+  const spend = sum('spend'), reg = sum('reg'), payCount = sum('payCount'), payAmount = sum('payAmount');
+  return {
+    n: slice.length,
+    spend, reg, payCount, payAmount,
+    ai: sum('ai'), enterRoom: sum('enterRoom'), mic: sum('mic'), activate: sum('activate'),
+    roi: spend>0 ? payAmount/spend*100 : null,
+    regCost: reg>0 ? spend/reg : null,
+    payCost: payCount>0 ? spend/payCount : null,
+    payRate: reg>0 ? payCount/reg*100 : null,
+    enterRoomRate: reg>0 ? sum('enterRoom')/reg*100 : null,
+    micRate: reg>0 ? sum('mic')/reg*100 : null,
+    arpu: reg>0 ? payAmount/reg : null,
+    arppu: payCount>0 ? payAmount/payCount : null,
+    nextRetention: avg('nextRetention'),
+    roi3: avg('roi3_cur') || (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[2]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })(),
+    roi7: (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[3]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })()
+  };
+}
+
+// Shift a range backwards by its own length
+function prevPeriod(dateFrom, dateTo){
+  const iFrom = dates.indexOf(dateFrom), iTo = dates.indexOf(dateTo);
+  if(iFrom < 0 || iTo < 0) return null;
+  const n = iTo - iFrom + 1;
+  const pTo = iFrom > 0 ? dates[iFrom-1] : null;
+  const pFrom = pTo ? dates[Math.max(0, iFrom-n)] : null;
+  return pFrom && pTo ? {from: pFrom, to: pTo} : null;
 }
 
 // ════════ RENDER ════════
-function render(date){
-  const cur = byDate[date];
+function renderRange(dateFrom, dateTo){
+  const cur = aggregateRange(dateFrom, dateTo);
   if(!cur) return;
-  const idx = dates.indexOf(date);
-  const prev = idx > 0 ? byDate[dates[idx-1]] : null;
+  const pp = prevPeriod(dateFrom, dateTo);
+  const prev = pp ? aggregateRange(pp.from, pp.to) : null;
+  const isSingle = dateFrom === dateTo;
+  const rangeLabel = isSingle ? dateFrom : dateFrom+'  至  '+dateTo;
+  const dayLabel = isSingle ? '较前日' : '较前期';
+  const avgLabel = isSingle ? '7日均' : '日均值';
+  const avgVal = f => { const v=aggregateRange(dateFrom,dateTo); return v?v[f]/v.n:null; };
 
   // Snapshot
-  document.getElementById('snap-biz').textContent = date.replace(/-/g,'–');
-  document.getElementById('snap-date').textContent = date.replace(/-/g,'–');
-  document.getElementById('snap-spend').textContent = date.replace(/-/g,'–');
-  document.getElementById('snap-conv').textContent = date.replace(/-/g,'–');
+  document.getElementById('snap-biz').textContent = rangeLabel.replace(/-/g,'–');
+  document.getElementById('snap-date').textContent = dateTo.replace(/-/g,'–');
+  document.getElementById('snap-spend').textContent = dateTo.replace(/-/g,'–');
+  document.getElementById('snap-conv').textContent = dateTo.replace(/-/g,'–');
+  if(!isSingle) document.getElementById('snap-status').textContent = `共 ${cur.n} 日数据`;
 
   // ── 消耗 & ROI ──
-  const spendPrev = prev ? prev.spend : null;
-  const spend7 = avg7('spend', date);
   setCard('spend',
     '<b style="font-size:24px">¥'+fmt(cur.spend)+'</b>',
-    deltaHtml(cur.spend, spendPrev, true),
-    deltaHtml(cur.spend, spend7, true)
+    dayLabel, deltaHtml(cur.spend, prev?.spend, true),
+    avgLabel, isSingle?'':('<span style="color:#8892a4">¥'+fmt(cur.spend/cur.n)+'/日</span>')
   );
 
-  const roiPrev = prev ? prev.roi : null;
-  const roi7 = avg7('roi', date);
-  setCard('roi',
-    fmtPct(cur.roi),
-    deltaHtml(cur.roi, roiPrev, false, 2, true),
-    deltaHtml(cur.roi, roi7, false, 2, true)
+  setCard('roi', fmtPct(cur.roi),
+    dayLabel, deltaHtml(cur.roi, prev?.roi, false, 2, true),
+    avgLabel, ''
   );
 
-  const roi3Cur = cur.roiCurve ? cur.roiCurve[2] : null;
-  const roi3Prev = prev && prev.roiCurve ? prev.roiCurve[2] : null;
-  setCard('roi3', roi3Cur!=null ? fmtPct(roi3Cur) : '<span style="color:#aab0be;font-size:18px">数据待回填</span>',
-    deltaHtml(roi3Cur, roi3Prev, false, 2, true), '');
+  setCard('roi3',
+    cur.roi3!=null ? fmtPct(cur.roi3) : '<span style="color:#aab0be;font-size:18px">数据待回填</span>',
+    dayLabel, deltaHtml(cur.roi3, prev?.roi3, false, 2, true),
+    '', ''
+  );
 
-  const roi7Cur = cur.roiCurve ? cur.roiCurve[3] : null;
-  const roi7Prev = prev && prev.roiCurve ? prev.roiCurve[3] : null;
-  setCard('roi7', roi7Cur!=null ? fmtPct(roi7Cur) : '<span style="color:#aab0be;font-size:18px">数据待回填</span>',
-    deltaHtml(roi7Cur, roi7Prev, false, 2, true), '');
+  setCard('roi7',
+    cur.roi7!=null ? fmtPct(cur.roi7) : '<span style="color:#aab0be;font-size:18px">数据待回填</span>',
+    dayLabel, deltaHtml(cur.roi7, prev?.roi7, false, 2, true),
+    '', ''
+  );
 
   // ── 注册 & 付费 ──
-  const reg7 = avg7('reg', date);
   setCard('reg', fmt(cur.reg,0),
-    deltaHtml(cur.reg, prev?.reg, false, 0),
-    deltaHtml(cur.reg, reg7, false, 1));
+    dayLabel, deltaHtml(cur.reg, prev?.reg, false, 0),
+    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.reg/cur.n,1)+'/日</span>')
+  );
 
-  const rc7 = avg7('regCost', date);
   setCard('regcost', '¥'+fmt(cur.regCost),
-    deltaHtml(cur.regCost, prev?.regCost, true),
-    deltaHtml(cur.regCost, rc7, true));
+    dayLabel, deltaHtml(cur.regCost, prev?.regCost, true),
+    '', ''
+  );
 
-  const pay7 = avg7('payCount', date);
   setCard('pay', fmt(cur.payCount,0),
-    deltaHtml(cur.payCount, prev?.payCount, false, 1),
-    deltaHtml(cur.payCount, pay7, false, 1));
+    dayLabel, deltaHtml(cur.payCount, prev?.payCount, false, 1),
+    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.payCount/cur.n,1)+'/日</span>')
+  );
 
-  const pc7 = avg7('payCost', date);
   setCard('paycost', '¥'+fmt(cur.payCost),
-    deltaHtml(cur.payCost, prev?.payCost, true),
-    deltaHtml(cur.payCost, pc7, true));
+    dayLabel, deltaHtml(cur.payCost, prev?.payCost, true),
+    '', ''
+  );
 
   // ── 行为 & 留存 ──
-  const pr7 = avg7('payRate', date);
   setCard('payrate', fmtPct(cur.payRate),
-    deltaHtml(cur.payRate, prev?.payRate, false, 2, true),
-    deltaHtml(cur.payRate, pr7, false, 2, true));
+    dayLabel, deltaHtml(cur.payRate, prev?.payRate, false, 2, true),
+    '', ''
+  );
 
-  const arpu = cur.payAmount && cur.reg ? cur.payAmount/cur.reg : null;
-  const arppu = cur.payAmount && cur.payCount ? cur.payAmount/cur.payCount : null;
-  document.getElementById('v-arpu').innerHTML = arpu!=null ? '¥'+fmt(arpu) : '—';
+  document.getElementById('v-arpu').innerHTML = cur.arpu!=null ? '¥'+fmt(cur.arpu) : '—';
   document.getElementById('d-arpu').innerHTML =
-    `<div class="mc-delta"><span class="dlabel">ARPU</span>${arpu!=null?'¥'+fmt(arpu):'—'}</div>`+
-    `<div class="mc-delta"><span class="dlabel">ARPPU</span>${arppu!=null?'¥'+fmt(arppu):'—'}</div>`;
+    `<div class="mc-delta"><span class="dlabel">ARPU</span>${cur.arpu!=null?'¥'+fmt(cur.arpu):'—'}</div>`+
+    `<div class="mc-delta"><span class="dlabel">ARPPU</span>${cur.arppu!=null?'¥'+fmt(cur.arppu):'—'}</div>`;
 
-  const ret7 = avg7('nextRetention', date);
-  setCard('ret', cur.nextRetention!=null ? fmtPct(cur.nextRetention) : '<span style="color:#aab0be;font-size:18px">待回填</span>',
-    deltaHtml(cur.nextRetention, prev?.nextRetention, false, 2, true),
-    deltaHtml(cur.nextRetention, ret7, false, 2, true));
+  setCard('ret',
+    cur.nextRetention!=null ? fmtPct(cur.nextRetention) : '<span style="color:#aab0be;font-size:18px">待回填</span>',
+    dayLabel, deltaHtml(cur.nextRetention, prev?.nextRetention, false, 2, true),
+    '', ''
+  );
 
-  const ai7 = avg7('ai', date);
   setCard('ai', fmt(cur.ai,0),
-    deltaHtml(cur.ai, prev?.ai, false, 1),
-    deltaHtml(cur.ai, ai7, false, 1));
+    dayLabel, deltaHtml(cur.ai, prev?.ai, false, 1),
+    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.ai/cur.n,1)+'/日</span>')
+  );
 
   // ── 漏斗 & 激活 ──
-  const room7 = avg7('enterRoom', date);
   setCard('room', fmt(cur.enterRoom,0),
-    deltaHtml(cur.enterRoom, prev?.enterRoom, false, 1),
-    deltaHtml(cur.enterRoom, room7, false, 1));
+    dayLabel, deltaHtml(cur.enterRoom, prev?.enterRoom, false, 1),
+    '', ''
+  );
 
-  const rr7 = avg7('enterRoomRate', date);
   setCard('roomrate', fmtPct(cur.enterRoomRate),
-    deltaHtml(cur.enterRoomRate, prev?.enterRoomRate, false, 2, true),
-    deltaHtml(cur.enterRoomRate, rr7, false, 2, true));
+    dayLabel, deltaHtml(cur.enterRoomRate, prev?.enterRoomRate, false, 2, true),
+    '', ''
+  );
 
-  const mic7 = avg7('micRate', date);
   setCard('mic', fmtPct(cur.micRate),
-    deltaHtml(cur.micRate, prev?.micRate, false, 2, true),
-    deltaHtml(cur.micRate, mic7, false, 2, true));
+    dayLabel, deltaHtml(cur.micRate, prev?.micRate, false, 2, true),
+    '', ''
+  );
 
-  const act7 = avg7('activate', date);
   setCard('act', fmt(cur.activate,0),
-    deltaHtml(cur.activate, prev?.activate, false, 1),
-    deltaHtml(cur.activate, act7, false, 1));
+    dayLabel, deltaHtml(cur.activate, prev?.activate, false, 1),
+    '', ''
+  );
 
-  // Refresh chart
-  renderChart(date, currentChartMode);
+  // Refresh chart – use the range
+  renderChart(dateFrom, dateTo, currentChartMode);
 }
 
 // ════════ CHART ════════
@@ -578,12 +650,11 @@ function switchChart(mode, btn){
   document.querySelectorAll('.trend-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   currentChartMode = mode;
-  renderChart(document.getElementById('dateSelect').value, mode);
+  renderChart(elFrom.value, elTo.value, mode);
 }
 
-function renderChart(date, mode){
-  const idx = dates.indexOf(date);
-  const slice = dates.slice(Math.max(0,idx-29), idx+1);
+function renderChart(dateFrom, dateTo, mode){
+  const slice = dates.filter(d => d >= dateFrom && d <= dateTo);
   const labels = slice.map(d => d.slice(5));
 
   let datasets = [];
@@ -645,7 +716,6 @@ function renderChart(date, mode){
 // ════════ PAGE NAVIGATION ════════
 let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = null;
 let userGenderC = null, userAgeC = null, userDailyC = null, userAmtC = null;
-let currentTrendDays = 30;
 
 function switchPage(id, el){
   // Hide all pages
@@ -658,38 +728,54 @@ function switchPage(id, el){
   if(el) el.classList.add('active');
 
   // Lazy-render page content
-  if(id === 'roi') renderRoiPage(document.getElementById('dateSelect').value);
-  if(id === 'trend') renderTrendPage(currentTrendDays);
+  if(id === 'roi')   renderRoiPage(elFrom.value, elTo.value);
+  if(id === 'trend') renderTrendPage(elFrom.value, elTo.value);
   if(id === 'users') renderUsersPage();
-  if(id === 'alert') renderAlertPage(document.getElementById('dateSelect').value);
+  if(id === 'alert') renderAlertPage(elFrom.value, elTo.value);
 }
 
 // ──── ROI PAGE ────
-function renderRoiPage(date){
+function renderRoiPage(dateFrom, dateTo){
   const roiLabels = ['ROI0','ROI3','ROI7','ROI15','ROI30','ROI60','ROI90'];
   const roiIdxs =   [0,     2,     3,     4,      5,      6,      7    ];
-  const cur = byDate[date];
+  const rangeSlice = dates.filter(d => d >= dateFrom && d <= dateTo);
+  if(!rangeSlice.length) return;
+  const lastDate = rangeSlice[rangeSlice.length-1];
+  const cur = byDate[lastDate];
   if(!cur) return;
-  document.getElementById('roi-curve-date').textContent = date;
+  const isSingle = dateFrom === dateTo;
+  document.getElementById('roi-curve-date').textContent = isSingle ? dateFrom : dateFrom+' 至 '+dateTo+'（显示末日曲线）';
 
-  // Curve chart
+  // Curve chart – show end-of-range date's curve + optional avg curve for range
   const curveData = roiIdxs.map(i => cur.roiCurve ? cur.roiCurve[i] : null);
+  const datasets = [{
+    label: lastDate+' ROI回收 (%)',
+    data: curveData,
+    borderColor:'#4a7cf0', backgroundColor:'rgba(74,124,240,.1)',
+    fill:true, tension:.3, pointRadius:5, pointHoverRadius:7, spanGaps:false
+  }];
+  // If range > 1 day, add an avg curve
+  if(!isSingle){
+    const avgData = roiIdxs.map(i => {
+      const vals = rangeSlice.map(d=>byDate[d].roiCurve&&byDate[d].roiCurve[i]).filter(v=>v!=null);
+      return vals.length ? vals.reduce((a,b)=>a+b)/vals.length : null;
+    });
+    datasets.push({
+      label: '区间均值 (%)',
+      data: avgData,
+      borderColor:'#f59e0b', backgroundColor:'transparent',
+      borderDash:[5,3], tension:.3, pointRadius:3, spanGaps:false
+    });
+  }
+
   if(roiCurveChart){ roiCurveChart.destroy(); roiCurveChart = null; }
   roiCurveChart = new Chart(document.getElementById('roiCurveChart').getContext('2d'),{
     type:'line',
-    data:{
-      labels: roiLabels,
-      datasets:[{
-        label: date+' ROI回收 (%)',
-        data: curveData,
-        borderColor:'#4a7cf0', backgroundColor:'rgba(74,124,240,.1)',
-        fill:true, tension:.3, pointRadius:5, pointHoverRadius:7, spanGaps:false
-      }]
-    },
+    data:{ labels: roiLabels, datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{display:false},
+        legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}},
         tooltip:{callbacks:{label:c => c.raw!=null ? c.raw.toFixed(2)+'%' : '待回填'}}
       },
       scales:{
@@ -699,12 +785,10 @@ function renderRoiPage(date){
     }
   });
 
-  // Summary table – last 20 dates
-  const idx = dates.indexOf(date);
-  const recentDates = dates.slice(Math.max(0,idx-19), idx+1).reverse();
+  // Summary table – all dates in range, reversed
   const tbody = document.getElementById('roi-table-body');
   tbody.innerHTML = '';
-  recentDates.forEach(d => {
+  [...rangeSlice].reverse().forEach(d => {
     const e = byDate[d];
     const rc = e.roiCurve || [];
     const cell = (v) => v!=null ? `<td class="${v>=100?'roi-hi':''}">${v.toFixed(2)}%</td>` : '<td class="roi-null">—</td>';
@@ -718,16 +802,11 @@ function renderRoiPage(date){
 
 // ──── TREND PAGE ────
 function switchTrendDays(days, btn){
-  document.querySelectorAll('.trend-tabs .trend-tab').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  currentTrendDays = days;
-  renderTrendPage(days);
+  // No-op — trend page now uses the global date range picker
 }
 
-function renderTrendPage(days){
-  const date = document.getElementById('dateSelect').value;
-  const idx = dates.indexOf(date);
-  const slice = days >= 999 ? dates.slice(0, idx+1) : dates.slice(Math.max(0,idx-days+1), idx+1);
+function renderTrendPage(dateFrom, dateTo){
+  const slice = dates.filter(d => d >= dateFrom && d <= dateTo);
   const labels = slice.map(d => d.slice(5));
 
   const mkLine = (label, data, color, fill=false) => ({
@@ -886,10 +965,9 @@ function renderUsersPage(){
 }
 
 // ──── ALERT PAGE ────
-function renderAlertPage(date){
+function renderAlertPage(dateFrom, dateTo){
   const wrap = document.getElementById('alert-table-wrap');
-  const today = date;
-  const recent = dates.filter(d => d <= today).slice(-14);
+  const recent = dates.filter(d => d >= dateFrom && d <= dateTo);
   const alerts = recent.map(d => {
     const e = byDate[d];
     let type = 'normal', label = '正常', style = 'color:#166534;background:#f0fdf4;border-color:#bbf7d0';
