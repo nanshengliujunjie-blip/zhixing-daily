@@ -121,6 +121,26 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .empty-state .es-icon{font-size:48px;margin-bottom:16px;opacity:.4}
 .empty-state h3{font-size:16px;font-weight:600;color:#8892a4;margin-bottom:8px}
 .empty-state p{font-size:13px;color:#aab0be;line-height:1.6}
+
+/* ─── UID Search ─── */
+.uid-search-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.uid-input{flex:1;max-width:320px;border:1px solid #d0d5e0;border-radius:8px;padding:8px 14px;font-size:13px;outline:none;transition:border-color .15s;color:#0f1628}
+.uid-input:focus{border-color:#4a7cf0;box-shadow:0 0 0 2px rgba(74,124,240,.12)}
+.uid-btn{padding:8px 18px;background:#4a7cf0;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.uid-btn:hover{background:#3b6de0}
+.uid-result-card{background:#f8faff;border:1px solid #c7d7fd;border-radius:10px;padding:16px 20px;margin-top:12px;display:none}
+.uid-result-card.show{display:block}
+.uid-result-title{font-size:13px;font-weight:700;color:#0f1628;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.uid-result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.uid-field{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e8f0}
+.uid-field-label{font-size:10px;color:#8892a4;margin-bottom:3px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.uid-field-val{font-size:15px;font-weight:700;color:#0f1628}
+.uid-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-right:3px}
+.uid-tag-q{background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe}
+.uid-tag-lm{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.uid-tag-zx{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff}
+.uid-not-found{color:#dc2626;font-size:13px;padding:12px 0}
+.users-spinner{text-align:center;padding:60px;color:#aab0be;font-size:13px}
 </style>
 </head>
 <body>
@@ -326,48 +346,84 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <!-- ═══ PAGE: 用户行为 ═══ -->
   <div id="page-users" class="page">
-    <div class="section-header" style="margin-top:0"><h3>付费用户画像（纯新）</h3></div>
-    <div class="chart-2col">
-      <div class="chart-half">
-        <div class="chart-half-title">性别分布</div>
-        <div class="chart-half-wrap"><canvas id="userGenderChart"></canvas></div>
+
+    <!-- UID Search -->
+    <div class="section-header" style="margin-top:0"><h3>用户查询</h3></div>
+    <div class="trend-card" style="margin-bottom:16px">
+      <div class="uid-search-bar">
+        <input class="uid-input" id="uid-input" type="text" placeholder="输入用户 UID 查询…" onkeydown="if(event.key==='Enter')doUidSearch()">
+        <button class="uid-btn" onclick="doUidSearch()">查询</button>
       </div>
-      <div class="chart-half">
-        <div class="chart-half-title">年龄分布</div>
-        <div class="chart-half-wrap"><canvas id="userAgeChart"></canvas></div>
+      <div class="uid-result-card" id="uid-result-card">
+        <div class="uid-result-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a7cf0" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+          <span id="uid-result-nick">—</span>
+          <span style="font-size:11px;color:#8892a4;font-weight:400" id="uid-result-uid"></span>
+        </div>
+        <div class="uid-result-grid" id="uid-result-grid"></div>
+        <div id="uid-result-orders" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
       </div>
+      <div id="uid-not-found" class="uid-not-found" style="display:none">未找到该 UID 的用户数据</div>
     </div>
-    <div class="full-chart-card">
-      <div class="full-chart-card-title">每日新增付费人数趋势</div>
-      <div style="position:relative;height:160px"><canvas id="userDailyPayChart"></canvas></div>
+
+    <!-- Loading spinner -->
+    <div id="users-spinner" class="users-spinner">
+      <div style="font-size:24px;margin-bottom:8px;opacity:.4">⏳</div>
+      加载用户数据中（约 3.5 MB）…
     </div>
-    <div class="chart-2col">
-      <div class="chart-half">
-        <div class="chart-half-title">客单价分布</div>
-        <div class="chart-half-wrap"><canvas id="userAmtChart"></canvas></div>
+
+    <!-- Content shown after data loads -->
+    <div id="users-content" style="display:none">
+
+      <!-- Stats cards -->
+      <div class="section-header"><h3>用户概览</h3></div>
+      <div class="metric-grid" style="margin-bottom:16px">
+        <div class="mc"><div class="mc-head"><span class="mc-label">总用户数</span></div><div class="mc-val" id="us-total">—</div><div class="mc-deltas"><div class="mc-delta">全周期有订单用户</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">付费用户数</span></div><div class="mc-val" id="us-paying">—</div><div class="mc-deltas"><div class="mc-delta">累计充值 &gt; 0</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">平均充值</span><span class="mc-badge">付费用户</span></div><div class="mc-val" id="us-avg">—</div><div class="mc-deltas"><div class="mc-delta" id="us-median-label">中位数 —</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">女性占比</span><span class="mc-badge">已知性别</span></div><div class="mc-val" id="us-female">—</div><div class="mc-deltas"><div class="mc-delta" id="us-gender-detail">男 — / 女 —</div></div></div>
       </div>
-      <div class="chart-half" style="display:flex;flex-direction:column;justify-content:center">
-        <div class="chart-half-title">核心指标</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
-            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">样本总量</div>
-            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-total">—</div>
-          </div>
-          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
-            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">平均客单价</div>
-            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-avg">—</div>
-          </div>
-          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
-            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">中位客单价</div>
-            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-median">—</div>
-          </div>
-          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
-            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">女性占比</div>
-            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-female">—</div>
-          </div>
+
+      <!-- Portrait charts -->
+      <div class="section-header"><h3>用户画像</h3></div>
+      <div class="chart-2col">
+        <div class="chart-half">
+          <div class="chart-half-title">性别分布（全量用户）</div>
+          <div class="chart-half-wrap"><canvas id="userGenderChart"></canvas></div>
+        </div>
+        <div class="chart-half">
+          <div class="chart-half-title">年龄分布（有年龄数据的用户）</div>
+          <div class="chart-half-wrap"><canvas id="userAgeChart"></canvas></div>
         </div>
       </div>
-    </div>
+
+      <!-- Order analysis -->
+      <div class="section-header"><h3>订单分析</h3></div>
+      <div class="chart-2col">
+        <div class="chart-half">
+          <div class="chart-half-title">订单类型分布</div>
+          <div class="chart-half-wrap"><canvas id="userOrderTypeChart"></canvas></div>
+        </div>
+        <div class="chart-half">
+          <div class="chart-half-title">充值金额分布（付费用户）</div>
+          <div class="chart-half-wrap"><canvas id="userAmtChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Daily trend -->
+      <div class="full-chart-card" style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="full-chart-card-title">每日订单量 &amp; 收入趋势（2026-04-09 起）</div>
+          <div class="trend-tabs" style="margin:0">
+            <button class="trend-tab active" onclick="switchUserDaily('cnt',this)">订单量</button>
+            <button class="trend-tab" onclick="switchUserDaily('amt',this)">收入(¥)</button>
+            <button class="trend-tab" onclick="switchUserDaily('type',this)">类型分拆</button>
+          </div>
+        </div>
+        <div style="position:relative;height:180px"><canvas id="userDailyChart"></canvas></div>
+      </div>
+
+    </div><!-- /users-content -->
   </div>
 
   <!-- ═══ PAGE: 空耗预警 ═══ -->
@@ -404,17 +460,6 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 const FALLBACK = [{"date":"2026-04-09","spend":5415.8,"activate":279,"reg":219,"regCost":24.73,"ai":158,"payCount":14,"payAmount":1447.7,"payCost":386.84,"payRate":6.39,"roi":26.73,"enterRoom":63,"enterRoomRate":28.77,"mic":11,"micRate":5.02,"nextRetention":19.88,"roiCurve":[26.73,72.95,112.09,195.77,299.8782,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-10","spend":5804.45,"activate":257,"reg":215,"regCost":27,"ai":160,"payCount":10,"payAmount":1051.7,"payCost":580.44,"payRate":4.65,"roi":18.12,"enterRoom":75,"enterRoomRate":34.88,"mic":14,"micRate":6.51,"nextRetention":21.76,"roiCurve":[18.12,28.18,36.35,56.41,65.15,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-11","spend":5662.15,"activate":213,"reg":177,"regCost":31.99,"ai":126,"payCount":13,"payAmount":645.6,"payCost":435.55,"payRate":7.34,"roi":11.4,"enterRoom":47,"enterRoomRate":26.55,"mic":13,"micRate":7.34,"nextRetention":20.55,"roiCurve":[11.4,24.02,26.24,33.1,38.4218,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-12","spend":6224.3,"activate":261,"reg":219,"regCost":28.42,"ai":164,"payCount":11,"payAmount":633.7,"payCost":565.85,"payRate":5.02,"roi":10.18,"enterRoom":70,"enterRoomRate":31.96,"mic":16,"micRate":7.31,"nextRetention":15.34,"roiCurve":[10.18,33.07,42.9,61.07,145.671,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-13","spend":4948.6,"activate":213,"reg":171,"regCost":28.94,"ai":121,"payCount":9,"payAmount":459.6,"payCost":549.84,"payRate":5.26,"roi":9.29,"enterRoom":50,"enterRoomRate":29.24,"mic":5,"micRate":2.92,"nextRetention":19.42,"roiCurve":[9.29,19.65,26.52,26.52,32.4435,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-14","spend":5330.83,"activate":230,"reg":176,"regCost":30.29,"ai":112,"payCount":12,"payAmount":1479.6,"payCost":444.24,"payRate":6.82,"roi":27.76,"enterRoom":43,"enterRoomRate":24.43,"mic":10,"micRate":5.68,"nextRetention":25.34,"roiCurve":[27.76,53.23,54.27,57.72,57.9066,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-15","spend":7458.33,"activate":400,"reg":321,"regCost":23.23,"ai":209,"payCount":24,"payAmount":2645.1,"payCost":310.76,"payRate":7.48,"roi":35.47,"enterRoom":99,"enterRoomRate":30.84,"mic":23,"micRate":7.17,"nextRetention":20.16,"roiCurve":[35.47,64.99,119.17,193.03,210.6906,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-16","spend":8210.78,"activate":429,"reg":332,"regCost":24.73,"ai":219,"payCount":24,"payAmount":1923,"payCost":342.12,"payRate":7.23,"roi":23.42,"enterRoom":110,"enterRoomRate":33.13,"mic":35,"micRate":10.54,"nextRetention":15.75,"roiCurve":[23.42,28.75,35.7,54.28,46.2891,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-17","spend":8525.7,"activate":393,"reg":322,"regCost":26.48,"ai":205,"payCount":20,"payAmount":2551.4,"payCost":426.29,"payRate":6.21,"roi":29.93,"enterRoom":98,"enterRoomRate":30.43,"mic":22,"micRate":6.83,"nextRetention":21.96,"roiCurve":[29.93,81.32,181.43,212.25,212.331,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-18","spend":11609.92,"activate":476,"reg":401,"regCost":28.95,"ai":248,"payCount":22,"payAmount":969.6,"payCost":527.72,"payRate":5.49,"roi":8.35,"enterRoom":102,"enterRoomRate":25.44,"mic":19,"micRate":4.74,"nextRetention":17.2,"roiCurve":[8.35,14.93,23.67,27.5,27.8116,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-19","spend":10519.33,"activate":529,"reg":444,"regCost":23.69,"ai":250,"payCount":21,"payAmount":1703.5,"payCost":500.92,"payRate":4.73,"roi":16.19,"enterRoom":125,"enterRoomRate":28.15,"mic":26,"micRate":5.86,"nextRetention":12.6,"roiCurve":[16.19,21.78,23.73,33.88,63.5497,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-20","spend":9388.68,"activate":456,"reg":382,"regCost":24.58,"ai":228,"payCount":23,"payAmount":1191.8,"payCost":408.2,"payRate":6.02,"roi":12.69,"enterRoom":98,"enterRoomRate":25.65,"mic":24,"micRate":6.28,"nextRetention":14.29,"roiCurve":[12.69,17.04,19.7,20.72,34.2913,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-21","spend":8629.06,"activate":432,"reg":339,"regCost":25.45,"ai":207,"payCount":22,"payAmount":3617.7,"payCost":392.23,"payRate":6.49,"roi":41.92,"enterRoom":100,"enterRoomRate":29.5,"mic":23,"micRate":6.78,"nextRetention":19.08,"roiCurve":[41.92,94.84,122.92,192.52,206.5938,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-22","spend":6618.76,"activate":322,"reg":248,"regCost":26.69,"ai":149,"payCount":14,"payAmount":863.5,"payCost":472.77,"payRate":5.65,"roi":13.05,"enterRoom":73,"enterRoomRate":29.44,"mic":20,"micRate":8.06,"nextRetention":16.24,"roiCurve":[13.05,50,60.74,17.6121,18.9688,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-23","spend":6687.19,"activate":321,"reg":243,"regCost":27.52,"ai":149,"payCount":12,"payAmount":1865.6,"payCost":557.27,"payRate":4.94,"roi":27.9,"enterRoom":71,"enterRoomRate":29.22,"mic":13,"micRate":5.35,"nextRetention":19.19,"roiCurve":[27.9,58.53,77.37,117.2256,208.1921,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-24","spend":5925.92,"activate":327,"reg":253,"regCost":23.42,"ai":133,"payCount":10,"payAmount":969.4,"payCost":592.59,"payRate":3.95,"roi":16.36,"enterRoom":63,"enterRoomRate":24.9,"mic":10,"micRate":3.95,"nextRetention":14.21,"roiCurve":[16.36,19.29,24.83,14.7386,17.0336,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-25","spend":7206.92,"activate":432,"reg":345,"regCost":20.89,"ai":207,"payCount":17,"payAmount":849.6,"payCost":423.94,"payRate":4.93,"roi":11.79,"enterRoom":108,"enterRoomRate":31.3,"mic":20,"micRate":5.8,"nextRetention":15.2,"roiCurve":[11.79,26.22,36.15,48.9793,86.879,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-26","spend":10097.95,"activate":444,"reg":356,"regCost":28.37,"ai":249,"payCount":20,"payAmount":1747.3,"payCost":504.9,"payRate":5.62,"roi":17.3,"enterRoom":115,"enterRoomRate":32.3,"mic":28,"micRate":7.87,"nextRetention":12.62,"roiCurve":[17.3,17.81,18.51,17.3758,25.2972,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-27","spend":5912.59,"activate":322,"reg":247,"regCost":23.94,"ai":144,"payCount":15,"payAmount":1393.5,"payCost":394.17,"payRate":6.07,"roi":23.57,"enterRoom":73,"enterRoomRate":29.55,"mic":19,"micRate":7.69,"nextRetention":15.2,"roiCurve":[23.57,28.3,39.49,37.4675,41.2222,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-28","spend":4837.93,"activate":317,"reg":242,"regCost":19.99,"ai":149,"payCount":10,"payAmount":675.6,"payCost":483.79,"payRate":4.13,"roi":13.96,"enterRoom":73,"enterRoomRate":30.17,"mic":19,"micRate":7.85,"nextRetention":18.09,"roiCurve":[13.96,69.93,87.78,27.9706,33.5061,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-29","spend":4610.68,"activate":286,"reg":213,"regCost":21.65,"ai":117,"payCount":10,"payAmount":223.8,"payCost":461.07,"payRate":4.69,"roi":4.85,"enterRoom":57,"enterRoomRate":26.76,"mic":10,"micRate":4.69,"nextRetention":13.11,"roiCurve":[4.85,7.01,17.2,19.3377,20.2486,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-30","spend":4753.28,"activate":247,"reg":200,"regCost":23.77,"ai":104,"payCount":12,"payAmount":1029.4,"payCost":396.11,"payRate":6,"roi":21.66,"enterRoom":58,"enterRoomRate":29,"mic":15,"micRate":7.5,"nextRetention":20.65,"roiCurve":[21.66,41.72,72.31,87.285,122.2314,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-01","spend":3767.59,"activate":238,"reg":198,"regCost":19.03,"ai":120,"payCount":13,"payAmount":697.5,"payCost":289.81,"payRate":6.57,"roi":18.51,"enterRoom":53,"enterRoomRate":26.77,"mic":11,"micRate":5.56,"nextRetention":14.29,"roiCurve":[18.51,21.75,23.18,23.97,25.8282,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-02","spend":5538.23,"activate":310,"reg":252,"regCost":21.98,"ai":161,"payCount":11,"payAmount":919.7,"payCost":503.48,"payRate":4.37,"roi":16.61,"enterRoom":73,"enterRoomRate":28.97,"mic":15,"micRate":5.95,"nextRetention":13.04,"roiCurve":[16.61,18.95,19.06,19.06,19.0584,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-03","spend":6014.84,"activate":287,"reg":253,"regCost":23.77,"ai":156,"payCount":16,"payAmount":1469.6,"payCost":375.93,"payRate":6.32,"roi":24.43,"enterRoom":70,"enterRoomRate":27.67,"mic":18,"micRate":7.11,"nextRetention":18.18,"roiCurve":[24.43,39.33,42.58,71.91,217.7348,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-04","spend":4374.6,"activate":238,"reg":210,"regCost":20.83,"ai":126,"payCount":13,"payAmount":973.7,"payCost":336.51,"payRate":6.19,"roi":22.26,"enterRoom":61,"enterRoomRate":29.05,"mic":20,"micRate":9.52,"nextRetention":17.24,"roiCurve":[22.26,35.83,36.06,39.9,50.9647,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-05","spend":4848.01,"activate":293,"reg":269,"regCost":18.02,"ai":170,"payCount":14,"payAmount":633.5,"payCost":346.29,"payRate":5.2,"roi":13.07,"enterRoom":82,"enterRoomRate":30.48,"mic":18,"micRate":6.69,"nextRetention":27.27,"roiCurve":[13.07,69.01,94.41,178.36,307.1363,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-06","spend":4009.12,"activate":253,"reg":219,"regCost":18.31,"ai":141,"payCount":4,"payAmount":195.9,"payCost":1002.28,"payRate":1.83,"roi":4.89,"enterRoom":76,"enterRoomRate":34.7,"mic":11,"micRate":5.02,"nextRetention":17.51,"roiCurve":[4.89,5.63,5.63,5.6322,7.5752,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-07","spend":4002.7,"activate":269,"reg":219,"regCost":18.28,"ai":132,"payCount":12,"payAmount":621.5,"payCost":333.56,"payRate":5.48,"roi":15.53,"enterRoom":60,"enterRoomRate":27.4,"mic":10,"micRate":4.57,"nextRetention":15.08,"roiCurve":[15.53,14.53,26.77,28.2684,50.3935,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-08","spend":3993.77,"activate":290,"reg":233,"regCost":17.14,"ai":142,"payCount":11,"payAmount":1099.7,"payCost":363.07,"payRate":4.72,"roi":27.54,"enterRoom":61,"enterRoomRate":26.18,"mic":12,"micRate":5.15,"nextRetention":20.2,"roiCurve":[27.54,31.59,33.09,33.8402,40.755,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-09","spend":3414.18,"activate":294,"reg":256,"regCost":13.34,"ai":157,"payCount":6,"payAmount":291.8,"payCost":569.03,"payRate":2.34,"roi":8.55,"enterRoom":72,"enterRoomRate":28.12,"mic":8,"micRate":3.12,"nextRetention":15.07,"roiCurve":[8.55,11.71,11.71,11.71,11.8857,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-10","spend":3285.52,"activate":288,"reg":243,"regCost":13.52,"ai":143,"payCount":8,"payAmount":561.9,"payCost":410.69,"payRate":3.29,"roi":17.1,"enterRoom":51,"enterRoomRate":20.99,"mic":12,"micRate":4.94,"nextRetention":15.28,"roiCurve":[17.1,21.73,26.11,33.0511,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-11","spend":5676.33,"activate":323,"reg":261,"regCost":21.75,"ai":165,"payCount":14,"payAmount":367.3,"payCost":405.45,"payRate":5.36,"roi":6.47,"enterRoom":91,"enterRoomRate":34.87,"mic":11,"micRate":4.21,"nextRetention":22.62,"roiCurve":[6.47,15.02,22.35,28.9025,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-12","spend":6102.61,"activate":304,"reg":257,"regCost":23.75,"ai":163,"payCount":11,"payAmount":718.8,"payCost":554.78,"payRate":4.28,"roi":11.78,"enterRoom":75,"enterRoomRate":29.18,"mic":26,"micRate":10.12,"nextRetention":17.21,"roiCurve":[11.78,22.13,22.13,22.1315,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-13","spend":6582.35,"activate":328,"reg":266,"regCost":24.75,"ai":153,"payCount":17,"payAmount":2087.8,"payCost":387.2,"payRate":6.39,"roi":31.72,"enterRoom":99,"enterRoomRate":37.22,"mic":20,"micRate":7.52,"nextRetention":12.39,"roiCurve":[31.72,42.9,45.51,49.2134,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-14","spend":7190.57,"activate":327,"reg":269,"regCost":26.73,"ai":176,"payCount":16,"payAmount":1937.2,"payCost":449.41,"payRate":5.95,"roi":26.94,"enterRoom":111,"enterRoomRate":41.26,"mic":24,"micRate":8.92,"nextRetention":22.61,"roiCurve":[26.94,144.2,226.86,312.0212,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-15","spend":5445.75,"activate":337,"reg":283,"regCost":19.24,"ai":185,"payCount":13,"payAmount":837.8,"payCost":418.9,"payRate":4.59,"roi":15.38,"enterRoom":102,"enterRoomRate":36.04,"mic":28,"micRate":9.89,"nextRetention":15.64,"roiCurve":[15.38,29.04,37.15,55.4047,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-16","spend":8361.69,"activate":400,"reg":313,"regCost":26.71,"ai":189,"payCount":32,"payAmount":1867.2,"payCost":261.3,"payRate":10.22,"roi":22.33,"enterRoom":124,"enterRoomRate":39.62,"mic":30,"micRate":9.58,"nextRetention":16.14,"roiCurve":[22.33,37.42,48.99,69.1726,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-17","spend":14288.9,"activate":543,"reg":466,"regCost":30.66,"ai":344,"payCount":40,"payAmount":1977,"payCost":357.22,"payRate":8.58,"roi":13.84,"enterRoom":172,"enterRoomRate":36.91,"mic":53,"micRate":11.37,"nextRetention":19.86,"roiCurve":[13.84,24.33,41.75,106.1873,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-18","spend":16339.84,"activate":744,"reg":661,"regCost":24.72,"ai":464,"payCount":40,"payAmount":2600.6,"payCost":408.5,"payRate":6.05,"roi":15.92,"enterRoom":260,"enterRoomRate":39.33,"mic":67,"micRate":10.14,"nextRetention":16.64,"roiCurve":[15.92,40.14,70.87,117.954,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-19","spend":12396.72,"activate":594,"reg":523,"regCost":23.7,"ai":357,"payCount":32,"payAmount":1071.5,"payCost":387.4,"payRate":6.12,"roi":8.64,"enterRoom":189,"enterRoomRate":36.14,"mic":50,"micRate":9.56,"nextRetention":16.57,"roiCurve":[8.64,17.76,29.67,35.2553,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-20","spend":11767.4,"activate":576,"reg":489,"regCost":24.06,"ai":338,"payCount":34,"payAmount":3249.1,"payCost":346.1,"payRate":6.95,"roi":27.61,"enterRoom":193,"enterRoomRate":39.47,"mic":45,"micRate":9.2,"nextRetention":12.69,"roiCurve":[27.61,28.97,29.36,30.208,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.4706},{"date":"2026-05-21","spend":11107.31,"activate":551,"reg":468,"regCost":23.73,"ai":306,"payCount":32,"payAmount":1484.8,"payCost":347.1,"payRate":6.84,"roi":13.37,"enterRoom":175,"enterRoomRate":37.39,"mic":51,"micRate":10.9,"nextRetention":17.19,"roiCurve":[13.37,20.3866,22.6373,26.903,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.7097},{"date":"2026-05-22","spend":8879.99,"activate":428,"reg":365,"regCost":24.33,"ai":238,"payCount":15,"payAmount":1139.4,"payCost":592,"payRate":4.11,"roi":12.83,"enterRoom":151,"enterRoomRate":41.37,"mic":42,"micRate":11.51,"nextRetention":11.21,"roiCurve":[12.83,18.0552,18.866,24.7444,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.7143},{"date":"2026-05-23","spend":7685.66,"activate":411,"reg":334,"regCost":23.01,"ai":221,"payCount":19,"payAmount":751.8,"payCost":404.51,"payRate":5.69,"roi":9.78,"enterRoom":111,"enterRoomRate":33.23,"mic":23,"micRate":6.89,"nextRetention":13.73,"roiCurve":[9.78,23.1782,35.4088,45.0892,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.3158},{"date":"2026-05-24","spend":8539.4,"activate":599,"reg":493,"regCost":17.32,"ai":315,"payCount":15,"payAmount":297.4,"payCost":569.29,"payRate":3.04,"roi":3.48,"enterRoom":170,"enterRoomRate":34.48,"mic":34,"micRate":6.9,"nextRetention":10.9,"roiCurve":[3.48,7.4373,11.6296,37.1302,null,null,null,null,null,null,null,null,null,null,null,null],"pret":6.6667},{"date":"2026-05-25","spend":8803.63,"activate":671,"reg":557,"regCost":15.81,"ai":394,"payCount":30,"payAmount":1869,"payCost":293.45,"payRate":5.39,"roi":21.23,"enterRoom":210,"enterRoomRate":37.7,"mic":59,"micRate":10.59,"nextRetention":11.57,"roiCurve":[21.23,44.013,75.5192,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.3333},{"date":"2026-05-26","spend":11506.99,"activate":718,"reg":611,"regCost":18.83,"ai":433,"payCount":23,"payAmount":1439.7,"payCost":500.3,"payRate":3.7643,"roi":12.5115,"enterRoom":231,"enterRoomRate":37.8069,"mic":49,"micRate":8.0196,"nextRetention":15.371,"roiCurve":[12.5115,23.1459,38.0734,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":54.5455},{"date":"2026-05-27","spend":4567.44,"activate":388,"reg":322,"regCost":14.18,"ai":234,"payCount":13,"payAmount":561.8,"payCost":351.34,"payRate":4.0373,"roi":12.3001,"enterRoom":127,"enterRoomRate":39.441,"mic":24,"micRate":7.4534,"nextRetention":19.2308,"roiCurve":[12.3001,19.466,26.0277,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":63.6364},{"date":"2026-05-28","spend":4882.76,"activate":308,"reg":250,"regCost":19.53,"ai":180,"payCount":17,"payAmount":1071.2,"payCost":287.22,"payRate":6.8,"roi":21.9384,"enterRoom":111,"enterRoomRate":44.4,"mic":28,"micRate":11.2,"nextRetention":21.3636,"roiCurve":[21.9384,44.0018,53.906,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":46.6667},{"date":"2026-05-29","spend":7552.68,"activate":457,"reg":398,"regCost":18.98,"ai":286,"payCount":27,"payAmount":2729.4,"payCost":279.73,"payRate":6.7839,"roi":36.1382,"enterRoom":153,"enterRoomRate":38.4422,"mic":37,"micRate":9.2965,"nextRetention":11.326,"roiCurve":[36.1382,86.9532,115.0757,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":32},{"date":"2026-05-30","spend":10686.67,"activate":521,"reg":438,"regCost":24.4,"ai":345,"payCount":37,"payAmount":3412.7,"payCost":288.83,"payRate":8.4475,"roi":31.9342,"enterRoom":190,"enterRoomRate":43.379,"mic":48,"micRate":10.9589,"nextRetention":15.8025,"roiCurve":[31.9342,54.8197,79.4298,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.8889},{"date":"2026-05-31","spend":7831.54,"activate":360,"reg":304,"regCost":25.76,"ai":223,"payCount":23,"payAmount":1578.3,"payCost":340.5,"payRate":7.5658,"roi":20.1531,"enterRoom":135,"enterRoomRate":44.4079,"mic":34,"micRate":11.1842,"nextRetention":13.9286,"roiCurve":[20.1531,32.4112,46.0727,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":52.1739},{"date":"2026-06-01","spend":8687.79,"activate":745,"reg":640,"regCost":13.57,"ai":488,"payCount":30,"payAmount":1677.6,"payCost":289.59,"payRate":4.6875,"roi":19.3099,"enterRoom":253,"enterRoomRate":39.5312,"mic":56,"micRate":8.75,"nextRetention":16.5584,"roiCurve":[19.3099,27.4456,51.6273,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":30},{"date":"2026-06-02","spend":17462.2,"activate":1656,"reg":1498,"regCost":11.66,"ai":1174,"payCount":53,"payAmount":2290.5,"payCost":329.48,"payRate":3.5381,"roi":13.1169,"enterRoom":549,"enterRoomRate":36.6489,"mic":101,"micRate":6.7423,"nextRetention":11.7808,"roiCurve":[13.1169,19.5953,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.9623},{"date":"2026-06-03","spend":13599.5,"activate":913,"reg":802,"regCost":16.96,"ai":615,"payCount":42,"payAmount":2133.2,"payCost":323.8,"payRate":5.2369,"roi":15.6859,"enterRoom":293,"enterRoomRate":36.5337,"mic":67,"micRate":8.3541,"nextRetention":12.1053,"roiCurve":[15.6859,25.062,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":41.4634},{"date":"2026-06-04","spend":7081.76,"activate":546,"reg":458,"regCost":15.46,"ai":349,"payCount":20,"payAmount":1823.1,"payCost":354.09,"payRate":4.3668,"roi":25.7436,"enterRoom":166,"enterRoomRate":36.2445,"mic":35,"micRate":7.6419,"nextRetention":14.1876,"roiCurve":[25.7436,41.1602,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-05","spend":6424.76,"activate":577,"reg":487,"regCost":13.19,"ai":352,"payCount":17,"payAmount":907.6,"payCost":377.93,"payRate":3.4908,"roi":14.1266,"enterRoom":179,"enterRoomRate":36.7556,"mic":43,"micRate":8.8296,"nextRetention":11.6331,"roiCurve":[14.1266,18.8552,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.2941},{"date":"2026-06-06","spend":4470.88,"activate":447,"reg":378,"regCost":11.83,"ai":287,"payCount":11,"payAmount":915.6,"payCost":406.44,"payRate":2.9101,"roi":20.4792,"enterRoom":142,"enterRoomRate":37.5661,"mic":24,"micRate":6.3492,"nextRetention":12.3919,"roiCurve":[20.4792,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-07","spend":13515.9,"activate":1284,"reg":1131,"regCost":11.95,"ai":894,"payCount":57,"payAmount":3032.4,"payCost":237.12,"payRate":5.0398,"roi":22.4358,"enterRoom":422,"enterRoomRate":37.3121,"mic":89,"micRate":7.8691,"nextRetention":13.4913,"roiCurve":[22.4358,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":25.4545},{"date":"2026-06-08","spend":11036.19,"activate":936,"reg":821,"regCost":13.44,"ai":600,"payCount":51,"payAmount":4693.1,"payCost":216.4,"payRate":6.2119,"roi":42.5246,"enterRoom":284,"enterRoomRate":34.592,"mic":66,"micRate":8.039,"nextRetention":null,"roiCurve":[42.5246,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":null}];
 
 
-// ════════ USER STATS (付费用户纯新) ════════
-const USER_STATS = {
-  total: 1123,
-  male: 32,
-  female: 72,
-  avgAmt: 223.23,
-  medianAmt: 168.0,
-  ageBuckets: [0, 10, 36, 41, 17],
-  amtDist: [[6, 4], [9, 3], [18, 1], [29, 1], [30, 3], [36, 1], [39, 1], [60, 1], [88, 2], [97, 1], [98, 1], [100, 1], [101, 1], [102, 2], [104, 1]],
-  payDaily: {"2026-04-09": 11, "2026-04-10": 10, "2026-04-11": 10, "2026-04-12": 8, "2026-04-13": 8, "2026-04-14": 10, "2026-04-15": 20, "2026-04-16": 18, "2026-04-17": 18, "2026-04-18": 21, "2026-04-19": 21, "2026-04-20": 20, "2026-04-21": 20, "2026-04-22": 11, "2026-04-23": 11, "2026-04-24": 11, "2026-04-25": 14, "2026-04-26": 17, "2026-04-27": 12, "2026-04-28": 8, "2026-04-29": 11, "2026-04-30": 8, "2026-05-01": 13, "2026-05-02": 8, "2026-05-03": 13, "2026-05-04": 9, "2026-05-05": 12, "2026-05-06": 4, "2026-05-07": 10, "2026-05-08": 11, "2026-05-09": 9, "2026-05-10": 7, "2026-05-11": 14, "2026-05-12": 12, "2026-05-13": 11, "2026-05-14": 15, "2026-05-15": 15, "2026-05-16": 26, "2026-05-17": 39, "2026-05-18": 40, "2026-05-19": 31, "2026-05-20": 32, "2026-05-21": 30, "2026-05-22": 14, "2026-05-23": 19, "2026-05-24": 15, "2026-05-25": 26, "2026-05-26": 22, "2026-05-27": 11, "2026-05-28": 14, "2026-05-29": 23, "2026-05-30": 33, "2026-05-31": 21, "2026-06-01": 30, "2026-06-02": 53, "2026-06-03": 41, "2026-06-04": 19, "2026-06-05": 17, "2026-06-06": 9, "2026-06-07": 53, "2026-06-08": 44}
-};
 
 // ════════ INIT ════════
 const byDate = {};
@@ -715,7 +760,7 @@ function renderChart(dateFrom, dateTo, mode){
 
 // ════════ PAGE NAVIGATION ════════
 let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = null;
-let userGenderC = null, userAgeC = null, userDailyC = null, userAmtC = null;
+let userGenderC = null, userAgeC = null, userAmtC = null;
 
 function switchPage(id, el){
   // Hide all pages
@@ -863,105 +908,173 @@ function chartOpts(prefix=''){
 }
 
 // ──── USERS PAGE ────
-function renderUsersPage(){
-  // Stats
-  document.getElementById('us-total').textContent = USER_STATS.total.toLocaleString();
-  document.getElementById('us-avg').textContent = '¥'+USER_STATS.avgAmt.toFixed(2);
-  document.getElementById('us-median').textContent = '¥'+USER_STATS.medianAmt.toFixed(2);
-  const total_known = USER_STATS.male + USER_STATS.female;
-  document.getElementById('us-female').textContent = total_known>0 ? (USER_STATS.female/total_known*100).toFixed(1)+'%' : '—';
+let _userData = null, _userMap = null, _userDailyMode = 'cnt', _userDailyChart = null;
 
-  // Gender pie
+function renderUsersPage(){
+  if(_userData){ _renderUsersContent(); return; }
+  document.getElementById('users-spinner').style.display = 'block';
+  document.getElementById('users-content').style.display = 'none';
+  fetch('user_data.json')
+    .then(r=>r.json())
+    .then(data=>{
+      _userData = data;
+      _userMap = {};
+      data.users.forEach(u => _userMap[u[0]] = u);
+      document.getElementById('users-spinner').style.display = 'none';
+      document.getElementById('users-content').style.display = 'block';
+      _renderUsersContent();
+    })
+    .catch(e=>{ document.getElementById('users-spinner').textContent = '加载失败: '+e.message; });
+}
+
+function _renderUsersContent(){
+  const s = _userData.stats;
+  const [gUnk, gMale, gFemale] = s.gender;
+  const knownG = gMale + gFemale;
+  document.getElementById('us-total').textContent = s.total_users.toLocaleString();
+  document.getElementById('us-paying').textContent = s.paying_users.toLocaleString();
+  document.getElementById('us-avg').textContent = '¥'+s.avg_amt.toLocaleString('zh-CN',{maximumFractionDigits:2});
+  document.getElementById('us-median-label').textContent = '中位数 ¥'+s.median_amt;
+  document.getElementById('us-female').textContent = knownG>0 ? (gFemale/knownG*100).toFixed(1)+'%' : '—';
+  document.getElementById('us-gender-detail').textContent = `男 ${gMale.toLocaleString()} / 女 ${gFemale.toLocaleString()}`;
+
+  // Gender doughnut
   if(userGenderC){ userGenderC.destroy(); userGenderC=null; }
   userGenderC = new Chart(document.getElementById('userGenderChart').getContext('2d'),{
     type:'doughnut',
     data:{
-      labels:['男','女'],
-      datasets:[{data:[USER_STATS.male,USER_STATS.female],
-        backgroundColor:['rgba(99,102,241,0.85)','rgba(236,72,153,0.8)'],
+      labels:['未知','男','女'],
+      datasets:[{data:[gUnk,gMale,gFemale],
+        backgroundColor:['rgba(203,213,225,0.8)','rgba(99,102,241,0.85)','rgba(236,72,153,0.8)'],
         borderWidth:2,borderColor:'#fff'}]
     },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:12}},
-        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}人`}}
-      }
-    }
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}人`}}}}
   });
 
   // Age bar
   if(userAgeC){ userAgeC.destroy(); userAgeC=null; }
-  const ageLabels = ['<18','18-24','25-30','31-40','41+'];
   userAgeC = new Chart(document.getElementById('userAgeChart').getContext('2d'),{
     type:'bar',
-    data:{
-      labels:ageLabels,
-      datasets:[{
-        label:'占比(%)',
-        data:USER_STATS.ageBuckets,
-        backgroundColor:'rgba(74,124,240,0.8)',
-        borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
-        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9},callback:v=>v+'%'}}
-      }
-    }
+    data:{labels:['<18','18-24','25-30','31-40','41+'],
+      datasets:[{label:'人数',data:s.age_buckets,backgroundColor:'rgba(74,124,240,0.8)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.raw.toLocaleString()}人`}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}}}
   });
 
-  // Daily pay chart
-  if(userDailyC){ userDailyC.destroy(); userDailyC=null; }
-  const dailyKeys = Object.keys(USER_STATS.payDaily).sort();
-  userDailyC = new Chart(document.getElementById('userDailyPayChart').getContext('2d'),{
-    type:'bar',
-    data:{
-      labels: dailyKeys.map(d=>d.slice(5)),
-      datasets:[{
-        label:'每日付费人数',
-        data: dailyKeys.map(d=>USER_STATS.payDaily[d]),
-        backgroundColor:'rgba(16,185,129,0.7)',
-        borderRadius:2
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:20}},
-        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}
-      }
-    }
-  });
+  // Order type doughnut
+  if(userGenderC && document.getElementById('userOrderTypeChart')){
+    if(window._orderTypeC){ window._orderTypeC.destroy(); }
+    const ot = s.order_type_total;
+    window._orderTypeC = new Chart(document.getElementById('userOrderTypeChart').getContext('2d'),{
+      type:'doughnut',
+      data:{labels:['提问','连麦','咨询'],
+        datasets:[{data:[ot.q,ot.lm,ot.zx],
+          backgroundColor:['rgba(59,130,246,0.8)','rgba(16,185,129,0.8)','rgba(147,51,234,0.8)'],
+          borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:10}},
+          tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}次`}}}}
+    });
+  }
 
-  // Amt dist
+  // Amount distribution bar
   if(userAmtC){ userAmtC.destroy(); userAmtC=null; }
-  const amtLabels = USER_STATS.amtDist.map(a=>'¥'+a[0]);
-  const amtData   = USER_STATS.amtDist.map(a=>a[1]);
   userAmtC = new Chart(document.getElementById('userAmtChart').getContext('2d'),{
     type:'bar',
-    data:{
-      labels:amtLabels,
-      datasets:[{
-        label:'人数',
-        data:amtData,
-        backgroundColor:'rgba(245,158,11,0.75)',
-        borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
+    data:{labels:s.amt_dist.map(d=>d[0]),
+      datasets:[{label:'人数',data:s.amt_dist.map(d=>d[1]),
+        backgroundColor:'rgba(245,158,11,0.75)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45}},
-        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}
-      }
-    }
+      scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}}}
   });
+
+  // Daily chart
+  _renderUserDailyChart(_userDailyMode);
+}
+
+function switchUserDaily(mode, btn){
+  document.querySelectorAll('#page-users .trend-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  _userDailyMode = mode;
+  _renderUserDailyChart(mode);
+}
+
+function _renderUserDailyChart(mode){
+  if(!_userData) return;
+  const daily = _userData.stats.daily;
+  const dk = Object.keys(daily).sort();
+  const labels = dk.map(d=>d.slice(5));
+  if(_userDailyChart){ _userDailyChart.destroy(); _userDailyChart=null; }
+  let datasets;
+  if(mode === 'cnt'){
+    datasets = [{label:'订单量',data:dk.map(d=>daily[d].c),
+      backgroundColor:'rgba(74,124,240,0.7)',borderRadius:2,type:'bar'}];
+  } else if(mode === 'amt'){
+    datasets = [{label:'收入(¥)',data:dk.map(d=>daily[d].a),
+      backgroundColor:'rgba(245,158,11,0.7)',borderRadius:2,type:'bar'}];
+  } else {
+    datasets = [
+      {label:'提问',data:dk.map(d=>daily[d].q),backgroundColor:'rgba(59,130,246,0.75)',borderRadius:2,type:'bar'},
+      {label:'连麦',data:dk.map(d=>daily[d].lm),backgroundColor:'rgba(16,185,129,0.75)',borderRadius:2,type:'bar'},
+      {label:'咨询',data:dk.map(d=>daily[d].zx||0),backgroundColor:'rgba(147,51,234,0.75)',borderRadius:2,type:'bar'}
+    ];
+  }
+  _userDailyChart = new Chart(document.getElementById('userDailyChart').getContext('2d'),{
+    type:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}}},
+      scales:{x:{grid:{display:false},stacked:mode==='type',ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:20}},
+        y:{grid:{color:'#f0f2f7'},stacked:mode==='type',ticks:{color:'#aab0be',font:{size:9}}}}}
+  });
+}
+
+// ──── UID SEARCH ────
+function doUidSearch(){
+  const uid = document.getElementById('uid-input').value.trim();
+  const card = document.getElementById('uid-result-card');
+  const notFound = document.getElementById('uid-not-found');
+  card.classList.remove('show');
+  notFound.style.display = 'none';
+  if(!uid) return;
+  if(!_userMap){
+    // Trigger data load first
+    renderUsersPage();
+    setTimeout(()=>doUidSearch(), 1500);
+    return;
+  }
+  const u = _userMap[uid];
+  if(!u){
+    notFound.style.display = 'block';
+    return;
+  }
+  // u = [uid, nick, gender_code, age, total_amt, order_cnt, paid_cnt, q_cnt, lm_cnt, zx_cnt]
+  const G = ['未知','男','女'];
+  const gIcon = u[2]===1 ? '♂' : u[2]===2 ? '♀' : '？';
+  document.getElementById('uid-result-nick').textContent = (u[1]||'—') + ' ' + gIcon;
+  document.getElementById('uid-result-uid').textContent = 'UID: ' + uid;
+  const grid = document.getElementById('uid-result-grid');
+  const field = (label, val) => `<div class="uid-field"><div class="uid-field-label">${label}</div><div class="uid-field-val">${val}</div></div>`;
+  grid.innerHTML =
+    field('性别', G[u[2]]) +
+    field('年龄', u[3]!=null ? Math.floor(u[3])+'岁' : '未知') +
+    field('累计充值', '¥'+u[4].toLocaleString('zh-CN',{maximumFractionDigits:2})) +
+    field('总订单数', u[5].toLocaleString()) +
+    field('付费订单', u[6].toLocaleString()) +
+    field('注册天数', '—');
+  const orders = document.getElementById('uid-result-orders');
+  orders.innerHTML = '';
+  if(u[7]>0) orders.innerHTML += `<span class="uid-tag uid-tag-q">提问 ${u[7]}</span>`;
+  if(u[8]>0) orders.innerHTML += `<span class="uid-tag uid-tag-lm">连麦 ${u[8]}</span>`;
+  if(u[9]>0) orders.innerHTML += `<span class="uid-tag uid-tag-zx">咨询 ${u[9]}</span>`;
+  card.classList.add('show');
 }
 
 // ──── ALERT PAGE ────
