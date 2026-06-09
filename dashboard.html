@@ -83,6 +83,35 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .trend-tab{padding:4px 14px;border-radius:5px;border:none;cursor:pointer;font-size:11px;background:transparent;color:#8892a4;font-weight:500;transition:all .2s}
 .trend-tab.active{background:#fff;color:#4a7cf0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .chart-wrap{position:relative;height:200px}
+
+/* ─── Pages ─── */
+.page{display:none}
+.page.active{display:block}
+
+/* ─── ROI Curve page ─── */
+.roi-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.roi-table th{background:#f8f9fc;color:#8892a4;font-weight:600;padding:7px 10px;text-align:right;border-bottom:2px solid #e4e8f0;letter-spacing:.3px}
+.roi-table th:first-child{text-align:left}
+.roi-table td{padding:7px 10px;text-align:right;border-bottom:1px solid #f0f2f7;color:#0f1628}
+.roi-table td:first-child{text-align:left;color:#4a5068;font-weight:500}
+.roi-table tr:hover td{background:#f8faff}
+.roi-null{color:#d0d5e0!important}
+.roi-hi{color:#16a34a;font-weight:600}
+
+/* ─── Users page ─── */
+.chart-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-half{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.chart-half-title{font-size:13px;font-weight:600;color:#0f1628;margin-bottom:14px}
+.chart-half-wrap{position:relative;height:180px}
+.full-chart-card{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}
+.full-chart-card-title{font-size:13px;font-weight:600;color:#0f1628;margin-bottom:14px}
+.full-chart-wrap{position:relative;height:160px}
+
+/* ─── Empty state ─── */
+.empty-state{text-align:center;padding:80px 20px;color:#aab0be}
+.empty-state .es-icon{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-state h3{font-size:16px;font-weight:600;color:#8892a4;margin-bottom:8px}
+.empty-state p{font-size:13px;color:#aab0be;line-height:1.6}
 </style>
 </head>
 <body>
@@ -101,19 +130,19 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <div class="sb-section">
     <div class="sb-section-label">投放分析 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
-    <a class="nav-item active" href="#">
+    <a class="nav-item active" href="#" onclick="switchPage('overview',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       营销总览
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="#" onclick="switchPage('roi',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       ROI 追踪
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="#" onclick="switchPage('trend',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       投放趋势
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="#" onclick="switchPage('users',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
       用户行为
     </a>
@@ -121,11 +150,11 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <div class="sb-section">
     <div class="sb-section-label">数据质量</div>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="#" onclick="switchPage('alert',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       空耗预警
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="index.html" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       日报归档
     </a>
@@ -157,6 +186,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <!-- Content -->
   <div class="content">
+  <div id="page-overview" class="page active">
 
     <!-- 快照状态 -->
     <div class="snapshot-card">
@@ -222,12 +252,156 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
     </div>
 
+  </div><!-- /page-overview -->
+
+  <!-- ═══ PAGE: ROI 追踪 ═══ -->
+  <div id="page-roi" class="page">
+    <div class="section-header" style="margin-top:0"><h3>ROI 回收曲线</h3></div>
+    <div class="trend-card" style="margin-bottom:16px">
+      <div class="trend-header">
+        <div class="trend-title">所选日期 ROI 回收曲线</div>
+        <span id="roi-curve-date" style="font-size:12px;color:#8892a4"></span>
+      </div>
+      <div class="chart-wrap"><canvas id="roiCurveChart"></canvas></div>
+    </div>
+    <div class="section-header"><h3>近期各日 ROI 回收汇总</h3></div>
+    <div class="trend-card">
+      <div style="overflow-x:auto">
+        <table class="roi-table" id="roi-summary-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>ROI0</th>
+              <th>ROI3</th>
+              <th>ROI7</th>
+              <th>ROI15</th>
+              <th>ROI30</th>
+              <th>消耗 (¥)</th>
+            </tr>
+          </thead>
+          <tbody id="roi-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: 投放趋势 ═══ -->
+  <div id="page-trend" class="page">
+    <div class="section-header" style="margin-top:0"><h3>投放消耗趋势</h3></div>
+    <div class="trend-card" style="margin-bottom:16px">
+      <div class="trend-header">
+        <div class="trend-title">消耗 · 注册 · 付费 趋势</div>
+        <div class="trend-tabs">
+          <button class="trend-tab active" id="tt-30" onclick="switchTrendDays(30,this)">近30日</button>
+          <button class="trend-tab" id="tt-60" onclick="switchTrendDays(60,this)">近60日</button>
+          <button class="trend-tab" id="tt-all" onclick="switchTrendDays(999,this)">全周期</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="trendSpendChart"></canvas></div>
+    </div>
+    <div class="chart-2col">
+      <div class="chart-half">
+        <div class="chart-half-title">注册 / 付费人数趋势</div>
+        <div class="chart-half-wrap"><canvas id="trendRegChart"></canvas></div>
+      </div>
+      <div class="chart-half">
+        <div class="chart-half-title">付费率 &amp; 注册成本趋势</div>
+        <div class="chart-half-wrap"><canvas id="trendPayRateChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: 用户行为 ═══ -->
+  <div id="page-users" class="page">
+    <div class="section-header" style="margin-top:0"><h3>付费用户画像（纯新）</h3></div>
+    <div class="chart-2col">
+      <div class="chart-half">
+        <div class="chart-half-title">性别分布</div>
+        <div class="chart-half-wrap"><canvas id="userGenderChart"></canvas></div>
+      </div>
+      <div class="chart-half">
+        <div class="chart-half-title">年龄分布</div>
+        <div class="chart-half-wrap"><canvas id="userAgeChart"></canvas></div>
+      </div>
+    </div>
+    <div class="full-chart-card">
+      <div class="full-chart-card-title">每日新增付费人数趋势</div>
+      <div style="position:relative;height:160px"><canvas id="userDailyPayChart"></canvas></div>
+    </div>
+    <div class="chart-2col">
+      <div class="chart-half">
+        <div class="chart-half-title">客单价分布</div>
+        <div class="chart-half-wrap"><canvas id="userAmtChart"></canvas></div>
+      </div>
+      <div class="chart-half" style="display:flex;flex-direction:column;justify-content:center">
+        <div class="chart-half-title">核心指标</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">样本总量</div>
+            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-total">—</div>
+          </div>
+          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">平均客单价</div>
+            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-avg">—</div>
+          </div>
+          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">中位客单价</div>
+            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-median">—</div>
+          </div>
+          <div style="background:#f8f9fc;border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8892a4;margin-bottom:4px">女性占比</div>
+            <div style="font-size:20px;font-weight:700;color:#0f1628" id="us-female">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: 空耗预警 ═══ -->
+  <div id="page-alert" class="page">
+    <div class="section-header" style="margin-top:0"><h3>空耗预警规则</h3></div>
+    <div class="trend-card" style="margin-bottom:16px">
+      <div class="trend-title" style="margin-bottom:16px">当日触发预警的计划</div>
+      <div id="alert-table-wrap"></div>
+    </div>
+    <div class="section-header"><h3>判定规则说明</h3></div>
+    <div class="trend-card">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;font-size:12px">
+        <div style="background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:14px">
+          <div style="font-weight:700;color:#92400e;margin-bottom:6px">⚠️ 高消耗低ROI</div>
+          <div style="color:#78350f;line-height:1.6">当日消耗 &gt; ¥3000 且 ROI0 &lt; 10%，视为空耗风险。</div>
+        </div>
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px">
+          <div style="font-weight:700;color:#991b1b;margin-bottom:6px">🚨 零付费高消耗</div>
+          <div style="color:#7f1d1d;line-height:1.6">当日消耗 &gt; ¥2000 且新增付费 = 0，触发零付预警。</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px">
+          <div style="font-weight:700;color:#166534;margin-bottom:6px">✅ 正常</div>
+          <div style="color:#14532d;line-height:1.6">ROI0 ≥ 15% 且付费率 ≥ 4%，计划健康，无需干预。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
 <script>
 // ════════ DATA ════════
-const FALLBACK = [{"date":"2026-04-09","spend":5415.8,"activate":279,"reg":219,"regCost":24.73,"ai":158,"payCount":14,"payAmount":1447.7,"payCost":386.84,"payRate":6.39,"roi":26.73,"enterRoom":63,"enterRoomRate":28.77,"mic":11,"micRate":5.02,"nextRetention":19.88,"roiCurve":[26.73,72.95,112.09,195.77,299.8782,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-10","spend":5804.45,"activate":257,"reg":215,"regCost":27,"ai":160,"payCount":10,"payAmount":1051.7,"payCost":580.44,"payRate":4.65,"roi":18.12,"enterRoom":75,"enterRoomRate":34.88,"mic":14,"micRate":6.51,"nextRetention":21.76,"roiCurve":[18.12,28.18,36.35,56.41,65.15,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-11","spend":5662.15,"activate":213,"reg":177,"regCost":31.99,"ai":126,"payCount":13,"payAmount":645.6,"payCost":435.55,"payRate":7.34,"roi":11.4,"enterRoom":47,"enterRoomRate":26.55,"mic":13,"micRate":7.34,"nextRetention":20.55,"roiCurve":[11.4,24.02,26.24,33.1,38.4218,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-12","spend":6224.3,"activate":261,"reg":219,"regCost":28.42,"ai":164,"payCount":11,"payAmount":633.7,"payCost":565.85,"payRate":5.02,"roi":10.18,"enterRoom":70,"enterRoomRate":31.96,"mic":16,"micRate":7.31,"nextRetention":15.34,"roiCurve":[10.18,33.07,42.9,61.07,145.671,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-13","spend":4948.6,"activate":213,"reg":171,"regCost":28.94,"ai":121,"payCount":9,"payAmount":459.6,"payCost":549.84,"payRate":5.26,"roi":9.29,"enterRoom":50,"enterRoomRate":29.24,"mic":5,"micRate":2.92,"nextRetention":19.42,"roiCurve":[9.29,19.65,26.52,26.52,32.4435,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-14","spend":5330.83,"activate":230,"reg":176,"regCost":30.29,"ai":112,"payCount":12,"payAmount":1479.6,"payCost":444.24,"payRate":6.82,"roi":27.76,"enterRoom":43,"enterRoomRate":24.43,"mic":10,"micRate":5.68,"nextRetention":25.34,"roiCurve":[27.76,53.23,54.27,57.72,57.9066,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-15","spend":7458.33,"activate":400,"reg":321,"regCost":23.23,"ai":209,"payCount":24,"payAmount":2645.1,"payCost":310.76,"payRate":7.48,"roi":35.47,"enterRoom":99,"enterRoomRate":30.84,"mic":23,"micRate":7.17,"nextRetention":20.16,"roiCurve":[35.47,64.99,119.17,193.03,210.6906,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-16","spend":8210.78,"activate":429,"reg":332,"regCost":24.73,"ai":219,"payCount":24,"payAmount":1923,"payCost":342.12,"payRate":7.23,"roi":23.42,"enterRoom":110,"enterRoomRate":33.13,"mic":35,"micRate":10.54,"nextRetention":15.75,"roiCurve":[23.42,28.75,35.7,54.28,46.2891,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-17","spend":8525.7,"activate":393,"reg":322,"regCost":26.48,"ai":205,"payCount":20,"payAmount":2551.4,"payCost":426.29,"payRate":6.21,"roi":29.93,"enterRoom":98,"enterRoomRate":30.43,"mic":22,"micRate":6.83,"nextRetention":21.96,"roiCurve":[29.93,81.32,181.43,212.25,212.331,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-18","spend":11609.92,"activate":476,"reg":401,"regCost":28.95,"ai":248,"payCount":22,"payAmount":969.6,"payCost":527.72,"payRate":5.49,"roi":8.35,"enterRoom":102,"enterRoomRate":25.44,"mic":19,"micRate":4.74,"nextRetention":17.2,"roiCurve":[8.35,14.93,23.67,27.5,27.8116,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-19","spend":10519.33,"activate":529,"reg":444,"regCost":23.69,"ai":250,"payCount":21,"payAmount":1703.5,"payCost":500.92,"payRate":4.73,"roi":16.19,"enterRoom":125,"enterRoomRate":28.15,"mic":26,"micRate":5.86,"nextRetention":12.6,"roiCurve":[16.19,21.78,23.73,33.88,63.5497,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-20","spend":9388.68,"activate":456,"reg":382,"regCost":24.58,"ai":228,"payCount":23,"payAmount":1191.8,"payCost":408.2,"payRate":6.02,"roi":12.69,"enterRoom":98,"enterRoomRate":25.65,"mic":24,"micRate":6.28,"nextRetention":14.29,"roiCurve":[12.69,17.04,19.7,20.72,34.2913,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-21","spend":8629.06,"activate":432,"reg":339,"regCost":25.45,"ai":207,"payCount":22,"payAmount":3617.7,"payCost":392.23,"payRate":6.49,"roi":41.92,"enterRoom":100,"enterRoomRate":29.5,"mic":23,"micRate":6.78,"nextRetention":19.08,"roiCurve":[41.92,94.84,122.92,192.52,206.5938,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-22","spend":6618.76,"activate":322,"reg":248,"regCost":26.69,"ai":149,"payCount":14,"payAmount":863.5,"payCost":472.77,"payRate":5.65,"roi":13.05,"enterRoom":73,"enterRoomRate":29.44,"mic":20,"micRate":8.06,"nextRetention":16.24,"roiCurve":[13.05,50,60.74,17.6121,18.9688,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-23","spend":6687.19,"activate":321,"reg":243,"regCost":27.52,"ai":149,"payCount":12,"payAmount":1865.6,"payCost":557.27,"payRate":4.94,"roi":27.9,"enterRoom":71,"enterRoomRate":29.22,"mic":13,"micRate":5.35,"nextRetention":19.19,"roiCurve":[27.9,58.53,77.37,117.2256,208.1921,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-24","spend":5925.92,"activate":327,"reg":253,"regCost":23.42,"ai":133,"payCount":10,"payAmount":969.4,"payCost":592.59,"payRate":3.95,"roi":16.36,"enterRoom":63,"enterRoomRate":24.9,"mic":10,"micRate":3.95,"nextRetention":14.21,"roiCurve":[16.36,19.29,24.83,14.7386,17.0336,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-25","spend":7206.92,"activate":432,"reg":345,"regCost":20.89,"ai":207,"payCount":17,"payAmount":849.6,"payCost":423.94,"payRate":4.93,"roi":11.79,"enterRoom":108,"enterRoomRate":31.3,"mic":20,"micRate":5.8,"nextRetention":15.2,"roiCurve":[11.79,26.22,36.15,48.9793,86.879,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-26","spend":10097.95,"activate":444,"reg":356,"regCost":28.37,"ai":249,"payCount":20,"payAmount":1747.3,"payCost":504.9,"payRate":5.62,"roi":17.3,"enterRoom":115,"enterRoomRate":32.3,"mic":28,"micRate":7.87,"nextRetention":12.62,"roiCurve":[17.3,17.81,18.51,17.3758,25.2972,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-27","spend":5912.59,"activate":322,"reg":247,"regCost":23.94,"ai":144,"payCount":15,"payAmount":1393.5,"payCost":394.17,"payRate":6.07,"roi":23.57,"enterRoom":73,"enterRoomRate":29.55,"mic":19,"micRate":7.69,"nextRetention":15.2,"roiCurve":[23.57,28.3,39.49,37.4675,41.2222,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-28","spend":4837.93,"activate":317,"reg":242,"regCost":19.99,"ai":149,"payCount":10,"payAmount":675.6,"payCost":483.79,"payRate":4.13,"roi":13.96,"enterRoom":73,"enterRoomRate":30.17,"mic":19,"micRate":7.85,"nextRetention":18.09,"roiCurve":[13.96,69.93,87.78,27.9706,33.5061,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-29","spend":4610.68,"activate":286,"reg":213,"regCost":21.65,"ai":117,"payCount":10,"payAmount":223.8,"payCost":461.07,"payRate":4.69,"roi":4.85,"enterRoom":57,"enterRoomRate":26.76,"mic":10,"micRate":4.69,"nextRetention":13.11,"roiCurve":[4.85,7.01,17.2,19.3377,20.2486,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-30","spend":4753.28,"activate":247,"reg":200,"regCost":23.77,"ai":104,"payCount":12,"payAmount":1029.4,"payCost":396.11,"payRate":6,"roi":21.66,"enterRoom":58,"enterRoomRate":29,"mic":15,"micRate":7.5,"nextRetention":20.65,"roiCurve":[21.66,41.72,72.31,87.285,122.2314,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-01","spend":3767.59,"activate":238,"reg":198,"regCost":19.03,"ai":120,"payCount":13,"payAmount":697.5,"payCost":289.81,"payRate":6.57,"roi":18.51,"enterRoom":53,"enterRoomRate":26.77,"mic":11,"micRate":5.56,"nextRetention":14.29,"roiCurve":[18.51,21.75,23.18,23.97,25.8282,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-02","spend":5538.23,"activate":310,"reg":252,"regCost":21.98,"ai":161,"payCount":11,"payAmount":919.7,"payCost":503.48,"payRate":4.37,"roi":16.61,"enterRoom":73,"enterRoomRate":28.97,"mic":15,"micRate":5.95,"nextRetention":13.04,"roiCurve":[16.61,18.95,19.06,19.06,19.0584,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-03","spend":6014.84,"activate":287,"reg":253,"regCost":23.77,"ai":156,"payCount":16,"payAmount":1469.6,"payCost":375.93,"payRate":6.32,"roi":24.43,"enterRoom":70,"enterRoomRate":27.67,"mic":18,"micRate":7.11,"nextRetention":18.18,"roiCurve":[24.43,39.33,42.58,71.91,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-04","spend":4374.6,"activate":238,"reg":210,"regCost":20.83,"ai":126,"payCount":13,"payAmount":973.7,"payCost":336.51,"payRate":6.19,"roi":22.26,"enterRoom":61,"enterRoomRate":29.05,"mic":20,"micRate":9.52,"nextRetention":17.24,"roiCurve":[22.26,35.83,36.06,39.9,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-05","spend":4848.01,"activate":293,"reg":269,"regCost":18.02,"ai":170,"payCount":14,"payAmount":633.5,"payCost":346.29,"payRate":5.2,"roi":13.07,"enterRoom":82,"enterRoomRate":30.48,"mic":18,"micRate":6.69,"nextRetention":27.27,"roiCurve":[13.07,69.01,94.41,178.36,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-06","spend":4009.12,"activate":253,"reg":219,"regCost":18.31,"ai":141,"payCount":4,"payAmount":195.9,"payCost":1002.28,"payRate":1.83,"roi":4.89,"enterRoom":76,"enterRoomRate":34.7,"mic":11,"micRate":5.02,"nextRetention":17.51,"roiCurve":[4.89,5.63,5.63,5.6322,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-07","spend":4002.7,"activate":269,"reg":219,"regCost":18.28,"ai":132,"payCount":12,"payAmount":621.5,"payCost":333.56,"payRate":5.48,"roi":15.53,"enterRoom":60,"enterRoomRate":27.4,"mic":10,"micRate":4.57,"nextRetention":15.08,"roiCurve":[15.53,14.53,26.77,28.2684,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-08","spend":3993.77,"activate":290,"reg":233,"regCost":17.14,"ai":142,"payCount":11,"payAmount":1099.7,"payCost":363.07,"payRate":4.72,"roi":27.54,"enterRoom":61,"enterRoomRate":26.18,"mic":12,"micRate":5.15,"nextRetention":20.2,"roiCurve":[27.54,31.59,33.09,33.8402,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-09","spend":3414.18,"activate":294,"reg":256,"regCost":13.34,"ai":157,"payCount":6,"payAmount":291.8,"payCost":569.03,"payRate":2.34,"roi":8.55,"enterRoom":72,"enterRoomRate":28.12,"mic":8,"micRate":3.12,"nextRetention":15.07,"roiCurve":[8.55,11.71,11.71,11.71,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-10","spend":3285.52,"activate":288,"reg":243,"regCost":13.52,"ai":143,"payCount":8,"payAmount":561.9,"payCost":410.69,"payRate":3.29,"roi":17.1,"enterRoom":51,"enterRoomRate":20.99,"mic":12,"micRate":4.94,"nextRetention":15.28,"roiCurve":[17.1,21.73,26.11,33.0511,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-11","spend":5676.33,"activate":323,"reg":261,"regCost":21.75,"ai":165,"payCount":14,"payAmount":367.3,"payCost":405.45,"payRate":5.36,"roi":6.47,"enterRoom":91,"enterRoomRate":34.87,"mic":11,"micRate":4.21,"nextRetention":22.62,"roiCurve":[6.47,15.02,22.35,28.9025,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-12","spend":6102.61,"activate":304,"reg":257,"regCost":23.75,"ai":163,"payCount":11,"payAmount":718.8,"payCost":554.78,"payRate":4.28,"roi":11.78,"enterRoom":75,"enterRoomRate":29.18,"mic":26,"micRate":10.12,"nextRetention":17.21,"roiCurve":[11.78,22.13,22.13,22.1315,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-13","spend":6582.35,"activate":328,"reg":266,"regCost":24.75,"ai":153,"payCount":17,"payAmount":2087.8,"payCost":387.2,"payRate":6.39,"roi":31.72,"enterRoom":99,"enterRoomRate":37.22,"mic":20,"micRate":7.52,"nextRetention":12.39,"roiCurve":[31.72,42.9,45.51,49.2134,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-14","spend":7190.57,"activate":327,"reg":269,"regCost":26.73,"ai":176,"payCount":16,"payAmount":1937.2,"payCost":449.41,"payRate":5.95,"roi":26.94,"enterRoom":111,"enterRoomRate":41.26,"mic":24,"micRate":8.92,"nextRetention":22.61,"roiCurve":[26.94,144.2,226.86,312.0212,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-15","spend":5445.75,"activate":337,"reg":283,"regCost":19.24,"ai":185,"payCount":13,"payAmount":837.8,"payCost":418.9,"payRate":4.59,"roi":15.38,"enterRoom":102,"enterRoomRate":36.04,"mic":28,"micRate":9.89,"nextRetention":15.64,"roiCurve":[15.38,29.04,37.15,55.4047,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-16","spend":8361.69,"activate":400,"reg":313,"regCost":26.71,"ai":189,"payCount":32,"payAmount":1867.2,"payCost":261.3,"payRate":10.22,"roi":22.33,"enterRoom":124,"enterRoomRate":39.62,"mic":30,"micRate":9.58,"nextRetention":16.14,"roiCurve":[22.33,37.42,48.99,69.1726,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-17","spend":14288.9,"activate":543,"reg":466,"regCost":30.66,"ai":344,"payCount":40,"payAmount":1977,"payCost":357.22,"payRate":8.58,"roi":13.84,"enterRoom":172,"enterRoomRate":36.91,"mic":53,"micRate":11.37,"nextRetention":19.86,"roiCurve":[13.84,24.33,41.75,106.1873,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-18","spend":16339.84,"activate":744,"reg":661,"regCost":24.72,"ai":464,"payCount":40,"payAmount":2600.6,"payCost":408.5,"payRate":6.05,"roi":15.92,"enterRoom":260,"enterRoomRate":39.33,"mic":67,"micRate":10.14,"nextRetention":16.64,"roiCurve":[15.92,40.14,70.87,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-19","spend":12396.72,"activate":594,"reg":523,"regCost":23.7,"ai":357,"payCount":32,"payAmount":1071.5,"payCost":387.4,"payRate":6.12,"roi":8.64,"enterRoom":189,"enterRoomRate":36.14,"mic":50,"micRate":9.56,"nextRetention":16.57,"roiCurve":[8.64,17.76,29.67,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-20","spend":11767.4,"activate":576,"reg":489,"regCost":24.06,"ai":338,"payCount":34,"payAmount":3249.1,"payCost":346.1,"payRate":6.95,"roi":27.61,"enterRoom":193,"enterRoomRate":39.47,"mic":45,"micRate":9.2,"nextRetention":12.69,"roiCurve":[27.61,28.97,29.36,30.208,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.4706},{"date":"2026-05-21","spend":11107.31,"activate":551,"reg":468,"regCost":23.73,"ai":306,"payCount":32,"payAmount":1484.8,"payCost":347.1,"payRate":6.84,"roi":13.37,"enterRoom":175,"enterRoomRate":37.39,"mic":51,"micRate":10.9,"nextRetention":17.19,"roiCurve":[13.37,20.3866,22.6373,26.903,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.7097},{"date":"2026-05-22","spend":8879.99,"activate":428,"reg":365,"regCost":24.33,"ai":238,"payCount":15,"payAmount":1139.4,"payCost":592,"payRate":4.11,"roi":12.83,"enterRoom":151,"enterRoomRate":41.37,"mic":42,"micRate":11.51,"nextRetention":11.21,"roiCurve":[12.83,18.0552,18.866,24.7444,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.7143},{"date":"2026-05-23","spend":7685.66,"activate":411,"reg":334,"regCost":23.01,"ai":221,"payCount":19,"payAmount":751.8,"payCost":404.51,"payRate":5.69,"roi":9.78,"enterRoom":111,"enterRoomRate":33.23,"mic":23,"micRate":6.89,"nextRetention":13.73,"roiCurve":[9.78,23.1782,35.4088,45.0892,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.3158},{"date":"2026-05-24","spend":8539.4,"activate":599,"reg":493,"regCost":17.32,"ai":315,"payCount":15,"payAmount":297.4,"payCost":569.29,"payRate":3.04,"roi":3.48,"enterRoom":170,"enterRoomRate":34.48,"mic":34,"micRate":6.9,"nextRetention":10.9,"roiCurve":[3.48,7.4373,11.6296,37.1302,null,null,null,null,null,null,null,null,null,null,null,null],"pret":6.6667},{"date":"2026-05-25","spend":8803.63,"activate":671,"reg":557,"regCost":15.81,"ai":394,"payCount":30,"payAmount":1869,"payCost":293.45,"payRate":5.39,"roi":21.23,"enterRoom":210,"enterRoomRate":37.7,"mic":59,"micRate":10.59,"nextRetention":11.57,"roiCurve":[21.23,44.013,75.5192,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.3333},{"date":"2026-05-26","spend":11506.99,"activate":718,"reg":611,"regCost":18.83,"ai":433,"payCount":23,"payAmount":1439.7,"payCost":500.3,"payRate":3.7643,"roi":12.5115,"enterRoom":231,"enterRoomRate":37.8069,"mic":49,"micRate":8.0196,"nextRetention":15.371,"roiCurve":[12.5115,23.1459,38.0734,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":54.5455},{"date":"2026-05-27","spend":4567.44,"activate":388,"reg":322,"regCost":14.18,"ai":234,"payCount":13,"payAmount":561.8,"payCost":351.34,"payRate":4.0373,"roi":12.3001,"enterRoom":127,"enterRoomRate":39.441,"mic":24,"micRate":7.4534,"nextRetention":19.2308,"roiCurve":[12.3001,19.466,26.0277,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":63.6364},{"date":"2026-05-28","spend":4882.76,"activate":308,"reg":250,"regCost":19.53,"ai":180,"payCount":17,"payAmount":1071.2,"payCost":287.22,"payRate":6.8,"roi":21.9384,"enterRoom":111,"enterRoomRate":44.4,"mic":28,"micRate":11.2,"nextRetention":21.3636,"roiCurve":[21.9384,44.0018,53.906,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":46.6667},{"date":"2026-05-29","spend":7552.68,"activate":457,"reg":398,"regCost":18.98,"ai":286,"payCount":27,"payAmount":2729.4,"payCost":279.73,"payRate":6.7839,"roi":36.1382,"enterRoom":153,"enterRoomRate":38.4422,"mic":37,"micRate":9.2965,"nextRetention":11.326,"roiCurve":[36.1382,86.9532,115.0757,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":32},{"date":"2026-05-30","spend":10686.67,"activate":521,"reg":438,"regCost":24.4,"ai":345,"payCount":37,"payAmount":3412.7,"payCost":288.83,"payRate":8.4475,"roi":31.9342,"enterRoom":190,"enterRoomRate":43.379,"mic":48,"micRate":10.9589,"nextRetention":15.8025,"roiCurve":[31.9342,54.8197,79.4298,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.8889},{"date":"2026-05-31","spend":7831.54,"activate":360,"reg":304,"regCost":25.76,"ai":223,"payCount":23,"payAmount":1578.3,"payCost":340.5,"payRate":7.5658,"roi":20.1531,"enterRoom":135,"enterRoomRate":44.4079,"mic":34,"micRate":11.1842,"nextRetention":13.9286,"roiCurve":[20.1531,32.4112,46.0727,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":52.1739},{"date":"2026-06-01","spend":8687.79,"activate":745,"reg":640,"regCost":13.57,"ai":488,"payCount":30,"payAmount":1677.6,"payCost":289.59,"payRate":4.6875,"roi":19.3099,"enterRoom":253,"enterRoomRate":39.5312,"mic":56,"micRate":8.75,"nextRetention":16.5584,"roiCurve":[19.3099,27.4456,51.6273,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":30},{"date":"2026-06-02","spend":17462.2,"activate":1656,"reg":1498,"regCost":11.66,"ai":1174,"payCount":53,"payAmount":2290.5,"payCost":329.48,"payRate":3.5381,"roi":13.1169,"enterRoom":549,"enterRoomRate":36.6489,"mic":101,"micRate":6.7423,"nextRetention":11.7808,"roiCurve":[13.1169,19.5953,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.9623},{"date":"2026-06-03","spend":13599.5,"activate":913,"reg":802,"regCost":16.96,"ai":615,"payCount":42,"payAmount":2133.2,"payCost":323.8,"payRate":5.2369,"roi":15.6859,"enterRoom":293,"enterRoomRate":36.5337,"mic":67,"micRate":8.3541,"nextRetention":12.1053,"roiCurve":[15.6859,25.062,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":41.4634},{"date":"2026-06-04","spend":7081.76,"activate":546,"reg":458,"regCost":15.46,"ai":349,"payCount":20,"payAmount":1823.1,"payCost":354.09,"payRate":4.3668,"roi":25.7436,"enterRoom":166,"enterRoomRate":36.2445,"mic":35,"micRate":7.6419,"nextRetention":14.1876,"roiCurve":[25.7436,41.1602,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-05","spend":6424.76,"activate":577,"reg":487,"regCost":13.19,"ai":352,"payCount":17,"payAmount":907.6,"payCost":377.93,"payRate":3.4908,"roi":14.1266,"enterRoom":179,"enterRoomRate":36.7556,"mic":43,"micRate":8.8296,"nextRetention":11.6331,"roiCurve":[14.1266,18.8552,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.2941},{"date":"2026-06-06","spend":4470.88,"activate":447,"reg":378,"regCost":11.83,"ai":287,"payCount":11,"payAmount":915.6,"payCost":406.44,"payRate":2.9101,"roi":20.4792,"enterRoom":142,"enterRoomRate":37.5661,"mic":24,"micRate":6.3492,"nextRetention":12.3919,"roiCurve":[20.4792,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-07","spend":13515.9,"activate":1284,"reg":1131,"regCost":11.95,"ai":894,"payCount":57,"payAmount":3032.4,"payCost":237.12,"payRate":5.0398,"roi":22.4358,"enterRoom":422,"enterRoomRate":37.3121,"mic":89,"micRate":7.8691,"nextRetention":13.4913,"roiCurve":[22.4358,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":25.4545},{"date":"2026-06-08","spend":11036.19,"activate":936,"reg":821,"regCost":13.44,"ai":600,"payCount":51,"payAmount":4693.1,"payCost":216.4,"payRate":6.2119,"roi":42.5246,"enterRoom":284,"enterRoomRate":34.592,"mic":66,"micRate":8.039,"nextRetention":null,"roiCurve":[42.5246,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":null}];
+const FALLBACK = [{"date":"2026-04-09","spend":5415.8,"activate":279,"reg":219,"regCost":24.73,"ai":158,"payCount":14,"payAmount":1447.7,"payCost":386.84,"payRate":6.39,"roi":26.73,"enterRoom":63,"enterRoomRate":28.77,"mic":11,"micRate":5.02,"nextRetention":19.88,"roiCurve":[26.73,72.95,112.09,195.77,299.8782,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-10","spend":5804.45,"activate":257,"reg":215,"regCost":27,"ai":160,"payCount":10,"payAmount":1051.7,"payCost":580.44,"payRate":4.65,"roi":18.12,"enterRoom":75,"enterRoomRate":34.88,"mic":14,"micRate":6.51,"nextRetention":21.76,"roiCurve":[18.12,28.18,36.35,56.41,65.15,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-11","spend":5662.15,"activate":213,"reg":177,"regCost":31.99,"ai":126,"payCount":13,"payAmount":645.6,"payCost":435.55,"payRate":7.34,"roi":11.4,"enterRoom":47,"enterRoomRate":26.55,"mic":13,"micRate":7.34,"nextRetention":20.55,"roiCurve":[11.4,24.02,26.24,33.1,38.4218,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-12","spend":6224.3,"activate":261,"reg":219,"regCost":28.42,"ai":164,"payCount":11,"payAmount":633.7,"payCost":565.85,"payRate":5.02,"roi":10.18,"enterRoom":70,"enterRoomRate":31.96,"mic":16,"micRate":7.31,"nextRetention":15.34,"roiCurve":[10.18,33.07,42.9,61.07,145.671,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-13","spend":4948.6,"activate":213,"reg":171,"regCost":28.94,"ai":121,"payCount":9,"payAmount":459.6,"payCost":549.84,"payRate":5.26,"roi":9.29,"enterRoom":50,"enterRoomRate":29.24,"mic":5,"micRate":2.92,"nextRetention":19.42,"roiCurve":[9.29,19.65,26.52,26.52,32.4435,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-14","spend":5330.83,"activate":230,"reg":176,"regCost":30.29,"ai":112,"payCount":12,"payAmount":1479.6,"payCost":444.24,"payRate":6.82,"roi":27.76,"enterRoom":43,"enterRoomRate":24.43,"mic":10,"micRate":5.68,"nextRetention":25.34,"roiCurve":[27.76,53.23,54.27,57.72,57.9066,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-15","spend":7458.33,"activate":400,"reg":321,"regCost":23.23,"ai":209,"payCount":24,"payAmount":2645.1,"payCost":310.76,"payRate":7.48,"roi":35.47,"enterRoom":99,"enterRoomRate":30.84,"mic":23,"micRate":7.17,"nextRetention":20.16,"roiCurve":[35.47,64.99,119.17,193.03,210.6906,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-16","spend":8210.78,"activate":429,"reg":332,"regCost":24.73,"ai":219,"payCount":24,"payAmount":1923,"payCost":342.12,"payRate":7.23,"roi":23.42,"enterRoom":110,"enterRoomRate":33.13,"mic":35,"micRate":10.54,"nextRetention":15.75,"roiCurve":[23.42,28.75,35.7,54.28,46.2891,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-17","spend":8525.7,"activate":393,"reg":322,"regCost":26.48,"ai":205,"payCount":20,"payAmount":2551.4,"payCost":426.29,"payRate":6.21,"roi":29.93,"enterRoom":98,"enterRoomRate":30.43,"mic":22,"micRate":6.83,"nextRetention":21.96,"roiCurve":[29.93,81.32,181.43,212.25,212.331,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-18","spend":11609.92,"activate":476,"reg":401,"regCost":28.95,"ai":248,"payCount":22,"payAmount":969.6,"payCost":527.72,"payRate":5.49,"roi":8.35,"enterRoom":102,"enterRoomRate":25.44,"mic":19,"micRate":4.74,"nextRetention":17.2,"roiCurve":[8.35,14.93,23.67,27.5,27.8116,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-19","spend":10519.33,"activate":529,"reg":444,"regCost":23.69,"ai":250,"payCount":21,"payAmount":1703.5,"payCost":500.92,"payRate":4.73,"roi":16.19,"enterRoom":125,"enterRoomRate":28.15,"mic":26,"micRate":5.86,"nextRetention":12.6,"roiCurve":[16.19,21.78,23.73,33.88,63.5497,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-20","spend":9388.68,"activate":456,"reg":382,"regCost":24.58,"ai":228,"payCount":23,"payAmount":1191.8,"payCost":408.2,"payRate":6.02,"roi":12.69,"enterRoom":98,"enterRoomRate":25.65,"mic":24,"micRate":6.28,"nextRetention":14.29,"roiCurve":[12.69,17.04,19.7,20.72,34.2913,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-21","spend":8629.06,"activate":432,"reg":339,"regCost":25.45,"ai":207,"payCount":22,"payAmount":3617.7,"payCost":392.23,"payRate":6.49,"roi":41.92,"enterRoom":100,"enterRoomRate":29.5,"mic":23,"micRate":6.78,"nextRetention":19.08,"roiCurve":[41.92,94.84,122.92,192.52,206.5938,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-22","spend":6618.76,"activate":322,"reg":248,"regCost":26.69,"ai":149,"payCount":14,"payAmount":863.5,"payCost":472.77,"payRate":5.65,"roi":13.05,"enterRoom":73,"enterRoomRate":29.44,"mic":20,"micRate":8.06,"nextRetention":16.24,"roiCurve":[13.05,50,60.74,17.6121,18.9688,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-23","spend":6687.19,"activate":321,"reg":243,"regCost":27.52,"ai":149,"payCount":12,"payAmount":1865.6,"payCost":557.27,"payRate":4.94,"roi":27.9,"enterRoom":71,"enterRoomRate":29.22,"mic":13,"micRate":5.35,"nextRetention":19.19,"roiCurve":[27.9,58.53,77.37,117.2256,208.1921,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-24","spend":5925.92,"activate":327,"reg":253,"regCost":23.42,"ai":133,"payCount":10,"payAmount":969.4,"payCost":592.59,"payRate":3.95,"roi":16.36,"enterRoom":63,"enterRoomRate":24.9,"mic":10,"micRate":3.95,"nextRetention":14.21,"roiCurve":[16.36,19.29,24.83,14.7386,17.0336,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-25","spend":7206.92,"activate":432,"reg":345,"regCost":20.89,"ai":207,"payCount":17,"payAmount":849.6,"payCost":423.94,"payRate":4.93,"roi":11.79,"enterRoom":108,"enterRoomRate":31.3,"mic":20,"micRate":5.8,"nextRetention":15.2,"roiCurve":[11.79,26.22,36.15,48.9793,86.879,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-26","spend":10097.95,"activate":444,"reg":356,"regCost":28.37,"ai":249,"payCount":20,"payAmount":1747.3,"payCost":504.9,"payRate":5.62,"roi":17.3,"enterRoom":115,"enterRoomRate":32.3,"mic":28,"micRate":7.87,"nextRetention":12.62,"roiCurve":[17.3,17.81,18.51,17.3758,25.2972,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-27","spend":5912.59,"activate":322,"reg":247,"regCost":23.94,"ai":144,"payCount":15,"payAmount":1393.5,"payCost":394.17,"payRate":6.07,"roi":23.57,"enterRoom":73,"enterRoomRate":29.55,"mic":19,"micRate":7.69,"nextRetention":15.2,"roiCurve":[23.57,28.3,39.49,37.4675,41.2222,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-28","spend":4837.93,"activate":317,"reg":242,"regCost":19.99,"ai":149,"payCount":10,"payAmount":675.6,"payCost":483.79,"payRate":4.13,"roi":13.96,"enterRoom":73,"enterRoomRate":30.17,"mic":19,"micRate":7.85,"nextRetention":18.09,"roiCurve":[13.96,69.93,87.78,27.9706,33.5061,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-29","spend":4610.68,"activate":286,"reg":213,"regCost":21.65,"ai":117,"payCount":10,"payAmount":223.8,"payCost":461.07,"payRate":4.69,"roi":4.85,"enterRoom":57,"enterRoomRate":26.76,"mic":10,"micRate":4.69,"nextRetention":13.11,"roiCurve":[4.85,7.01,17.2,19.3377,20.2486,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-04-30","spend":4753.28,"activate":247,"reg":200,"regCost":23.77,"ai":104,"payCount":12,"payAmount":1029.4,"payCost":396.11,"payRate":6,"roi":21.66,"enterRoom":58,"enterRoomRate":29,"mic":15,"micRate":7.5,"nextRetention":20.65,"roiCurve":[21.66,41.72,72.31,87.285,122.2314,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-01","spend":3767.59,"activate":238,"reg":198,"regCost":19.03,"ai":120,"payCount":13,"payAmount":697.5,"payCost":289.81,"payRate":6.57,"roi":18.51,"enterRoom":53,"enterRoomRate":26.77,"mic":11,"micRate":5.56,"nextRetention":14.29,"roiCurve":[18.51,21.75,23.18,23.97,25.8282,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-02","spend":5538.23,"activate":310,"reg":252,"regCost":21.98,"ai":161,"payCount":11,"payAmount":919.7,"payCost":503.48,"payRate":4.37,"roi":16.61,"enterRoom":73,"enterRoomRate":28.97,"mic":15,"micRate":5.95,"nextRetention":13.04,"roiCurve":[16.61,18.95,19.06,19.06,19.0584,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-03","spend":6014.84,"activate":287,"reg":253,"regCost":23.77,"ai":156,"payCount":16,"payAmount":1469.6,"payCost":375.93,"payRate":6.32,"roi":24.43,"enterRoom":70,"enterRoomRate":27.67,"mic":18,"micRate":7.11,"nextRetention":18.18,"roiCurve":[24.43,39.33,42.58,71.91,217.7348,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-04","spend":4374.6,"activate":238,"reg":210,"regCost":20.83,"ai":126,"payCount":13,"payAmount":973.7,"payCost":336.51,"payRate":6.19,"roi":22.26,"enterRoom":61,"enterRoomRate":29.05,"mic":20,"micRate":9.52,"nextRetention":17.24,"roiCurve":[22.26,35.83,36.06,39.9,50.9647,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-05","spend":4848.01,"activate":293,"reg":269,"regCost":18.02,"ai":170,"payCount":14,"payAmount":633.5,"payCost":346.29,"payRate":5.2,"roi":13.07,"enterRoom":82,"enterRoomRate":30.48,"mic":18,"micRate":6.69,"nextRetention":27.27,"roiCurve":[13.07,69.01,94.41,178.36,307.1363,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-06","spend":4009.12,"activate":253,"reg":219,"regCost":18.31,"ai":141,"payCount":4,"payAmount":195.9,"payCost":1002.28,"payRate":1.83,"roi":4.89,"enterRoom":76,"enterRoomRate":34.7,"mic":11,"micRate":5.02,"nextRetention":17.51,"roiCurve":[4.89,5.63,5.63,5.6322,7.5752,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-07","spend":4002.7,"activate":269,"reg":219,"regCost":18.28,"ai":132,"payCount":12,"payAmount":621.5,"payCost":333.56,"payRate":5.48,"roi":15.53,"enterRoom":60,"enterRoomRate":27.4,"mic":10,"micRate":4.57,"nextRetention":15.08,"roiCurve":[15.53,14.53,26.77,28.2684,50.3935,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-08","spend":3993.77,"activate":290,"reg":233,"regCost":17.14,"ai":142,"payCount":11,"payAmount":1099.7,"payCost":363.07,"payRate":4.72,"roi":27.54,"enterRoom":61,"enterRoomRate":26.18,"mic":12,"micRate":5.15,"nextRetention":20.2,"roiCurve":[27.54,31.59,33.09,33.8402,40.755,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-09","spend":3414.18,"activate":294,"reg":256,"regCost":13.34,"ai":157,"payCount":6,"payAmount":291.8,"payCost":569.03,"payRate":2.34,"roi":8.55,"enterRoom":72,"enterRoomRate":28.12,"mic":8,"micRate":3.12,"nextRetention":15.07,"roiCurve":[8.55,11.71,11.71,11.71,11.8857,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-10","spend":3285.52,"activate":288,"reg":243,"regCost":13.52,"ai":143,"payCount":8,"payAmount":561.9,"payCost":410.69,"payRate":3.29,"roi":17.1,"enterRoom":51,"enterRoomRate":20.99,"mic":12,"micRate":4.94,"nextRetention":15.28,"roiCurve":[17.1,21.73,26.11,33.0511,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-11","spend":5676.33,"activate":323,"reg":261,"regCost":21.75,"ai":165,"payCount":14,"payAmount":367.3,"payCost":405.45,"payRate":5.36,"roi":6.47,"enterRoom":91,"enterRoomRate":34.87,"mic":11,"micRate":4.21,"nextRetention":22.62,"roiCurve":[6.47,15.02,22.35,28.9025,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-12","spend":6102.61,"activate":304,"reg":257,"regCost":23.75,"ai":163,"payCount":11,"payAmount":718.8,"payCost":554.78,"payRate":4.28,"roi":11.78,"enterRoom":75,"enterRoomRate":29.18,"mic":26,"micRate":10.12,"nextRetention":17.21,"roiCurve":[11.78,22.13,22.13,22.1315,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-13","spend":6582.35,"activate":328,"reg":266,"regCost":24.75,"ai":153,"payCount":17,"payAmount":2087.8,"payCost":387.2,"payRate":6.39,"roi":31.72,"enterRoom":99,"enterRoomRate":37.22,"mic":20,"micRate":7.52,"nextRetention":12.39,"roiCurve":[31.72,42.9,45.51,49.2134,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-14","spend":7190.57,"activate":327,"reg":269,"regCost":26.73,"ai":176,"payCount":16,"payAmount":1937.2,"payCost":449.41,"payRate":5.95,"roi":26.94,"enterRoom":111,"enterRoomRate":41.26,"mic":24,"micRate":8.92,"nextRetention":22.61,"roiCurve":[26.94,144.2,226.86,312.0212,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-15","spend":5445.75,"activate":337,"reg":283,"regCost":19.24,"ai":185,"payCount":13,"payAmount":837.8,"payCost":418.9,"payRate":4.59,"roi":15.38,"enterRoom":102,"enterRoomRate":36.04,"mic":28,"micRate":9.89,"nextRetention":15.64,"roiCurve":[15.38,29.04,37.15,55.4047,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-16","spend":8361.69,"activate":400,"reg":313,"regCost":26.71,"ai":189,"payCount":32,"payAmount":1867.2,"payCost":261.3,"payRate":10.22,"roi":22.33,"enterRoom":124,"enterRoomRate":39.62,"mic":30,"micRate":9.58,"nextRetention":16.14,"roiCurve":[22.33,37.42,48.99,69.1726,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-17","spend":14288.9,"activate":543,"reg":466,"regCost":30.66,"ai":344,"payCount":40,"payAmount":1977,"payCost":357.22,"payRate":8.58,"roi":13.84,"enterRoom":172,"enterRoomRate":36.91,"mic":53,"micRate":11.37,"nextRetention":19.86,"roiCurve":[13.84,24.33,41.75,106.1873,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-18","spend":16339.84,"activate":744,"reg":661,"regCost":24.72,"ai":464,"payCount":40,"payAmount":2600.6,"payCost":408.5,"payRate":6.05,"roi":15.92,"enterRoom":260,"enterRoomRate":39.33,"mic":67,"micRate":10.14,"nextRetention":16.64,"roiCurve":[15.92,40.14,70.87,117.954,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-19","spend":12396.72,"activate":594,"reg":523,"regCost":23.7,"ai":357,"payCount":32,"payAmount":1071.5,"payCost":387.4,"payRate":6.12,"roi":8.64,"enterRoom":189,"enterRoomRate":36.14,"mic":50,"micRate":9.56,"nextRetention":16.57,"roiCurve":[8.64,17.76,29.67,35.2553,null,null,null,null,null,null,null,null,null,null,null,null]},{"date":"2026-05-20","spend":11767.4,"activate":576,"reg":489,"regCost":24.06,"ai":338,"payCount":34,"payAmount":3249.1,"payCost":346.1,"payRate":6.95,"roi":27.61,"enterRoom":193,"enterRoomRate":39.47,"mic":45,"micRate":9.2,"nextRetention":12.69,"roiCurve":[27.61,28.97,29.36,30.208,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.4706},{"date":"2026-05-21","spend":11107.31,"activate":551,"reg":468,"regCost":23.73,"ai":306,"payCount":32,"payAmount":1484.8,"payCost":347.1,"payRate":6.84,"roi":13.37,"enterRoom":175,"enterRoomRate":37.39,"mic":51,"micRate":10.9,"nextRetention":17.19,"roiCurve":[13.37,20.3866,22.6373,26.903,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.7097},{"date":"2026-05-22","spend":8879.99,"activate":428,"reg":365,"regCost":24.33,"ai":238,"payCount":15,"payAmount":1139.4,"payCost":592,"payRate":4.11,"roi":12.83,"enterRoom":151,"enterRoomRate":41.37,"mic":42,"micRate":11.51,"nextRetention":11.21,"roiCurve":[12.83,18.0552,18.866,24.7444,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.7143},{"date":"2026-05-23","spend":7685.66,"activate":411,"reg":334,"regCost":23.01,"ai":221,"payCount":19,"payAmount":751.8,"payCost":404.51,"payRate":5.69,"roi":9.78,"enterRoom":111,"enterRoomRate":33.23,"mic":23,"micRate":6.89,"nextRetention":13.73,"roiCurve":[9.78,23.1782,35.4088,45.0892,null,null,null,null,null,null,null,null,null,null,null,null],"pret":26.3158},{"date":"2026-05-24","spend":8539.4,"activate":599,"reg":493,"regCost":17.32,"ai":315,"payCount":15,"payAmount":297.4,"payCost":569.29,"payRate":3.04,"roi":3.48,"enterRoom":170,"enterRoomRate":34.48,"mic":34,"micRate":6.9,"nextRetention":10.9,"roiCurve":[3.48,7.4373,11.6296,37.1302,null,null,null,null,null,null,null,null,null,null,null,null],"pret":6.6667},{"date":"2026-05-25","spend":8803.63,"activate":671,"reg":557,"regCost":15.81,"ai":394,"payCount":30,"payAmount":1869,"payCost":293.45,"payRate":5.39,"roi":21.23,"enterRoom":210,"enterRoomRate":37.7,"mic":59,"micRate":10.59,"nextRetention":11.57,"roiCurve":[21.23,44.013,75.5192,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.3333},{"date":"2026-05-26","spend":11506.99,"activate":718,"reg":611,"regCost":18.83,"ai":433,"payCount":23,"payAmount":1439.7,"payCost":500.3,"payRate":3.7643,"roi":12.5115,"enterRoom":231,"enterRoomRate":37.8069,"mic":49,"micRate":8.0196,"nextRetention":15.371,"roiCurve":[12.5115,23.1459,38.0734,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":54.5455},{"date":"2026-05-27","spend":4567.44,"activate":388,"reg":322,"regCost":14.18,"ai":234,"payCount":13,"payAmount":561.8,"payCost":351.34,"payRate":4.0373,"roi":12.3001,"enterRoom":127,"enterRoomRate":39.441,"mic":24,"micRate":7.4534,"nextRetention":19.2308,"roiCurve":[12.3001,19.466,26.0277,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":63.6364},{"date":"2026-05-28","spend":4882.76,"activate":308,"reg":250,"regCost":19.53,"ai":180,"payCount":17,"payAmount":1071.2,"payCost":287.22,"payRate":6.8,"roi":21.9384,"enterRoom":111,"enterRoomRate":44.4,"mic":28,"micRate":11.2,"nextRetention":21.3636,"roiCurve":[21.9384,44.0018,53.906,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":46.6667},{"date":"2026-05-29","spend":7552.68,"activate":457,"reg":398,"regCost":18.98,"ai":286,"payCount":27,"payAmount":2729.4,"payCost":279.73,"payRate":6.7839,"roi":36.1382,"enterRoom":153,"enterRoomRate":38.4422,"mic":37,"micRate":9.2965,"nextRetention":11.326,"roiCurve":[36.1382,86.9532,115.0757,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":32},{"date":"2026-05-30","spend":10686.67,"activate":521,"reg":438,"regCost":24.4,"ai":345,"payCount":37,"payAmount":3412.7,"payCost":288.83,"payRate":8.4475,"roi":31.9342,"enterRoom":190,"enterRoomRate":43.379,"mic":48,"micRate":10.9589,"nextRetention":15.8025,"roiCurve":[31.9342,54.8197,79.4298,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":38.8889},{"date":"2026-05-31","spend":7831.54,"activate":360,"reg":304,"regCost":25.76,"ai":223,"payCount":23,"payAmount":1578.3,"payCost":340.5,"payRate":7.5658,"roi":20.1531,"enterRoom":135,"enterRoomRate":44.4079,"mic":34,"micRate":11.1842,"nextRetention":13.9286,"roiCurve":[20.1531,32.4112,46.0727,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":52.1739},{"date":"2026-06-01","spend":8687.79,"activate":745,"reg":640,"regCost":13.57,"ai":488,"payCount":30,"payAmount":1677.6,"payCost":289.59,"payRate":4.6875,"roi":19.3099,"enterRoom":253,"enterRoomRate":39.5312,"mic":56,"micRate":8.75,"nextRetention":16.5584,"roiCurve":[19.3099,27.4456,51.6273,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":30},{"date":"2026-06-02","spend":17462.2,"activate":1656,"reg":1498,"regCost":11.66,"ai":1174,"payCount":53,"payAmount":2290.5,"payCost":329.48,"payRate":3.5381,"roi":13.1169,"enterRoom":549,"enterRoomRate":36.6489,"mic":101,"micRate":6.7423,"nextRetention":11.7808,"roiCurve":[13.1169,19.5953,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":33.9623},{"date":"2026-06-03","spend":13599.5,"activate":913,"reg":802,"regCost":16.96,"ai":615,"payCount":42,"payAmount":2133.2,"payCost":323.8,"payRate":5.2369,"roi":15.6859,"enterRoom":293,"enterRoomRate":36.5337,"mic":67,"micRate":8.3541,"nextRetention":12.1053,"roiCurve":[15.6859,25.062,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":41.4634},{"date":"2026-06-04","spend":7081.76,"activate":546,"reg":458,"regCost":15.46,"ai":349,"payCount":20,"payAmount":1823.1,"payCost":354.09,"payRate":4.3668,"roi":25.7436,"enterRoom":166,"enterRoomRate":36.2445,"mic":35,"micRate":7.6419,"nextRetention":14.1876,"roiCurve":[25.7436,41.1602,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-05","spend":6424.76,"activate":577,"reg":487,"regCost":13.19,"ai":352,"payCount":17,"payAmount":907.6,"payCost":377.93,"payRate":3.4908,"roi":14.1266,"enterRoom":179,"enterRoomRate":36.7556,"mic":43,"micRate":8.8296,"nextRetention":11.6331,"roiCurve":[14.1266,18.8552,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":35.2941},{"date":"2026-06-06","spend":4470.88,"activate":447,"reg":378,"regCost":11.83,"ai":287,"payCount":11,"payAmount":915.6,"payCost":406.44,"payRate":2.9101,"roi":20.4792,"enterRoom":142,"enterRoomRate":37.5661,"mic":24,"micRate":6.3492,"nextRetention":12.3919,"roiCurve":[20.4792,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":50},{"date":"2026-06-07","spend":13515.9,"activate":1284,"reg":1131,"regCost":11.95,"ai":894,"payCount":57,"payAmount":3032.4,"payCost":237.12,"payRate":5.0398,"roi":22.4358,"enterRoom":422,"enterRoomRate":37.3121,"mic":89,"micRate":7.8691,"nextRetention":13.4913,"roiCurve":[22.4358,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":25.4545},{"date":"2026-06-08","spend":11036.19,"activate":936,"reg":821,"regCost":13.44,"ai":600,"payCount":51,"payAmount":4693.1,"payCost":216.4,"payRate":6.2119,"roi":42.5246,"enterRoom":284,"enterRoomRate":34.592,"mic":66,"micRate":8.039,"nextRetention":null,"roiCurve":[42.5246,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"pret":null}];
+
+
+// ════════ USER STATS (付费用户纯新) ════════
+const USER_STATS = {
+  total: 1123,
+  male: 32,
+  female: 72,
+  avgAmt: 223.23,
+  medianAmt: 168.0,
+  ageBuckets: [0, 10, 36, 41, 17],
+  amtDist: [[6, 4], [9, 3], [18, 1], [29, 1], [30, 3], [36, 1], [39, 1], [60, 1], [88, 2], [97, 1], [98, 1], [100, 1], [101, 1], [102, 2], [104, 1]],
+  payDaily: {"2026-04-09": 11, "2026-04-10": 10, "2026-04-11": 10, "2026-04-12": 8, "2026-04-13": 8, "2026-04-14": 10, "2026-04-15": 20, "2026-04-16": 18, "2026-04-17": 18, "2026-04-18": 21, "2026-04-19": 21, "2026-04-20": 20, "2026-04-21": 20, "2026-04-22": 11, "2026-04-23": 11, "2026-04-24": 11, "2026-04-25": 14, "2026-04-26": 17, "2026-04-27": 12, "2026-04-28": 8, "2026-04-29": 11, "2026-04-30": 8, "2026-05-01": 13, "2026-05-02": 8, "2026-05-03": 13, "2026-05-04": 9, "2026-05-05": 12, "2026-05-06": 4, "2026-05-07": 10, "2026-05-08": 11, "2026-05-09": 9, "2026-05-10": 7, "2026-05-11": 14, "2026-05-12": 12, "2026-05-13": 11, "2026-05-14": 15, "2026-05-15": 15, "2026-05-16": 26, "2026-05-17": 39, "2026-05-18": 40, "2026-05-19": 31, "2026-05-20": 32, "2026-05-21": 30, "2026-05-22": 14, "2026-05-23": 19, "2026-05-24": 15, "2026-05-25": 26, "2026-05-26": 22, "2026-05-27": 11, "2026-05-28": 14, "2026-05-29": 23, "2026-05-30": 33, "2026-05-31": 21, "2026-06-01": 30, "2026-06-02": 53, "2026-06-03": 41, "2026-06-04": 19, "2026-06-05": 17, "2026-06-06": 9, "2026-06-07": 53, "2026-06-08": 44}
+};
 
 // ════════ INIT ════════
 const byDate = {};
@@ -247,7 +421,16 @@ const sel = document.getElementById('dateSelect');
   sel.appendChild(o);
 });
 sel.value = dates[dates.length-1];
-sel.addEventListener('change', () => render(sel.value));
+sel.addEventListener('change', () => {
+  render(sel.value);
+  // Re-render active sub-page if needed
+  const activePage = document.querySelector('.page.active');
+  if(activePage){
+    const pid = activePage.id.replace('page-','');
+    if(pid === 'roi') renderRoiPage(sel.value);
+    if(pid === 'alert') renderAlertPage(sel.value);
+  }
+});
 render(sel.value);
 
 // ════════ HELPERS ════════
@@ -438,7 +621,8 @@ function renderChart(date, mode){
   }
 
   if(chart){ chart.destroy(); chart=null; }
-  const ctx = document.getElementById('trendChart').getContext('2d');
+  const ctx = document.getElementById('trendChart') && document.getElementById('trendChart').getContext('2d');
+  if(!ctx) return;
   chart = new Chart(ctx,{
     type:'line',
     data:{labels,datasets},
@@ -456,6 +640,284 @@ function renderChart(date, mode){
       }
     }
   });
+}
+
+// ════════ PAGE NAVIGATION ════════
+let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = null;
+let userGenderC = null, userAgeC = null, userDailyC = null, userAmtC = null;
+let currentTrendDays = 30;
+
+function switchPage(id, el){
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Remove active from all nav items
+  document.querySelectorAll('.nav-item').forEach(a => a.classList.remove('active'));
+  // Show target page
+  const page = document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  if(el) el.classList.add('active');
+
+  // Lazy-render page content
+  if(id === 'roi') renderRoiPage(document.getElementById('dateSelect').value);
+  if(id === 'trend') renderTrendPage(currentTrendDays);
+  if(id === 'users') renderUsersPage();
+  if(id === 'alert') renderAlertPage(document.getElementById('dateSelect').value);
+}
+
+// ──── ROI PAGE ────
+function renderRoiPage(date){
+  const roiLabels = ['ROI0','ROI3','ROI7','ROI15','ROI30','ROI60','ROI90'];
+  const roiIdxs =   [0,     2,     3,     4,      5,      6,      7    ];
+  const cur = byDate[date];
+  if(!cur) return;
+  document.getElementById('roi-curve-date').textContent = date;
+
+  // Curve chart
+  const curveData = roiIdxs.map(i => cur.roiCurve ? cur.roiCurve[i] : null);
+  if(roiCurveChart){ roiCurveChart.destroy(); roiCurveChart = null; }
+  roiCurveChart = new Chart(document.getElementById('roiCurveChart').getContext('2d'),{
+    type:'line',
+    data:{
+      labels: roiLabels,
+      datasets:[{
+        label: date+' ROI回收 (%)',
+        data: curveData,
+        borderColor:'#4a7cf0', backgroundColor:'rgba(74,124,240,.1)',
+        fill:true, tension:.3, pointRadius:5, pointHoverRadius:7, spanGaps:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c => c.raw!=null ? c.raw.toFixed(2)+'%' : '待回填'}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:11}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:10},callback:v=>v+'%'}}
+      }
+    }
+  });
+
+  // Summary table – last 20 dates
+  const idx = dates.indexOf(date);
+  const recentDates = dates.slice(Math.max(0,idx-19), idx+1).reverse();
+  const tbody = document.getElementById('roi-table-body');
+  tbody.innerHTML = '';
+  recentDates.forEach(d => {
+    const e = byDate[d];
+    const rc = e.roiCurve || [];
+    const cell = (v) => v!=null ? `<td class="${v>=100?'roi-hi':''}">${v.toFixed(2)}%</td>` : '<td class="roi-null">—</td>';
+    tbody.innerHTML += `<tr>
+      <td>${d}</td>
+      ${cell(rc[0])}${cell(rc[2])}${cell(rc[3])}${cell(rc[4])}${cell(rc[5])}
+      <td>¥${fmt(e.spend)}</td>
+    </tr>`;
+  });
+}
+
+// ──── TREND PAGE ────
+function switchTrendDays(days, btn){
+  document.querySelectorAll('.trend-tabs .trend-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  currentTrendDays = days;
+  renderTrendPage(days);
+}
+
+function renderTrendPage(days){
+  const date = document.getElementById('dateSelect').value;
+  const idx = dates.indexOf(date);
+  const slice = days >= 999 ? dates.slice(0, idx+1) : dates.slice(Math.max(0,idx-days+1), idx+1);
+  const labels = slice.map(d => d.slice(5));
+
+  const mkLine = (label, data, color, fill=false) => ({
+    label, data,
+    borderColor: color, backgroundColor: fill ? color.replace(')',',0.08)').replace('rgb','rgba') : 'transparent',
+    fill, tension:.35, pointRadius:2, pointHoverRadius:5
+  });
+
+  // Spend chart
+  if(trendSpendC){ trendSpendC.destroy(); trendSpendC=null; }
+  trendSpendC = new Chart(document.getElementById('trendSpendChart').getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[mkLine('消耗(¥)', slice.map(d=>byDate[d].spend), 'rgb(245,158,11)', true)]},
+    options: chartOpts('¥')
+  });
+
+  // Reg/pay chart
+  if(trendRegC){ trendRegC.destroy(); trendRegC=null; }
+  trendRegC = new Chart(document.getElementById('trendRegChart').getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[
+      mkLine('净注册', slice.map(d=>byDate[d].reg), 'rgb(16,185,129)', true),
+      mkLine('新增付费', slice.map(d=>byDate[d].payCount), 'rgb(239,68,68)')
+    ]},
+    options: chartOpts()
+  });
+
+  // Pay rate / reg cost
+  if(trendPayRateC){ trendPayRateC.destroy(); trendPayRateC=null; }
+  trendPayRateC = new Chart(document.getElementById('trendPayRateChart').getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[
+      mkLine('付费率(%)', slice.map(d=>byDate[d].payRate), 'rgb(99,102,241)'),
+      mkLine('注册成本(¥)', slice.map(d=>byDate[d].regCost), 'rgb(234,179,8)')
+    ]},
+    options: chartOpts()
+  });
+}
+
+function chartOpts(prefix=''){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}},
+      tooltip:{backgroundColor:'#fff',titleColor:'#0f1628',bodyColor:'#4a5068',
+        borderColor:'#e4e8f0',borderWidth:1,padding:8,boxWidth:8}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:12}},
+      y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}
+    }
+  };
+}
+
+// ──── USERS PAGE ────
+function renderUsersPage(){
+  // Stats
+  document.getElementById('us-total').textContent = USER_STATS.total.toLocaleString();
+  document.getElementById('us-avg').textContent = '¥'+USER_STATS.avgAmt.toFixed(2);
+  document.getElementById('us-median').textContent = '¥'+USER_STATS.medianAmt.toFixed(2);
+  const total_known = USER_STATS.male + USER_STATS.female;
+  document.getElementById('us-female').textContent = total_known>0 ? (USER_STATS.female/total_known*100).toFixed(1)+'%' : '—';
+
+  // Gender pie
+  if(userGenderC){ userGenderC.destroy(); userGenderC=null; }
+  userGenderC = new Chart(document.getElementById('userGenderChart').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:['男','女'],
+      datasets:[{data:[USER_STATS.male,USER_STATS.female],
+        backgroundColor:['rgba(99,102,241,0.85)','rgba(236,72,153,0.8)'],
+        borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:12}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}人`}}
+      }
+    }
+  });
+
+  // Age bar
+  if(userAgeC){ userAgeC.destroy(); userAgeC=null; }
+  const ageLabels = ['<18','18-24','25-30','31-40','41+'];
+  userAgeC = new Chart(document.getElementById('userAgeChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:ageLabels,
+      datasets:[{
+        label:'占比(%)',
+        data:USER_STATS.ageBuckets,
+        backgroundColor:'rgba(74,124,240,0.8)',
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
+
+  // Daily pay chart
+  if(userDailyC){ userDailyC.destroy(); userDailyC=null; }
+  const dailyKeys = Object.keys(USER_STATS.payDaily).sort();
+  userDailyC = new Chart(document.getElementById('userDailyPayChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels: dailyKeys.map(d=>d.slice(5)),
+      datasets:[{
+        label:'每日付费人数',
+        data: dailyKeys.map(d=>USER_STATS.payDaily[d]),
+        backgroundColor:'rgba(16,185,129,0.7)',
+        borderRadius:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:20}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}
+      }
+    }
+  });
+
+  // Amt dist
+  if(userAmtC){ userAmtC.destroy(); userAmtC=null; }
+  const amtLabels = USER_STATS.amtDist.map(a=>'¥'+a[0]);
+  const amtData   = USER_STATS.amtDist.map(a=>a[1]);
+  userAmtC = new Chart(document.getElementById('userAmtChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:amtLabels,
+      datasets:[{
+        label:'人数',
+        data:amtData,
+        backgroundColor:'rgba(245,158,11,0.75)',
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45}},
+        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}}
+      }
+    }
+  });
+}
+
+// ──── ALERT PAGE ────
+function renderAlertPage(date){
+  const wrap = document.getElementById('alert-table-wrap');
+  const today = date;
+  const recent = dates.filter(d => d <= today).slice(-14);
+  const alerts = recent.map(d => {
+    const e = byDate[d];
+    let type = 'normal', label = '正常', style = 'color:#166534;background:#f0fdf4;border-color:#bbf7d0';
+    if(e.payCount === 0 && e.spend > 2000){
+      type = 'zero'; label = '🚨 零付预警'; style='color:#991b1b;background:#fef2f2;border-color:#fecaca';
+    } else if(e.roi < 10 && e.spend > 3000){
+      type = 'low'; label = '⚠️ 低ROI'; style='color:#92400e;background:#fef9ec;border-color:#fde68a';
+    }
+    return {d, e, type, label, style};
+  }).filter(r=>r.type!=='normal').reverse();
+
+  if(!alerts.length){
+    wrap.innerHTML = '<div style="text-align:center;padding:24px;color:#aab0be;font-size:13px">近14日内无预警计划 ✅</div>';
+    return;
+  }
+  wrap.innerHTML = `<table class="roi-table"><thead><tr>
+    <th>日期</th><th>消耗(¥)</th><th style="text-align:left">预警类型</th>
+    <th>ROI0</th><th>付费数</th><th>付费率</th>
+  </tr></thead><tbody>`+
+  alerts.map(r=>`<tr>
+    <td>${r.d}</td>
+    <td>¥${fmt(r.e.spend)}</td>
+    <td><span style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid;${r.style}">${r.label}</span></td>
+    <td>${fmtPct(r.e.roi)}</td>
+    <td>${r.e.payCount}</td>
+    <td>${fmtPct(r.e.payRate)}</td>
+  </tr>`).join('')+
+  '</tbody></table>';
 }
 </script>
 </body>
