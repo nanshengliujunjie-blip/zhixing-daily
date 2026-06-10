@@ -1629,23 +1629,32 @@ function doSearch(){
 function _showSearchResult(uid){
   const notFoundEl = document.getElementById('search-not-found');
   const resultEl   = document.getElementById('search-result');
-  const orders = _orderData ? _orderData[uid] : null;
-  if(!orders || !orders.length){
-    notFoundEl.style.display='block';
+  const orders = (_orderData && _orderData[uid]) ? _orderData[uid] : [];
+  const uu = _userMap && _userMap[uid];
+  const au = _adMap   && _adMap[uid];
+  // 无订单且无基础信息 → 完全未知
+  if(!orders.length && !uu && !au){
+    notFoundEl.style.display = 'block';
+    resultEl.style.display = 'none';
     return;
   }
+  notFoundEl.style.display = 'none';
 
   // Summary info from user_data.json or ad_users.json
   const G = ['未知','男','女'];
   const field = (label,val)=>`<div class="uid-field"><div class="uid-field-label">${label}</div><div class="uid-field-val">${val}</div></div>`;
-  const uu = _userMap && _userMap[uid];
-  const au = _adMap   && _adMap[uid];
 
-  // Badge: is this an ad user?
+  // Badge: is this an ad user? (distinguish paid vs no-pay)
   const badge = document.getElementById('search-result-badge');
-  if(au){
+  if(au && orders.length > 0){
     badge.textContent = '投放付费用户';
     badge.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid #86efac;background:#f0fdf4;color:#15803d;margin-left:4px';
+  } else if(au){
+    badge.textContent = '投放用户（暂无付费）';
+    badge.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid #fcd34d;background:#fefce8;color:#92400e;margin-left:4px';
+  } else if(orders.length > 0){
+    badge.textContent = '普通付费用户';
+    badge.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid #cbd5e1;background:#f8fafc;color:#64748b;margin-left:4px';
   } else {
     badge.textContent = '普通用户';
     badge.style.cssText = 'font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid #cbd5e1;background:#f8fafc;color:#64748b;margin-left:4px';
@@ -1653,16 +1662,15 @@ function _showSearchResult(uid){
   document.getElementById('search-result-uid').textContent = 'UID: ' + uid;
 
   // Build summary grid
+  const hasOrders = orders.length > 0;
   let totalAmt = orders.reduce((s,o)=>s+o.amt, 0);
-  // Last payment date (orders sorted by date asc, last entry = most recent)
-  const lastPayDate = orders[orders.length - 1].d;
-  // First day payment: calculate from order data using reg_date from ad_users
+  const lastPayDate = hasOrders ? orders[orders.length - 1].d : null;
+  // First day payment from order data
   let firstDayAmt = null;
-  if(au){
-    const regDate = au[10];
-    if(regDate) firstDayAmt = orders.filter(o=>o.d===regDate).reduce((s,o)=>s+o.amt, 0);
+  if(au && au[10] && hasOrders){
+    firstDayAmt = orders.filter(o=>o.d===au[10]).reduce((s,o)=>s+o.amt, 0);
   }
-  // Preference type: type with most orders
+  // Preference type
   const typeCnt = {};
   orders.forEach(o=>{ typeCnt[o.type] = (typeCnt[o.type]||0)+1; });
   const prefType = Object.entries(typeCnt).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
@@ -1673,21 +1681,22 @@ function _showSearchResult(uid){
   if(uu){
     gridHtml +=
       field('性别', G[uu[2]||0]) +
-      field('年龄', uu[3]!=null ? Math.floor(uu[3])+'岁' : '未知') +
-      field('累计充值', '¥'+totalAmt.toLocaleString('zh-CN',{maximumFractionDigits:2})) +
-      field('付费笔数', orders.length.toLocaleString());
-  } else {
+      field('年龄', uu[3]!=null ? Math.floor(uu[3])+'岁' : '未知');
+  }
+  if(hasOrders){
     gridHtml +=
       field('累计充值', '¥'+totalAmt.toLocaleString('zh-CN',{maximumFractionDigits:2})) +
-      field('付费笔数', orders.length.toLocaleString());
+      field('付费笔数', orders.length.toLocaleString()) +
+      field('最后充值', lastPayDate);
+  } else {
+    gridHtml += `<div class="uid-field" style="grid-column:1/-1"><div class="uid-field-label">付费记录</div><div class="uid-field-val" style="color:#f59e0b">2025-05-01前暂无数据，或该用户尚未付费</div></div>`;
   }
-  gridHtml += field('最后充值', lastPayDate);
   if(au){
     const regDate = au[10] || '—';
     gridHtml += field('注册日期', regDate);
-    if(firstDayAmt !== null) gridHtml += field('首日充值', '¥'+firstDayAmt.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+    if(firstDayAmt !== null && hasOrders) gridHtml += field('首日充值', '¥'+firstDayAmt.toLocaleString('zh-CN',{maximumFractionDigits:2}));
   }
-  gridHtml += prefField('偏好类型', prefType, prefColor);
+  if(hasOrders) gridHtml += prefField('偏好类型', prefType, prefColor);
   document.getElementById('search-result-grid').innerHTML = gridHtml;
 
   // Tags
@@ -1697,16 +1706,24 @@ function _showSearchResult(uid){
     return `<span class="uid-tag ${cls}">${t} ${n}</span>`;
   }).join('');
 
-  // Orders table
+  // Orders table – only render when there are orders
   const tbody = document.getElementById('search-orders-tbody');
+  const ordersSection = document.querySelector('#page-search .section-header:last-of-type');
   const typeColor = t => t==='提问'?'#0369a1': t==='连麦'?'#7c3aed': t==='咨询'?'#0f766e': '#4a5068';
-  tbody.innerHTML = orders.map((o,i)=>`
-    <tr style="border-bottom:1px solid #f1f5f9;${i%2===0?'':'background:#fafbff'}">
-      <td style="padding:9px 14px;color:#4a5068">${o.d}</td>
-      <td style="padding:9px 14px;color:#0f1628;font-weight:500">${o.c||'—'}</td>
-      <td style="padding:9px 14px;text-align:right;font-weight:600;color:#0f1628">¥${o.amt.toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
-      <td style="padding:9px 14px;text-align:center;font-size:11px;font-weight:600;color:${typeColor(o.type)}">${o.type||'—'}</td>
-    </tr>`).join('');
+  if(hasOrders){
+    tbody.innerHTML = orders.map((o,i)=>`
+      <tr style="border-bottom:1px solid #f1f5f9;${i%2===0?'':'background:#fafbff'}">
+        <td style="padding:9px 14px;color:#4a5068">${o.d}</td>
+        <td style="padding:9px 14px;color:#0f1628;font-weight:500">${o.c||'—'}</td>
+        <td style="padding:9px 14px;text-align:right;font-weight:600;color:#0f1628">¥${o.amt.toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
+        <td style="padding:9px 14px;text-align:center;font-size:11px;font-weight:600;color:${typeColor(o.type)}">${o.type||'—'}</td>
+      </tr>`).join('');
+    document.getElementById('search-result').querySelectorAll('.section-header, .trend-card').forEach(el=>el.style.display='');
+  } else {
+    tbody.innerHTML = '';
+    // 隐藏付费明细区域（无订单时不显示）
+    document.getElementById('search-result').querySelectorAll('.section-header, .trend-card').forEach((el,i)=>{ if(i>0) el.style.display='none'; });
+  }
 
   resultEl.style.display = 'block';
 }
