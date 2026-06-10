@@ -405,7 +405,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
     <!-- Loading spinner -->
     <div id="users-spinner" class="users-spinner">
       <div style="font-size:24px;margin-bottom:8px;opacity:.4">⏳</div>
-      加载用户数据中（约 3.5 MB）…
+      加载用户数据中…
     </div>
 
     <!-- Content shown after data loads -->
@@ -414,8 +414,8 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <!-- Stats cards -->
       <div class="section-header"><h3>用户概览</h3></div>
       <div class="metric-grid" style="margin-bottom:16px">
-        <div class="mc"><div class="mc-head"><span class="mc-label">总用户数</span></div><div class="mc-val" id="us-total">—</div><div class="mc-deltas"><div class="mc-delta">全周期有订单用户</div></div></div>
-        <div class="mc"><div class="mc-head"><span class="mc-label">付费用户数</span></div><div class="mc-val" id="us-paying">—</div><div class="mc-deltas"><div class="mc-delta">累计充值 &gt; 0</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">活跃用户数</span></div><div class="mc-val" id="us-total">—</div><div class="mc-deltas"><div class="mc-delta">所选日期范围有订单用户</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">付费用户数</span></div><div class="mc-val" id="us-paying">—</div><div class="mc-deltas"><div class="mc-delta">范围内充值 &gt; 0</div></div></div>
         <div class="mc"><div class="mc-head"><span class="mc-label">平均充值</span><span class="mc-badge">付费用户</span></div><div class="mc-val" id="us-avg">—</div><div class="mc-deltas"><div class="mc-delta" id="us-median-label">中位数 —</div></div></div>
         <div class="mc"><div class="mc-head"><span class="mc-label">女性占比</span><span class="mc-badge">已知性别</span></div><div class="mc-val" id="us-female">—</div><div class="mc-deltas"><div class="mc-delta" id="us-gender-detail">男 — / 女 —</div></div></div>
       </div>
@@ -701,7 +701,7 @@ function onRangeChange(){
   if(pid === 'alert')   renderAlertPage(elFrom.value, elTo.value);
   if(pid === 'adusers')  renderAdUsersPage(elFrom.value, elTo.value);
   if(pid === 'addetail') renderAdDetailPage(elFrom.value, elTo.value);
-  if(pid === 'users' && _consultantAllData) _renderUserConsultantBars(elFrom.value, elTo.value);
+  if(pid === 'users') renderUsersPage(elFrom.value, elTo.value);
 }
 
 elFrom.addEventListener('change', onRangeChange);
@@ -971,6 +971,7 @@ function renderChart(dateFrom, dateTo, mode){
 let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = null;
 // trendRoiC, trendFunnelC, trendCostC declared in renderTrendPage scope
 let userGenderC = null, userAgeC = null, userAmtC = null;
+let _filteredUserStats = null;
 
 function switchPage(id, el){
   // Hide all pages
@@ -985,7 +986,7 @@ function switchPage(id, el){
   // Lazy-render page content
   if(id === 'roi')     renderRoiPage(elFrom.value, elTo.value);
   if(id === 'trend')   renderTrendPage(elFrom.value, elTo.value);
-  if(id === 'users')   renderUsersPage();
+  if(id === 'users')   renderUsersPage(elFrom.value, elTo.value);
   if(id === 'adusers') renderAdUsersPage(elFrom.value, elTo.value);
   if(id === 'alert')    renderAlertPage(elFrom.value, elTo.value);
   if(id === 'addetail') renderAdDetailPage(elFrom.value, elTo.value);
@@ -1247,26 +1248,95 @@ function chartOpts(prefix=''){
 let _userData = null, _userMap = null, _userDailyMode = 'cnt', _userDailyChart = null;
 let _consultantAllData = null, _userConsMode = 'amt';
 
-function renderUsersPage(){
-  if(_userData && _consultantAllData){ _renderUsersContent(); return; }
+function renderUsersPage(dateFrom, dateTo){
+  dateFrom = dateFrom || elFrom.value;
+  dateTo   = dateTo   || elTo.value;
+  if(_userData && _consultantAllData && _orderData){
+    _filteredUserStats = _computeUserStats(dateFrom, dateTo);
+    _renderUsersContent(dateFrom, dateTo);
+    return;
+  }
   document.getElementById('users-spinner').style.display = 'block';
   document.getElementById('users-content').style.display = 'none';
   Promise.all([
     _userData ? Promise.resolve(_userData) : fetch('user_data.json').then(r=>r.json()),
-    _consultantAllData ? Promise.resolve(_consultantAllData) : fetch('consultant_all_data.json').then(r=>r.json())
-  ]).then(([userData, consData])=>{
+    _consultantAllData ? Promise.resolve(_consultantAllData) : fetch('consultant_all_data.json').then(r=>r.json()),
+    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json').then(r=>r.json())
+  ]).then(([userData, consData, orderData])=>{
     _userData = userData;
     _consultantAllData = consData;
+    _orderData = orderData;
     _userMap = {};
     userData.users.forEach(u => _userMap[u[0]] = u);
     document.getElementById('users-spinner').style.display = 'none';
     document.getElementById('users-content').style.display = 'block';
-    _renderUsersContent();
+    _filteredUserStats = _computeUserStats(dateFrom, dateTo);
+    _renderUsersContent(dateFrom, dateTo);
   }).catch(e=>{ document.getElementById('users-spinner').textContent = '加载失败: '+e.message; });
 }
 
-function _renderUsersContent(){
-  const s = _userData.stats;
+function _computeUserStats(dateFrom, dateTo){
+  if(!_orderData) return null;
+  const userAmts = {};
+  const orderTypes = {q:0, lm:0, zx:0};
+
+  Object.entries(_orderData).forEach(([uid, orders]) => {
+    const ro = orders.filter(o => (!dateFrom || o.d >= dateFrom) && (!dateTo || o.d <= dateTo));
+    if(!ro.length) return;
+    userAmts[uid] = (userAmts[uid]||0) + ro.reduce((s,o)=>s+(o.amt||0), 0);
+    ro.forEach(o => {
+      const t = o.type||'';
+      if(t.includes('提问')) orderTypes.q++;
+      else if(t.includes('连麦')) orderTypes.lm++;
+      else orderTypes.zx++;
+    });
+  });
+
+  const activeUids = Object.keys(userAmts);
+  const payingUids = activeUids.filter(uid => userAmts[uid] > 0);
+
+  const g = [0,0,0];
+  const ages = [];
+  activeUids.forEach(uid => {
+    const u = _userMap && (_userMap[parseInt(uid)] || _userMap[uid]);
+    if(!u) return;
+    g[u[2]||0]++;
+    if(u[3] > 0) ages.push(u[3]);
+  });
+
+  const age_buckets = [0,0,0,0,0];
+  ages.forEach(a => {
+    if(a<18) age_buckets[0]++;
+    else if(a<=24) age_buckets[1]++;
+    else if(a<=30) age_buckets[2]++;
+    else if(a<=40) age_buckets[3]++;
+    else age_buckets[4]++;
+  });
+
+  const amts = payingUids.map(uid => userAmts[uid]).sort((a,b)=>a-b);
+  const totalPay = amts.reduce((s,a)=>s+a, 0);
+  const avg_amt = amts.length ? Math.round(totalPay/amts.length*100)/100 : 0;
+  const median_amt = amts.length ? Math.round(amts[Math.floor(amts.length/2)]*100)/100 : 0;
+
+  const amtBins = [['<¥10',0,10],['¥10-50',10,50],['¥50-100',50,100],['¥100-500',100,500],['¥500+',500,Infinity]];
+  const amt_dist = amtBins.map(([label,lo,hi]) =>
+    [label, payingUids.filter(uid=>{ const a=userAmts[uid]; return a>=lo && a<hi; }).length]);
+
+  const daily = {};
+  if(_userData && _userData.stats.daily){
+    Object.entries(_userData.stats.daily).forEach(([d,v]) => {
+      if((!dateFrom || d>=dateFrom) && (!dateTo || d<=dateTo)) daily[d] = v;
+    });
+  }
+
+  return { total_users:activeUids.length, paying_users:payingUids.length,
+    avg_amt, median_amt, gender:g, age_buckets, amt_dist, order_type_total:orderTypes, daily };
+}
+
+function _renderUsersContent(dateFrom, dateTo){
+  dateFrom = dateFrom || elFrom.value;
+  dateTo   = dateTo   || elTo.value;
+  const s = _filteredUserStats || _userData.stats;
   const [gUnk, gMale, gFemale] = s.gender;
   const knownG = gMale + gFemale;
   document.getElementById('us-total').textContent = s.total_users.toLocaleString();
@@ -1335,8 +1405,8 @@ function _renderUsersContent(){
 
   // Daily chart
   _renderUserDailyChart(_userDailyMode);
-  // 咨询师 Top10（全量，随日期过滤）
-  _renderUserConsultantBars(elFrom.value, elTo.value);
+  // 咨询师 Top10（随日期过滤）
+  _renderUserConsultantBars(dateFrom, dateTo);
 }
 
 function switchUserConsMode(mode, btn){
@@ -1396,7 +1466,7 @@ function switchUserDaily(mode, btn){
 
 function _renderUserDailyChart(mode){
   if(!_userData) return;
-  const daily = _userData.stats.daily;
+  const daily = (_filteredUserStats && _filteredUserStats.daily) || _userData.stats.daily;
   const dk = Object.keys(daily).sort();
   const labels = dk.map(d=>d.slice(5));
   if(_userDailyChart){ _userDailyChart.destroy(); _userDailyChart=null; }
