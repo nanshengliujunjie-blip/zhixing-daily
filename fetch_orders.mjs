@@ -159,9 +159,13 @@ async function main() {
         const type    = cols[5] || "未知";   // source_desc → 订单类型
         const starNick = cols[7] || "未知";  // stargazer_nick → 咨询师
         const amt     = parseFloat(cols[11]) || 0;  // coin_num → 金额
+        // 性别: API返回 '女'/'男'/'未知' → 存为 2/1/0
+        const gStr    = cols[3] || "";
+        const gender  = gStr === "女" ? 2 : gStr === "男" ? 1 : 0;
+        const age     = parseInt(cols[4]) || null;  // user_age
 
         if (!uid || !d) continue;
-        process.stdout.write(JSON.stringify({ uid, d, c: starNick, amt, type }) + "\n");
+        process.stdout.write(JSON.stringify({ uid, d, c: starNick, amt, type, gender, age }) + "\n");
         count++;
       }
 

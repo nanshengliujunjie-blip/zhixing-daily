@@ -447,7 +447,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
       <div class="section-header"><h3>投放用户概览</h3></div>
       <div class="metric-grid" style="margin-bottom:16px">
-        <div class="mc"><div class="mc-head"><span class="mc-label">总投放 / 首日付费</span></div><div class="mc-val" id="ad-total">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-total-sub">首日付费率 —</div></div></div>
+        <div class="mc"><div class="mc-head"><span class="mc-label">总订单量 / 付费订单</span></div><div class="mc-val" id="ad-total">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-total-sub">— 人投放，首日付费 —</div></div></div>
         <div class="mc"><div class="mc-head"><span class="mc-label">首日付费总额</span></div><div class="mc-val" id="ad-match">—</div><div class="mc-deltas"><div class="mc-delta">所选范围内首日充值合计</div></div></div>
         <div class="mc"><div class="mc-head"><span class="mc-label">首日人均充值</span><span class="mc-badge">仅付费用户</span></div><div class="mc-val" id="ad-avg">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-median-label">中位数 —</div></div></div>
         <div class="mc"><div class="mc-head"><span class="mc-label">女性占比</span><span class="mc-badge">已知性别</span></div><div class="mc-val" id="ad-female">—</div><div class="mc-deltas"><div class="mc-delta" id="ad-gender-detail">—</div></div></div>
@@ -1292,18 +1292,21 @@ function renderAdUsersPage(dateFrom, dateTo){
 // 动态计算过滤后的聚合统计
 function _calcAdStats(users){
   const g = [0,1,2].map(i => users.filter(u=>(u[1]||0)===i).length);
-  const ages = users.map(u=>u[2]).filter(a=>a!=null);
+  const ages = users.map(u=>u[2]).filter(a=>a!=null && a>0);
   const buckets = [0,0,0,0,0];
   ages.forEach(a=>{ if(a<18)buckets[0]++; else if(a<=24)buckets[1]++; else if(a<=30)buckets[2]++; else if(a<=40)buckets[3]++; else buckets[4]++; });
-  // u[3]=首日付费(roi_pay_amt), u[4]=总付费(total_amt)
-  const paidUsers = users.filter(u=>(u[3]||0)>0);
-  const amts = paidUsers.map(u=>u[3]).sort((a,b)=>a-b);  // 首日付费金额，仅付费用户
+  // u[3]=首日付费(roi_pay_amt), u[4]=总付费(total_amt), u[5]=总订单数, u[11]=付费订单数
+  const paidUsers = users.filter(u=>(u[3]||0)>0);  // 首日有付费的用户
+  const amts = paidUsers.map(u=>u[3]).sort((a,b)=>a-b);
   const firstDayTotal = Math.round(amts.reduce((s,a)=>s+a,0)*100)/100;
+  const totalOrders = users.reduce((s,u)=>s+(u[5]||0),0);
+  const paidOrders  = users.reduce((s,u)=>s+(u[11]||0),0);
   const amt_dist=[['≤9.9',0],['10-30',0],['31-100',0],['101-500',0],['501-2000',0],['>2000',0]];
   amts.forEach(a=>{ if(a<=9.9)amt_dist[0][1]++; else if(a<=30)amt_dist[1][1]++; else if(a<=100)amt_dist[2][1]++; else if(a<=500)amt_dist[3][1]++; else if(a<=2000)amt_dist[4][1]++; else amt_dist[5][1]++; });
   const ot={q:users.reduce((s,u)=>s+(u[6]||0),0),lm:users.reduce((s,u)=>s+(u[7]||0),0),zx:users.reduce((s,u)=>s+(u[8]||0),0)};
   return {
     total:users.length, paid:paidUsers.length, firstDayTotal,
+    totalOrders, paidOrders,
     gender:g, age_buckets:buckets, age_known:ages.length,
     avg_amt:amts.length?Math.round(amts.reduce((s,a)=>s+a,0)/amts.length*100)/100:0,
     median_amt:amts.length?amts[Math.floor(amts.length/2)]:0,
@@ -1332,9 +1335,8 @@ function _renderAdContent(allUsers, dateFrom, dateTo){
   const s = _calcAdStats(displayUsers);
   const [gUnk,gMale,gFemale] = s.gender;
   const knownG = gMale + gFemale;
-  const paidRate = s.total>0 ? (s.paid/s.total*100).toFixed(1)+'%' : '—';
-  document.getElementById('ad-total').textContent = `${s.total.toLocaleString()} / ${s.paid.toLocaleString()}`;
-  document.getElementById('ad-total-sub').textContent = `首日付费率 ${paidRate}`;
+  document.getElementById('ad-total').textContent = `${s.totalOrders.toLocaleString()} / ${s.paidOrders.toLocaleString()}`;
+  document.getElementById('ad-total-sub').textContent = `${s.total.toLocaleString()} 人投放，首日付费 ${s.paid.toLocaleString()} 人`;
   document.getElementById('ad-match').textContent = '¥'+s.firstDayTotal.toLocaleString('zh-CN',{maximumFractionDigits:1});
   document.getElementById('ad-avg').textContent = s.avg_amt>0 ? '¥'+s.avg_amt.toLocaleString('zh-CN',{maximumFractionDigits:1}) : '—';
   document.getElementById('ad-median-label').textContent = s.median_amt>0 ? '中位数 ¥'+s.median_amt : '中位数 —';
