@@ -471,6 +471,21 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
         <div id="user-consultant-bars"></div>
       </div>
 
+      <!-- User search -->
+      <div class="section-header" style="margin-top:24px"><h3>用户查询</h3></div>
+      <div class="trend-card" style="margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="uq-uid" class="uid-input" placeholder="用户 UID" style="width:150px"
+            onkeydown="if(event.key==='Enter')doUserPageSearch()">
+          <span style="color:#8892a4;font-size:12px">或</span>
+          <input type="text" id="uq-cons" class="uid-input" placeholder="咨询师姓名" style="width:150px"
+            onkeydown="if(event.key==='Enter')doUserPageSearch()">
+          <button class="uid-btn" onclick="doUserPageSearch()">查询</button>
+          <span id="uq-loading" style="display:none;font-size:12px;color:#8892a4;margin-left:4px">加载中…</span>
+        </div>
+      </div>
+      <div id="uq-result" style="margin-bottom:16px"></div>
+
     </div><!-- /users-content -->
   </div>
 
@@ -541,6 +556,10 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div class="trend-card">
         <div id="ad-consultant-bars"></div>
       </div>
+
+      <!-- Daily paid users -->
+      <div class="section-header" style="margin-top:16px"><h3>每日付费用户明细</h3></div>
+      <div id="adusers-daily-wrap"></div>
 
     </div><!-- /adusers-content -->
   </div>
@@ -1494,6 +1513,149 @@ function _renderUserDailyChart(mode){
   });
 }
 
+// ──── 用户概览内嵌查询 ────
+function doUserPageSearch(){
+  const uid  = document.getElementById('uq-uid').value.trim();
+  const cons = document.getElementById('uq-cons').value.trim();
+  const loadEl   = document.getElementById('uq-loading');
+  const resultEl = document.getElementById('uq-result');
+  if(!uid && !cons){ resultEl.innerHTML=''; return; }
+
+  const needs = [];
+  if(!_orderData) needs.push(fetch('user_orders.json').then(r=>r.json()).then(d=>{ _orderData=d; }));
+  if(!_userData)  needs.push(fetch('user_data.json').then(r=>r.json()).then(d=>{ _userData=d; _userMap={}; d.users.forEach(u=>_userMap[u[0]]=u); }));
+  if(!_adData)    needs.push(fetch('ad_users.json').then(r=>r.json()).then(d=>{ _adData=d; _adMap={}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
+
+  if(needs.length){
+    loadEl.style.display='block';
+    Promise.all(needs).then(()=>{ loadEl.style.display='none'; _renderUqResult(uid, cons, resultEl); })
+      .catch(e=>{ loadEl.style.display='none'; loadEl.textContent='加载失败: '+e.message; });
+    return;
+  }
+  _renderUqResult(uid, cons, resultEl);
+}
+
+function _renderUqResult(uid, cons, resultEl){
+  const G = ['未知','男','女'];
+  const field = (l,v)=>`<div class="uid-field"><div class="uid-field-label">${l}</div><div class="uid-field-val">${v}</div></div>`;
+  const typeColor = t=>t==='提问'?'#0369a1':t==='连麦'?'#7c3aed':t==='咨询'?'#0f766e':'#4a5068';
+
+  if(uid){
+    const orders = (_orderData&&_orderData[uid])||[];
+    const uu = _userMap&&(_userMap[parseInt(uid)]||_userMap[uid]);
+    const au = _adMap&&_adMap[uid];
+    if(!orders.length&&!uu&&!au){
+      resultEl.innerHTML='<div class="trend-card" style="color:#aab0be;text-align:center;padding:20px;font-size:13px">未找到该用户</div>';
+      return;
+    }
+    const paidOrders = orders.filter(o=>o.amt>0);
+    const totalAmt   = paidOrders.reduce((s,o)=>s+o.amt,0);
+    const lastPay    = paidOrders.length ? paidOrders[paidOrders.length-1].d : null;
+    let firstDayAmt  = null;
+    if(au&&au[10]) firstDayAmt = paidOrders.filter(o=>o.d===au[10]).reduce((s,o)=>s+o.amt,0);
+    const typeCnt = {};
+    orders.forEach(o=>{ typeCnt[o.type]=(typeCnt[o.type]||0)+1; });
+    let badgeText='普通用户', badgeStyle='border:1px solid #cbd5e1;background:#f8fafc;color:#64748b';
+    if(au&&paidOrders.length){ badgeText='投放付费用户'; badgeStyle='border:1px solid #86efac;background:#f0fdf4;color:#15803d'; }
+    else if(au){ badgeText='投放用户（未付费）'; badgeStyle='border:1px solid #fcd34d;background:#fefce8;color:#92400e'; }
+    else if(paidOrders.length){ badgeText='普通付费用户'; badgeStyle='border:1px solid #cbd5e1;background:#f8fafc;color:#64748b'; }
+    let gridHtml = '';
+    const gender = uu?uu[2]:(au?au[1]:0);
+    const age    = uu?uu[3]:(au?au[2]:null);
+    gridHtml += field('性别',G[gender||0]) + field('年龄',age>0?Math.floor(age)+'岁':'未知');
+    if(au) gridHtml += field('注册日期',au[10]||'—');
+    if(paidOrders.length){
+      gridHtml += field('累计充值','¥'+totalAmt.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+      gridHtml += field('付费笔数',paidOrders.length+'单');
+      gridHtml += field('最后付费',lastPay);
+    }
+    if(firstDayAmt!==null&&firstDayAmt>0) gridHtml += field('首日充值','¥'+firstDayAmt.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+    const orderRows = paidOrders.slice(-20).reverse().map((o,i)=>`
+      <tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#fafbff':''}">
+        <td style="padding:6px 12px;color:#4a5068;font-size:12px">${o.d}</td>
+        <td style="padding:6px 12px;font-weight:500;font-size:12px">${o.c||'—'}</td>
+        <td style="padding:6px 12px;text-align:right;font-weight:600;font-size:12px">¥${o.amt.toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
+        <td style="padding:6px 12px;text-align:center;font-size:11px;font-weight:600;color:${typeColor(o.type)}">${o.type||'—'}</td>
+      </tr>`).join('');
+    resultEl.innerHTML=`<div class="trend-card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-weight:700;color:#0f1628;font-size:14px">UID: ${uid}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle}">${badgeText}</span>
+      </div>
+      <div class="uid-result-grid">${gridHtml}</div>
+      ${Object.keys(typeCnt).length?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${Object.entries(typeCnt).map(([t,n])=>{
+        const cls=t==='提问'?'uid-tag-q':t==='连麦'?'uid-tag-lm':t==='咨询'?'uid-tag-zx':'';
+        return `<span class="uid-tag ${cls}">${t} ${n}</span>`;
+      }).join('')}</div>`:''}
+      ${paidOrders.length?`<div style="margin-top:12px">
+        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">最近付费记录（最多20条）</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f0f4ff;color:#4a5068;font-size:11px">
+            <th style="padding:6px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">日期</th>
+            <th style="padding:6px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">咨询师</th>
+            <th style="padding:6px 12px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">金额</th>
+            <th style="padding:6px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">类型</th>
+          </tr></thead>
+          <tbody>${orderRows}</tbody>
+        </table></div>`:''}
+    </div>`;
+    return;
+  }
+
+  // Consultant search
+  if(!_orderData){ resultEl.innerHTML='<div class="trend-card" style="color:#aab0be;text-align:center;padding:20px;font-size:13px">数据未加载，请稍后重试</div>'; return; }
+  const dateFrom=elFrom.value, dateTo=elTo.value;
+  const byUser={};
+  Object.entries(_orderData).forEach(([uidStr, orders])=>{
+    const ro=orders.filter(o=>o.c&&o.c.includes(cons)&&(!dateFrom||o.d>=dateFrom)&&(!dateTo||o.d<=dateTo));
+    if(!ro.length) return;
+    const au=_adMap&&_adMap[uidStr];
+    const regDate=au?au[10]:null;
+    const fd=regDate?ro.filter(o=>o.d===regDate).reduce((s,o)=>s+o.amt,0):0;
+    byUser[uidStr]={regDate:regDate||'—',cons:ro[0].c,firstAmt:fd,
+      totalAmt:ro.reduce((s,o)=>s+o.amt,0),cnt:ro.length,lastDate:ro[ro.length-1].d};
+  });
+  const uids=Object.keys(byUser).sort((a,b)=>byUser[b].totalAmt-byUser[a].totalAmt);
+  if(!uids.length){
+    resultEl.innerHTML=`<div class="trend-card" style="color:#aab0be;text-align:center;padding:20px;font-size:13px">未找到咨询师"${cons}"的记录（${dateFrom} ~ ${dateTo}）</div>`;
+    return;
+  }
+  const totalAmt=uids.reduce((s,u)=>s+byUser[u].totalAmt,0);
+  const rows=uids.map((u,i)=>{
+    const r=byUser[u];
+    return `<tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#f8f9fc':''}">
+      <td style="padding:7px 12px;font-weight:500;font-size:13px">${u}</td>
+      <td style="padding:7px 12px;color:#6b7280;font-size:12px">${r.regDate}</td>
+      <td style="padding:7px 12px;color:#4a5068;font-size:12px">${r.cons}</td>
+      <td style="padding:7px 12px;text-align:right;font-weight:600;font-size:12px;color:${r.firstAmt>0?'#16a34a':'#bbc0cc'}">
+        ${r.firstAmt>0?'¥'+r.firstAmt.toFixed(2):'—'}</td>
+      <td style="padding:7px 12px;text-align:right;font-weight:600;font-size:13px">
+        ¥${r.totalAmt.toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
+      <td style="padding:7px 12px;text-align:center;color:#6b7280;font-size:12px">${r.cnt}单</td>
+      <td style="padding:7px 12px;color:#6b7280;font-size:12px">${r.lastDate}</td>
+    </tr>`;
+  }).join('');
+  resultEl.innerHTML=`<div class="trend-card" style="padding:0;overflow:hidden">
+    <div style="padding:10px 16px;background:#f8f9fc;border-bottom:1px solid #e2e8f0;font-size:12px;color:#4a5068">
+      含 "<strong>${cons}</strong>" 的用户 <strong>${uids.length}</strong> 人 · 合计
+      <strong style="color:#0f1628">¥${totalAmt.toLocaleString('zh-CN',{maximumFractionDigits:2})}</strong>
+      <span style="color:#aab0be;margin-left:8px">${dateFrom} ~ ${dateTo}</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f0f4ff;color:#4a5068;font-size:12px">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">用户UID</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">注册日期</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">咨询师</th>
+        <th style="padding:8px 12px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">首日充值</th>
+        <th style="padding:8px 12px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">范围内充值</th>
+        <th style="padding:8px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">笔数</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">最后付费</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
 // ──── AD USERS PAGE ────
 let _adData = null, _adMap = null, _adDailyChart = null, _adDailyMode = 'cnt';
 let _consultantData = null;
@@ -1629,6 +1791,56 @@ function _renderAdContent(allUsers, dateFrom, dateTo){
 
   // 咨询师 Top10 — 来自 consultant_data.json，按日期区间聚合
   _renderConsultantBars(dateFrom, dateTo);
+
+  // 每日付费用户明细
+  _renderAdDailyTable(displayUsers);
+}
+
+function _renderAdDailyTable(users){
+  const wrap = document.getElementById('adusers-daily-wrap');
+  if(!wrap) return;
+
+  // Group paid users (u[3]>0) by reg_date, sorted date desc
+  const byDate = {};
+  users.filter(u=>(u[3]||0)>0).forEach(u=>{
+    const d = u[10]||'未知';
+    if(!byDate[d]) byDate[d]=[];
+    byDate[d].push(u);
+  });
+
+  const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  if(!dates.length){
+    wrap.innerHTML='<div class="trend-card" style="color:#aab0be;text-align:center;padding:20px;font-size:13px">所选范围内无首日付费用户</div>';
+    return;
+  }
+
+  wrap.innerHTML = dates.map(d=>{
+    const dayUsers = byDate[d].sort((a,b)=>(b[3]||0)-(a[3]||0));
+    const dayTotal = Math.round(dayUsers.reduce((s,u)=>s+(u[3]||0),0)*100)/100;
+    const rows = dayUsers.map((u,i)=>{
+      const cons = (_orderData && _getFirstDayCons(u[0], u[10])) || (u[9]&&u[9]!=='未知'?u[9]:'未知');
+      return `<tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#f8f9fc':''}">
+        <td style="padding:6px 14px;font-weight:500;font-size:13px;color:#0f1628">${u[0]}</td>
+        <td style="padding:6px 14px;font-size:13px;color:#4a5068">${cons}</td>
+        <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:#16a34a">¥${(u[3]||0).toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
+      </tr>`;
+    }).join('');
+    return `<div class="trend-card" style="padding:0;overflow:hidden;margin-bottom:12px">
+      <div style="padding:10px 16px;background:#f0f4ff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px">
+        <span style="font-weight:700;color:#0f1628;font-size:13px">${d}</span>
+        <span style="font-size:12px;color:#4a5068">${dayUsers.length} 人付费</span>
+        <span style="font-size:12px;font-weight:600;color:#16a34a;margin-left:auto">¥${dayTotal.toLocaleString('zh-CN',{maximumFractionDigits:2})}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#fafbff;color:#4a5068;font-size:11px">
+          <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">用户UID</th>
+          <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">承接咨询师</th>
+          <th style="padding:6px 14px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">首日充值</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
 }
 
 function switchAdDaily(mode, btn){
