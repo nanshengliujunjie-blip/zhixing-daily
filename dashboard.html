@@ -512,11 +512,11 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div class="section-header"><h3>用户画像</h3></div>
       <div class="chart-2col">
         <div class="chart-half">
-          <div class="chart-half-title">性别分布</div>
+          <div class="chart-half-title">性别分布<span id="ad-gender-coverage" style="font-size:10px;color:#8892a4;margin-left:6px;font-weight:400"></span></div>
           <div class="chart-half-wrap"><canvas id="adGenderChart"></canvas></div>
         </div>
         <div class="chart-half">
-          <div class="chart-half-title">年龄分布（已知 <span id="ad-age-known">—</span> 人）</div>
+          <div class="chart-half-title">年龄分布（已知 <span id="ad-age-known">—</span> 人 · <span id="ad-age-pct" style="font-weight:400;color:#8892a4">—</span>）</div>
           <div class="chart-half-wrap"><canvas id="adAgeChart"></canvas></div>
         </div>
       </div>
@@ -557,6 +557,10 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
         <div id="ad-consultant-bars"></div>
       </div>
 
+      <!-- Consultant funnel -->
+      <div class="section-header" style="margin-top:16px"><h3>咨询师转化漏斗</h3></div>
+      <div id="ad-consultant-funnel"></div>
+
       <!-- Daily paid users -->
       <div class="section-header" style="margin-top:16px"><h3>每日付费用户明细</h3></div>
       <div id="adusers-daily-wrap"></div>
@@ -577,6 +581,8 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div class="mc"><div class="mc-head"><span class="mc-label">首日付费总额</span></div><div class="mc-val" id="addetail-amt">—</div></div>
       <div class="mc"><div class="mc-head"><span class="mc-label">付费人均</span><span class="mc-badge">仅付费用户</span></div><div class="mc-val" id="addetail-avg">—</div></div>
       <div class="mc"><div class="mc-head"><span class="mc-label">涉及咨询师数</span></div><div class="mc-val" id="addetail-cons">—</div></div>
+      <div class="mc"><div class="mc-head"><span class="mc-label">次日活跃率</span><span class="mc-badge">D+1有订单</span></div><div class="mc-val" id="addetail-d1">—</div><div class="mc-deltas"><div class="mc-delta" id="addetail-d1-sub" style="font-size:11px;color:#8892a4">数据加载后显示</div></div></div>
+      <div class="mc"><div class="mc-head"><span class="mc-label">3日活跃率</span><span class="mc-badge">D+3有订单</span></div><div class="mc-val" id="addetail-d3">—</div><div class="mc-deltas"><div class="mc-delta" id="addetail-d3-sub" style="font-size:11px;color:#8892a4">数据加载后显示</div></div></div>
     </div>
 
     <!-- Loading -->
@@ -593,6 +599,8 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
             <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">UID</th>
             <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">承接咨询师</th>
             <th style="padding:10px 14px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">首日充值</th>
+            <th style="padding:10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">D+1</th>
+            <th style="padding:10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">D+3</th>
           </tr>
         </thead>
         <tbody id="addetail-tbody"></tbody>
@@ -759,6 +767,32 @@ function avg7(field, beforeDate){
   if(!slice.length) return null;
   return slice.reduce((a,b)=>a+b,0)/slice.length;
 }
+function avg7fn(getter, beforeDate){
+  const idx = dates.indexOf(beforeDate);
+  if(idx < 1) return null;
+  const slice = dates.slice(Math.max(0, idx-7), idx).map(d => getter(byDate[d])).filter(v => v!=null);
+  if(!slice.length) return null;
+  return slice.reduce((a,b)=>a+b,0)/slice.length;
+}
+function _addDays(d, n){
+  const t = new Date(d); t.setDate(t.getDate()+n); return t.toISOString().slice(0,10);
+}
+function _retStatus(uid, regDate, delta){
+  if(!_orderData || !regDate) return null;
+  const orders = _orderData[String(uid)]||[];
+  const tgt = _addDays(regDate, delta);
+  return orders.some(o=>o.d===tgt) ? 1 : 0;
+}
+function _retCell(val){
+  if(val===null) return '<td style="padding:6px 10px;text-align:center;color:#cbd5e1;font-size:12px">?</td>';
+  return val ? '<td style="padding:6px 10px;text-align:center;color:#16a34a;font-size:13px;font-weight:700">✓</td>'
+             : '<td style="padding:6px 10px;text-align:center;color:#fca5a5;font-size:13px">✗</td>';
+}
+function _tierBadge(amt){
+  if(amt>=50) return '<span style="display:inline-block;padding:0 4px;border-radius:2px;font-size:10px;font-weight:700;background:#fee2e2;color:#b91c1c;margin-left:3px;vertical-align:middle">高</span>';
+  if(amt>=10) return '<span style="display:inline-block;padding:0 4px;border-radius:2px;font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;margin-left:3px;vertical-align:middle">中</span>';
+  return '';
+}
 
 function setCard(id, valHtml, label1, delta1, label2, delta2){
   document.getElementById('v-'+id).innerHTML = valHtml;
@@ -826,7 +860,9 @@ function renderRange(dateFrom, dateTo){
   setCard('spend',
     '<b style="font-size:24px">¥'+fmt(cur.spend)+'</b>',
     dayLabel, deltaHtml(cur.spend, prev?.spend, true),
-    avgLabel, isSingle?'':('<span style="color:#8892a4">¥'+fmt(cur.spend/cur.n)+'/日</span>')
+    avgLabel, isSingle
+      ? deltaHtml(cur.spend, avg7('spend', dateFrom), true)
+      : '<span style="color:#8892a4">¥'+fmt(cur.spend/cur.n)+'/日</span>'
   );
 
   const noSpend = cur.spend === 0;
@@ -834,46 +870,50 @@ function renderRange(dateFrom, dateTo){
   const roiPending = '<span style="color:#aab0be;font-size:16px">待回填</span>';
   setCard('roi', noSpend ? roiNA : fmtPct(cur.roi),
     dayLabel, noSpend ? '' : deltaHtml(cur.roi, prev?.roi, false, 2, true),
-    avgLabel, ''
+    avgLabel, noSpend||!isSingle ? '' : deltaHtml(cur.roi, avg7('roi', dateFrom), false, 2, true)
   );
 
   setCard('roi3',
     noSpend ? roiNA : cur.roi3!=null ? fmtPct(cur.roi3) : roiPending,
     dayLabel, noSpend ? '' : deltaHtml(cur.roi3, prev?.roi3, false, 2, true),
-    '', ''
+    avgLabel, noSpend||!isSingle ? '' : deltaHtml(cur.roi3, avg7fn(e=>e.roiCurve&&e.roiCurve[1], dateFrom), false, 2, true)
   );
 
   setCard('roi7',
     noSpend ? roiNA : cur.roi7!=null ? fmtPct(cur.roi7) : roiPending,
     dayLabel, noSpend ? '' : deltaHtml(cur.roi7, prev?.roi7, false, 2, true),
-    '', ''
+    avgLabel, noSpend||!isSingle ? '' : deltaHtml(cur.roi7, avg7fn(e=>e.roiCurve&&e.roiCurve[2], dateFrom), false, 2, true)
   );
 
   // ── 注册 & 付费 ──
   setCard('reg', fmt(cur.reg,0),
     dayLabel, deltaHtml(cur.reg, prev?.reg, false, 0),
-    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.reg/cur.n,1)+'/日</span>')
+    avgLabel, isSingle
+      ? deltaHtml(cur.reg, avg7('reg', dateFrom), false, 0)
+      : '<span style="color:#8892a4">'+fmt(cur.reg/cur.n,1)+'/日</span>'
   );
 
   setCard('regcost', '¥'+fmt(cur.regCost),
     dayLabel, deltaHtml(cur.regCost, prev?.regCost, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.regCost, avg7('regCost', dateFrom), true) : ''
   );
 
   setCard('pay', fmt(cur.payCount,0),
     dayLabel, deltaHtml(cur.payCount, prev?.payCount, false, 1),
-    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.payCount/cur.n,1)+'/日</span>')
+    avgLabel, isSingle
+      ? deltaHtml(cur.payCount, avg7('payCount', dateFrom), false, 1)
+      : '<span style="color:#8892a4">'+fmt(cur.payCount/cur.n,1)+'/日</span>'
   );
 
   setCard('paycost', '¥'+fmt(cur.payCost),
     dayLabel, deltaHtml(cur.payCost, prev?.payCost, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.payCost, avg7('payCost', dateFrom), true) : ''
   );
 
   // ── 行为 & 留存 ──
   setCard('payrate', fmtPct(cur.payRate),
     dayLabel, deltaHtml(cur.payRate, prev?.payRate, false, 2, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.payRate, avg7('payRate', dateFrom), false, 2, true) : ''
   );
 
   document.getElementById('v-arpu').innerHTML = cur.arpu!=null ? '¥'+fmt(cur.arpu) : '—';
@@ -884,33 +924,35 @@ function renderRange(dateFrom, dateTo){
   setCard('ret',
     cur.nextRetention!=null ? fmtPct(cur.nextRetention) : '<span style="color:#aab0be;font-size:18px">待回填</span>',
     dayLabel, deltaHtml(cur.nextRetention, prev?.nextRetention, false, 2, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.nextRetention, avg7('nextRetention', dateFrom), false, 2, true) : ''
   );
 
   setCard('ai', fmt(cur.ai,0),
     dayLabel, deltaHtml(cur.ai, prev?.ai, false, 1),
-    avgLabel, isSingle?'':('<span style="color:#8892a4">'+fmt(cur.ai/cur.n,1)+'/日</span>')
+    avgLabel, isSingle
+      ? deltaHtml(cur.ai, avg7('ai', dateFrom), false, 1)
+      : '<span style="color:#8892a4">'+fmt(cur.ai/cur.n,1)+'/日</span>'
   );
 
   // ── 漏斗 & 激活 ──
   setCard('room', fmt(cur.enterRoom,0),
     dayLabel, deltaHtml(cur.enterRoom, prev?.enterRoom, false, 1),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.enterRoom, avg7('enterRoom', dateFrom), false, 1) : ''
   );
 
   setCard('roomrate', fmtPct(cur.enterRoomRate),
     dayLabel, deltaHtml(cur.enterRoomRate, prev?.enterRoomRate, false, 2, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.enterRoomRate, avg7('enterRoomRate', dateFrom), false, 2, true) : ''
   );
 
   setCard('mic', fmtPct(cur.micRate),
     dayLabel, deltaHtml(cur.micRate, prev?.micRate, false, 2, true),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.micRate, avg7('micRate', dateFrom), false, 2, true) : ''
   );
 
   setCard('act', fmt(cur.activate,0),
     dayLabel, deltaHtml(cur.activate, prev?.activate, false, 1),
-    '', ''
+    avgLabel, isSingle ? deltaHtml(cur.activate, avg7('activate', dateFrom), false, 1) : ''
   );
 
   // Refresh chart – use the range
@@ -1664,15 +1706,17 @@ let _adGenderC = null, _adAgeC = null, _adAmtC = null, _adOrderTypeC = null;
 function renderAdUsersPage(dateFrom, dateTo){
   dateFrom = dateFrom || elFrom.value;
   dateTo   = dateTo   || elTo.value;
-  if(_adData && _consultantData){ _renderAdContent(_adData.users, dateFrom, dateTo); return; }
+  if(_adData && _consultantData && _orderData){ _renderAdContent(_adData.users, dateFrom, dateTo); return; }
   document.getElementById('adusers-spinner').style.display = 'block';
   document.getElementById('adusers-content').style.display = 'none';
   Promise.all([
     _adData ? Promise.resolve(_adData) : fetch('ad_users.json').then(r=>r.json()),
-    _consultantData ? Promise.resolve(_consultantData) : fetch('consultant_data.json').then(r=>r.json())
-  ]).then(([adData, consData])=>{
+    _consultantData ? Promise.resolve(_consultantData) : fetch('consultant_data.json').then(r=>r.json()),
+    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json').then(r=>r.json())
+  ]).then(([adData, consData, orderData])=>{
     _adData = adData;
     _consultantData = consData;
+    _orderData = orderData;
     _adMap = {};
     adData.users.forEach(u => _adMap[String(u[0])] = u);
     document.getElementById('adusers-spinner').style.display = 'none';
@@ -1735,6 +1779,11 @@ function _renderAdContent(allUsers, dateFrom, dateTo){
   document.getElementById('ad-female').textContent = knownG>0 ? (gFemale/knownG*100).toFixed(1)+'%' : '—';
   document.getElementById('ad-gender-detail').textContent = `男 ${gMale.toLocaleString()} / 女 ${gFemale.toLocaleString()} / 未知 ${gUnk.toLocaleString()}`;
   document.getElementById('ad-age-known').textContent = s.age_known.toLocaleString();
+  // Coverage %
+  const gCoverEl = document.getElementById('ad-gender-coverage');
+  if(gCoverEl) gCoverEl.textContent = s.total>0 ? `覆盖 ${(knownG/s.total*100).toFixed(1)}%` : '';
+  const agePctEl = document.getElementById('ad-age-pct');
+  if(agePctEl) agePctEl.textContent = s.total>0 ? (s.age_known/s.total*100).toFixed(1)+'%' : '—';
 
   // 性别饼
   if(_adGenderC){ _adGenderC.destroy(); _adGenderC=null; }
@@ -1792,6 +1841,9 @@ function _renderAdContent(allUsers, dateFrom, dateTo){
   // 咨询师 Top10 — 来自 consultant_data.json，按日期区间聚合
   _renderConsultantBars(dateFrom, dateTo);
 
+  // 咨询师转化漏斗
+  _renderConsultantFunnel(displayUsers);
+
   // 每日付费用户明细
   _renderAdDailyTable(displayUsers);
 }
@@ -1819,10 +1871,14 @@ function _renderAdDailyTable(users){
     const dayTotal = Math.round(dayUsers.reduce((s,u)=>s+(u[3]||0),0)*100)/100;
     const rows = dayUsers.map((u,i)=>{
       const cons = (_orderData && _getFirstDayCons(u[0], u[10])) || (u[9]&&u[9]!=='未知'?u[9]:'未知');
+      const amt = u[3]||0;
+      const d1 = _retCell(_retStatus(u[0], u[10], 1));
+      const d3 = _retCell(_retStatus(u[0], u[10], 3));
       return `<tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#f8f9fc':''}">
         <td style="padding:6px 14px;font-weight:500;font-size:13px;color:#0f1628">${u[0]}</td>
         <td style="padding:6px 14px;font-size:13px;color:#4a5068">${cons}</td>
-        <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:#16a34a">¥${(u[3]||0).toLocaleString('zh-CN',{maximumFractionDigits:2})}</td>
+        <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:#16a34a">¥${amt.toLocaleString('zh-CN',{maximumFractionDigits:2})}${_tierBadge(amt)}</td>
+        ${d1}${d3}
       </tr>`;
     }).join('');
     return `<div class="trend-card" style="padding:0;overflow:hidden;margin-bottom:12px">
@@ -1836,11 +1892,63 @@ function _renderAdDailyTable(users){
           <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">用户UID</th>
           <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">承接咨询师</th>
           <th style="padding:6px 14px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">首日充值</th>
+          <th style="padding:6px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">D+1</th>
+          <th style="padding:6px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">D+3</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
   }).join('');
+}
+
+function _renderConsultantFunnel(users){
+  const wrap = document.getElementById('ad-consultant-funnel');
+  if(!wrap) return;
+  // Aggregate per consultant from ad_users data
+  const agg = {};
+  users.forEach(u => {
+    const name = (u[9]&&u[9]!=='未知'&&u[9].trim()) ? u[9].trim() : '未知';
+    if(!agg[name]) agg[name] = {cnt:0, paid:0, firstAmt:0, lm:0, q:0};
+    agg[name].cnt++;
+    if((u[3]||0)>0){ agg[name].paid++; agg[name].firstAmt += u[3]||0; }
+    if((u[7]||0)>0) agg[name].lm++;
+    if((u[6]||0)>0) agg[name].q++;
+  });
+  const sorted = Object.entries(agg)
+    .filter(([k]) => k!=='未知')
+    .map(([name,v]) => ({
+      name, cnt:v.cnt, paid:v.paid, firstAmt:v.firstAmt,
+      payRate: v.cnt>0 ? v.paid/v.cnt*100 : 0,
+      lmRate:  v.cnt>0 ? v.lm/v.cnt*100  : 0,
+      qRate:   v.cnt>0 ? v.q/v.cnt*100   : 0,
+      avgAmt:  v.paid>0 ? v.firstAmt/v.paid : 0
+    }))
+    .sort((a,b) => b.paid - a.paid);
+  if(!sorted.length){ wrap.innerHTML=''; return; }
+  const rows = sorted.map((c,i)=>`<tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#f8f9fc':''}">
+    <td style="padding:7px 12px;font-weight:500;font-size:12px;color:#0f1628">${c.name}</td>
+    <td style="padding:7px 12px;text-align:center;font-size:12px;color:#4a5068">${c.cnt}</td>
+    <td style="padding:7px 12px;text-align:center;font-size:12px">
+      <span style="color:#16a34a;font-weight:600">${c.paid}</span>
+      <span style="color:#8892a4;font-size:11px"> (${c.payRate.toFixed(1)}%)</span>
+    </td>
+    <td style="padding:7px 12px;text-align:center;font-size:12px;color:#4a5068">${c.lmRate.toFixed(1)}%</td>
+    <td style="padding:7px 12px;text-align:center;font-size:12px;color:#4a5068">${c.qRate.toFixed(1)}%</td>
+    <td style="padding:7px 12px;text-align:right;font-size:12px;color:#b45309;font-weight:600">${c.avgAmt>0?'¥'+c.avgAmt.toFixed(1):'—'}</td>
+  </tr>`).join('');
+  wrap.innerHTML = `<div class="trend-card" style="padding:0;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#f0f4ff;color:#4a5068;font-size:11px">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">咨询师</th>
+        <th style="padding:8px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">接入用户</th>
+        <th style="padding:8px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">付费（转化率）</th>
+        <th style="padding:8px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">连麦率</th>
+        <th style="padding:8px 12px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">提问率</th>
+        <th style="padding:8px 12px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">平均首充</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function switchAdDaily(mode, btn){
@@ -2027,18 +2135,33 @@ function _renderAdDetailTable(dateFrom, dateTo){
   document.getElementById('addetail-cons').textContent = consSet.size.toLocaleString();
   countEl.textContent = `共 ${rows.length} 条`;
 
+  // D+1 / D+3 retention stats (among paid users)
+  const d1Stats = paidRows.map(r=>_retStatus(r.u[0], r.u[10], 1));
+  const d3Stats = paidRows.map(r=>_retStatus(r.u[0], r.u[10], 3));
+  const d1Known = d1Stats.filter(v=>v!==null).length;
+  const d3Known = d3Stats.filter(v=>v!==null).length;
+  const d1Active = d1Stats.filter(v=>v===1).length;
+  const d3Active = d3Stats.filter(v=>v===1).length;
+  document.getElementById('addetail-d1').textContent = d1Known>0 ? (d1Active/d1Known*100).toFixed(1)+'%' : '—';
+  document.getElementById('addetail-d1-sub').textContent = d1Known>0 ? `${d1Active}/${d1Known} 人（付费用户）` : '订单数据未加载';
+  document.getElementById('addetail-d3').textContent = d3Known>0 ? (d3Active/d3Known*100).toFixed(1)+'%' : '—';
+  document.getElementById('addetail-d3-sub').textContent = d3Known>0 ? `${d3Active}/${d3Known} 人（付费用户）` : '订单数据未加载';
+
   tbody.innerHTML = rowsWithCons.map(({u, cons, firstAmt},i)=>{
     const isUnknown = cons==='未知';
     const hasPaid = firstAmt > 0;
     const rowBg = hasPaid ? 'background:#f0fdf4;' : i%2===0 ? '' : 'background:#f8f9fc;';
     const consColor = isUnknown ? '#bbc0cc' : '#0f1628';
     const amtColor = hasPaid ? '#16a34a' : '#bbc0cc';
-    const amt = hasPaid ? '¥'+firstAmt.toLocaleString('zh-CN',{maximumFractionDigits:2}) : '—';
+    const amtDisplay = hasPaid ? '¥'+firstAmt.toLocaleString('zh-CN',{maximumFractionDigits:2})+_tierBadge(firstAmt) : '—';
+    const d1 = _retCell(_retStatus(u[0], u[10], 1));
+    const d3 = _retCell(_retStatus(u[0], u[10], 3));
     return `<tr style="border-bottom:1px solid #f1f5f9;${rowBg}${isUnknown&&!hasPaid?'opacity:.55':''}">
       <td style="padding:6px 14px;color:#6b7280;font-size:13px;white-space:nowrap">${u[10]||'—'}</td>
       <td style="padding:6px 14px;color:#0f1628;font-weight:500;font-size:13px">${u[0]}</td>
       <td style="padding:6px 14px;color:${consColor};font-size:13px">${cons}</td>
-      <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:${amtColor}">${amt}</td>
+      <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:${amtColor}">${amtDisplay}</td>
+      ${d1}${d3}
     </tr>`;
   }).join('');
 }
