@@ -41,7 +41,17 @@ result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO)
 if result.returncode != 0:
     print('  ⚠ update_daily.py 失败，继续其他步骤')
 else:
-    print('  ✓ FALLBACK 已更新')
+    print('  ✓ index.html FALLBACK 已更新')
+    # 同步 dashboard.html 的 FALLBACK（与 index.html 保持一致）
+    idx = INDEX_HTML.read_text(encoding='utf-8')
+    m = re.search(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)', idx, re.DOTALL)
+    if m:
+        fb_content = m.group(2)
+        dash = DASHBOARD_HTML.read_text(encoding='utf-8')
+        dash2 = re.sub(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)',
+                       lambda x: x.group(1) + fb_content + x.group(3), dash, flags=re.DOTALL)
+        DASHBOARD_HTML.write_text(dash2, encoding='utf-8')
+        print('  ✓ dashboard.html FALLBACK 已同步')
 
 # ═══════════════════════════════════════════════════════
 # Step 2: 增量更新 user_orders.json
