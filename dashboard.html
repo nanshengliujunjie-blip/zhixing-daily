@@ -723,8 +723,8 @@ function aggregateRange(dateFrom, dateTo){
     arpu: reg>0 ? payAmount/reg : null,
     arppu: payCount>0 ? payAmount/payCount : null,
     nextRetention: avg('nextRetention'),
-    roi3: avg('roi3_cur') || (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[2]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })(),
-    roi7: (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[3]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })()
+    roi3: avg('roi3_cur') || (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[1]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })(),
+    roi7: (() => { const v=slice.map(e=>e.roiCurve&&e.roiCurve[2]).filter(v=>v!=null); return v.length?v.reduce((a,b)=>a+b)/v.length:null; })()
   };
 }
 
@@ -871,7 +871,7 @@ function renderChart(dateFrom, dateTo, mode){
       fill:true, tension:.35, pointRadius:3, pointHoverRadius:5
     },{
       label: 'ROI3 (%)',
-      data: slice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[2]:null),
+      data: slice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[1]:null),
       borderColor:'#6c5ce7', backgroundColor:'transparent',
       borderDash:[4,3], tension:.35, pointRadius:2, spanGaps:true
     }];
@@ -945,7 +945,7 @@ function switchPage(id, el){
 // ──── ROI PAGE ────
 function renderRoiPage(dateFrom, dateTo){
   const roiLabels = ['ROI0','ROI3','ROI7','ROI15','ROI30','ROI60','ROI90'];
-  const roiIdxs =   [0,     2,     3,     4,      5,      6,      7    ];
+  const roiIdxs =   [0,     1,     2,     3,      4,      5,      6    ];
   const rangeSlice = dates.filter(d => d >= dateFrom && d <= dateTo);
   if(!rangeSlice.length) return;
   const lastDate = rangeSlice[rangeSlice.length-1];
@@ -1002,7 +1002,7 @@ function renderRoiPage(dateFrom, dateTo){
     const cell = (v) => v!=null ? `<td class="${v>=100?'roi-hi':''}">${v.toFixed(2)}%</td>` : '<td class="roi-null">—</td>';
     tbody.innerHTML += `<tr>
       <td>${d}</td>
-      ${cell(rc[0])}${cell(rc[2])}${cell(rc[3])}${cell(rc[4])}${cell(rc[5])}
+      ${cell(rc[0])}${cell(rc[1])}${cell(rc[2])}${cell(rc[3])}${cell(rc[4])}
       <td>¥${fmt(e.spend)}</td>
     </tr>`;
   });
@@ -1703,8 +1703,8 @@ function renderAlertPage(dateFrom, dateTo){
     const e = byDate[d];
     const rc = e.roiCurve || [];
     const roi0 = rc[0];  // 首日ROI
-    const roi3 = rc[2];  // ROI3（index 2）
-    const roi7 = rc[4];  // ROI7（index 4）
+    const roi3 = rc[1];  // ROI3（index 1）
+    const roi7 = rc[2];  // ROI7（index 2）
     const warnings = [];
 
     // 首日ROI风险：若ROI3已回填且>30%、ROI7已回填且>45%，则后续弥补，取消首日预警
