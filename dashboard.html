@@ -307,27 +307,55 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <!-- ═══ PAGE: ROI 追踪 ═══ -->
   <div id="page-roi" class="page">
-    <div class="section-header" style="margin-top:0"><h3>ROI 回收曲线</h3></div>
-    <div class="trend-card" style="margin-bottom:16px">
-      <div class="trend-header">
-        <div class="trend-title">所选日期 ROI 回收曲线</div>
-        <span id="roi-curve-date" style="font-size:12px;color:#8892a4"></span>
+    <!-- ROI 趋势走势 -->
+    <div class="section-header" style="margin-top:0">
+      <h3>ROI 追踪</h3>
+      <div class="trend-tabs" style="margin-left:auto">
+        <button class="trend-tab active" id="roi-tab-curve" onclick="switchRoiView('curve',this)">回收曲线</button>
+        <button class="trend-tab" id="roi-tab-trend" onclick="switchRoiView('trend',this)">ROI趋势</button>
       </div>
-      <div class="chart-wrap"><canvas id="roiCurveChart"></canvas></div>
     </div>
-    <div class="section-header"><h3>近期各日 ROI 回收汇总</h3></div>
-    <div class="trend-card">
+    <!-- 回收曲线视图 -->
+    <div id="roi-view-curve">
+      <div class="full-chart-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div class="full-chart-card-title">ROI 回收曲线</div>
+            <div style="font-size:11px;color:#8892a4;margin-top:2px" id="roi-curve-date"></div>
+          </div>
+          <div style="display:flex;gap:8px;font-size:11px;color:#6b7280">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:#10b981;display:inline-block"></span>达标线(15/30/45%)</span>
+          </div>
+        </div>
+        <div style="position:relative;height:240px"><canvas id="roiCurveChart"></canvas></div>
+      </div>
+      <!-- ROI 进度条卡片 -->
+      <div id="roi-progress-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
+    </div>
+    <!-- ROI趋势视图 -->
+    <div id="roi-view-trend" style="display:none">
+      <div class="full-chart-card" style="margin-bottom:16px">
+        <div class="full-chart-card-title" style="margin-bottom:12px">各日 ROI0 / ROI3 / ROI7 走势</div>
+        <div style="position:relative;height:220px"><canvas id="roiTrendChart"></canvas></div>
+      </div>
+    </div>
+    <!-- 汇总表 -->
+    <div class="section-header"><h3>明细数据</h3></div>
+    <div class="trend-card" style="padding:0;overflow:hidden">
       <div style="overflow-x:auto">
-        <table class="roi-table" id="roi-summary-table">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:720px">
           <thead>
-            <tr>
-              <th>日期</th>
-              <th>ROI0</th>
-              <th>ROI3</th>
-              <th>ROI7</th>
-              <th>ROI15</th>
-              <th>ROI30</th>
-              <th>消耗 (¥)</th>
+            <tr style="background:#f0f4ff;color:#4a5068;font-weight:600">
+              <th style="padding:10px 14px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap">日期</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">消耗(¥)</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">注册</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">付费</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI0</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI3</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI7</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI15</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI30</th>
+              <th style="padding:10px 10px;text-align:center;border-bottom:1px solid #e2e8f0">ROI60</th>
             </tr>
           </thead>
           <tbody id="roi-table-body"></tbody>
@@ -338,22 +366,35 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 
   <!-- ═══ PAGE: 投放趋势 ═══ -->
   <div id="page-trend" class="page">
-    <div class="section-header" style="margin-top:0"><h3>投放消耗趋势</h3></div>
-    <div class="trend-card" style="margin-bottom:16px">
-      <div class="trend-header">
-        <div class="trend-title">消耗 · 注册 · 付费 趋势</div>
-        <div style="font-size:11px;color:#aab0be">时间范围由顶部选择器控制</div>
+    <div class="section-header" style="margin-top:0"><h3>投放趋势</h3></div>
+    <!-- Row 1: 消耗 & 注册成本 -->
+    <div class="full-chart-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="full-chart-card-title">消耗 &amp; 注册成本</div>
+        <div style="font-size:11px;color:#aab0be">日期范围由顶部选择器控制</div>
       </div>
-      <div class="chart-wrap" style="height:220px"><canvas id="trendSpendChart"></canvas></div>
+      <div style="position:relative;height:180px"><canvas id="trendSpendChart"></canvas></div>
     </div>
-    <div class="chart-2col">
+    <!-- Row 2: 注册/付费/激活 -->
+    <div class="chart-2col" style="margin-bottom:14px">
       <div class="chart-half">
-        <div class="chart-half-title">注册 / 付费人数趋势</div>
+        <div class="chart-half-title">注册 · 激活 · 付费人数</div>
         <div class="chart-half-wrap"><canvas id="trendRegChart"></canvas></div>
       </div>
       <div class="chart-half">
-        <div class="chart-half-title">付费率 &amp; 注册成本趋势</div>
-        <div class="chart-half-wrap"><canvas id="trendPayRateChart"></canvas></div>
+        <div class="chart-half-title">ROI0 · ROI3 · ROI7 走势</div>
+        <div class="chart-half-wrap"><canvas id="trendRoiChart"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 3: 漏斗转化率 & 付费率 -->
+    <div class="chart-2col">
+      <div class="chart-half">
+        <div class="chart-half-title">进房率 · 连麦率 · 付费率</div>
+        <div class="chart-half-wrap"><canvas id="trendFunnelChart"></canvas></div>
+      </div>
+      <div class="chart-half">
+        <div class="chart-half-title">注册成本 &amp; 付费成本趋势</div>
+        <div class="chart-half-wrap"><canvas id="trendCostChart"></canvas></div>
       </div>
     </div>
   </div>
@@ -635,8 +676,9 @@ let currentChartMode = 'roi';
 const minDate = dates[0], maxDate = dates[dates.length-1];
 const elFrom = document.getElementById('dateFrom');
 const elTo   = document.getElementById('dateTo');
-elFrom.min = elTo.min = minDate;
-elFrom.max = elTo.max = maxDate;
+// 不限制 min/max，让投放用户页可以选任意日期范围
+// elFrom.min = elTo.min = minDate;
+// elFrom.max = elTo.max = maxDate;
 
 function setPreset(n){
   document.querySelectorAll('.drp-preset').forEach(b=>b.classList.remove('active'));
@@ -927,6 +969,7 @@ function renderChart(dateFrom, dateTo, mode){
 
 // ════════ PAGE NAVIGATION ════════
 let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = null;
+// trendRoiC, trendFunnelC, trendCostC declared in renderTrendPage scope
 let userGenderC = null, userAgeC = null, userAmtC = null;
 
 function switchPage(id, el){
@@ -950,6 +993,16 @@ function switchPage(id, el){
 }
 
 // ──── ROI PAGE ────
+let roiTrendChart = null, _roiView = 'curve';
+function switchRoiView(v, btn){
+  _roiView = v;
+  document.querySelectorAll('#page-roi .trend-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('roi-view-curve').style.display = v==='curve'?'':'none';
+  document.getElementById('roi-view-trend').style.display = v==='trend'?'':'none';
+  renderRoiPage(elFrom.value, elTo.value);
+}
+
 function renderRoiPage(dateFrom, dateTo){
   const roiLabels = ['ROI0','ROI3','ROI7','ROI15','ROI30','ROI60','ROI90'];
   const roiIdxs =   [0,     1,     2,     3,      4,      5,      6    ];
@@ -959,111 +1012,218 @@ function renderRoiPage(dateFrom, dateTo){
   const cur = byDate[lastDate];
   if(!cur) return;
   const isSingle = dateFrom === dateTo;
-  document.getElementById('roi-curve-date').textContent = isSingle ? dateFrom : dateFrom+' 至 '+dateTo+'（显示末日曲线）';
+  document.getElementById('roi-curve-date').textContent = isSingle ? dateFrom : `${dateFrom} → ${dateTo}（曲线：${lastDate}，区间均值：虚线）`;
 
-  // Curve chart – show end-of-range date's curve + optional avg curve for range
-  const curveData = roiIdxs.map(i => cur.roiCurve ? cur.roiCurve[i] : null);
-  const datasets = [{
-    label: lastDate+' ROI回收 (%)',
-    data: curveData,
-    borderColor:'#4a7cf0', backgroundColor:'rgba(74,124,240,.1)',
-    fill:true, tension:.3, pointRadius:5, pointHoverRadius:7, spanGaps:false
-  }];
-  // If range > 1 day, add an avg curve
-  if(!isSingle){
-    const avgData = roiIdxs.map(i => {
-      const vals = rangeSlice.map(d=>byDate[d].roiCurve&&byDate[d].roiCurve[i]).filter(v=>v!=null);
-      return vals.length ? vals.reduce((a,b)=>a+b)/vals.length : null;
+  if(_roiView === 'curve'){
+    // ── 回收曲线 ──
+    const targets = [15, 30, 45, null, null, null, null];
+    const curveData = roiIdxs.map(i => cur.roiCurve ? cur.roiCurve[i] : null);
+    const datasets = [{
+      label: lastDate,
+      data: curveData,
+      borderColor:'#4a7cf0', backgroundColor:'rgba(74,124,240,.12)',
+      fill:true, tension:.35, pointRadius:5, pointHoverRadius:7,
+      pointBackgroundColor: curveData.map((v,i) => {
+        if(v==null) return '#aab0be';
+        if(targets[i]!=null && v>=targets[i]) return '#10b981';
+        if(targets[i]!=null && v<targets[i]) return '#ef4444';
+        return '#4a7cf0';
+      }),
+      spanGaps:false
+    }];
+    if(!isSingle){
+      const avgData = roiIdxs.map(i => {
+        const vals = rangeSlice.map(d=>byDate[d].roiCurve&&byDate[d].roiCurve[i]).filter(v=>v!=null);
+        return vals.length ? Math.round(vals.reduce((a,b)=>a+b)/vals.length*100)/100 : null;
+      });
+      datasets.push({ label:'区间均值', data:avgData, borderColor:'#f59e0b',
+        backgroundColor:'transparent', borderDash:[5,3], tension:.35, pointRadius:3,
+        spanGaps:false });
+    }
+    if(roiCurveChart){ roiCurveChart.destroy(); roiCurveChart=null; }
+    roiCurveChart = new Chart(document.getElementById('roiCurveChart').getContext('2d'),{
+      type:'line', data:{labels:roiLabels, datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{position:'top',labels:{boxWidth:10,font:{size:11},color:'#4a5068'}},
+          tooltip:{backgroundColor:'#fff',titleColor:'#0f1628',bodyColor:'#4a5068',
+            borderColor:'#e4e8f0',borderWidth:1,padding:10,
+            callbacks:{label:c=>c.raw!=null?`${c.dataset.label}: ${c.raw.toFixed(2)}%`:'待回填'}},
+          annotation:{annotations:{
+            line15:{type:'line',yMin:15,yMax:15,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'15%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
+            line30:{type:'line',yMin:30,yMax:30,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'30%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
+            line45:{type:'line',yMin:45,yMax:45,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'45%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}}
+          }}
+        },
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:11}}},
+          y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:10},callback:v=>v+'%'},
+            suggestedMin:0}
+        }
+      }
     });
-    datasets.push({
-      label: '区间均值 (%)',
-      data: avgData,
-      borderColor:'#f59e0b', backgroundColor:'transparent',
-      borderDash:[5,3], tension:.3, pointRadius:3, spanGaps:false
+
+    // ROI 进度卡片（最新日期）
+    const rc = cur.roiCurve||[];
+    const cards = [
+      {label:'ROI0',val:rc[0],target:15,idx:0},
+      {label:'ROI3',val:rc[1],target:30,idx:1},
+      {label:'ROI7',val:rc[2],target:45,idx:2},
+      {label:'ROI30',val:rc[4],target:null,idx:4}
+    ];
+    document.getElementById('roi-progress-cards').innerHTML = cards.map(c=>{
+      if(c.val==null) return `<div class="trend-card" style="padding:14px">
+        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}</div>
+        <div style="font-size:20px;font-weight:700;color:#aab0be">—</div>
+        <div style="font-size:10px;color:#bbc0cc;margin-top:4px">待回填</div></div>`;
+      const pct = c.target ? Math.min(c.val/c.target*100,120) : 100;
+      const color = c.target ? (c.val>=c.target?'#10b981':'#f59e0b') : '#4a7cf0';
+      const status = c.target ? (c.val>=c.target?'✓ 达标':'✗ 未达标') : '';
+      return `<div class="trend-card" style="padding:14px">
+        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}${c.target?` 目标${c.target}%`:''}</div>
+        <div style="font-size:22px;font-weight:700;color:${color}">${c.val.toFixed(2)}%</div>
+        ${c.target?`<div style="margin-top:8px;background:#f1f5f9;border-radius:4px;height:5px;overflow:hidden">
+          <div style="width:${Math.min(pct,100)}%;height:100%;background:${color};border-radius:4px;transition:.3s"></div></div>
+        <div style="font-size:10px;color:${color};margin-top:4px">${status}（${pct.toFixed(0)}%）</div>` : ''}
+      </div>`;
+    }).join('');
+
+  } else {
+    // ── ROI 趋势走势 ──
+    const labels = rangeSlice.map(d=>d.slice(5));
+    if(roiTrendChart){ roiTrendChart.destroy(); roiTrendChart=null; }
+    roiTrendChart = new Chart(document.getElementById('roiTrendChart').getContext('2d'),{
+      type:'line',
+      data:{labels, datasets:[
+        {label:'ROI0(%)', data:rangeSlice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[0]:null),
+          borderColor:'#4a7cf0',backgroundColor:'rgba(74,124,240,.08)',fill:true,tension:.3,pointRadius:2,spanGaps:true},
+        {label:'ROI3(%)', data:rangeSlice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[1]:null),
+          borderColor:'#10b981',backgroundColor:'transparent',tension:.3,pointRadius:2,spanGaps:true},
+        {label:'ROI7(%)', data:rangeSlice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[2]:null),
+          borderColor:'#f59e0b',backgroundColor:'transparent',borderDash:[4,3],tension:.3,pointRadius:2,spanGaps:true}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#4a5068'}},
+          tooltip:{backgroundColor:'#fff',titleColor:'#0f1628',bodyColor:'#4a5068',borderColor:'#e4e8f0',borderWidth:1,padding:8,
+            callbacks:{label:c=>c.raw!=null?`${c.dataset.label}: ${c.raw.toFixed(2)}%`:'待回填'}}},
+        scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:15}},
+          y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9},callback:v=>v+'%'}}}}
     });
   }
 
-  if(roiCurveChart){ roiCurveChart.destroy(); roiCurveChart = null; }
-  roiCurveChart = new Chart(document.getElementById('roiCurveChart').getContext('2d'),{
-    type:'line',
-    data:{ labels: roiLabels, datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}},
-        tooltip:{callbacks:{label:c => c.raw!=null ? c.raw.toFixed(2)+'%' : '待回填'}}
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:11}}},
-        y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:10},callback:v=>v+'%'}}
-      }
-    }
-  });
-
-  // Summary table – all dates in range, reversed
+  // ── 明细表 ──
   const tbody = document.getElementById('roi-table-body');
-  tbody.innerHTML = '';
-  [...rangeSlice].reverse().forEach(d => {
-    const e = byDate[d];
-    const rc = e.roiCurve || [];
-    const cell = (v, warn, ok) => {
-      if(v==null) return '<td class="roi-null">—</td>';
-      const cls = v>=100?'roi-hi': ok!=null&&v>=ok?'roi-ok': warn!=null&&v<warn?'roi-warn':'';
-      return `<td class="${cls}">${v.toFixed(2)}%</td>`;
-    };
-    const roi0cls = rc[0]!=null&&rc[0]<15 ? 'roi-warn' : rc[0]!=null&&rc[0]>=15 ? '' : '';
-    tbody.innerHTML += `<tr>
-      <td>${d}</td>
-      <td class="${rc[0]!=null&&rc[0]<15?'roi-warn':rc[0]!=null&&rc[0]>=30?'roi-ok':''}">${rc[0]!=null?rc[0].toFixed(2)+'%':'<span class="roi-null">—</span>'}</td>
-      ${cell(rc[1],30,30)}${cell(rc[2],45,45)}${cell(rc[3],null,null)}${cell(rc[4],null,null)}
-      <td>¥${fmt(e.spend)}</td>
+  const cell = (v,warn,ok) => {
+    if(v==null) return `<td style="text-align:center;color:#bbc0cc;padding:8px 10px">—</td>`;
+    const bg = v>=100?'background:#dcfce7;color:#166534;font-weight:700':
+               ok!=null&&v>=ok?'background:#f0fdf4;color:#15803d':
+               warn!=null&&v<warn?'background:#fef2f2;color:#dc2626':'color:#374151';
+    return `<td style="text-align:center;padding:8px 10px;${bg}">${v.toFixed(1)}%</td>`;
+  };
+  tbody.innerHTML = [...rangeSlice].reverse().map((d,i)=>{
+    const e=byDate[d]; const rc=e.roiCurve||[];
+    const bg = i%2===0?'':'background:#fafbff';
+    return `<tr style="${bg}border-bottom:1px solid #f1f5f9">
+      <td style="padding:8px 14px;font-size:12px;white-space:nowrap;font-weight:500">${d}</td>
+      <td style="text-align:center;padding:8px 10px;color:#374151">¥${fmt(e.spend)}</td>
+      <td style="text-align:center;padding:8px 10px;color:#374151">${e.reg??'—'}</td>
+      <td style="text-align:center;padding:8px 10px;color:#374151">${e.payCount??'—'}</td>
+      ${cell(rc[0],15,15)}${cell(rc[1],30,30)}${cell(rc[2],45,45)}${cell(rc[3],null,null)}${cell(rc[4],null,null)}${cell(rc[5],null,null)}
     </tr>`;
-  });
+  }).join('');
 }
 
 // ──── TREND PAGE ────
-function switchTrendDays(days, btn){
-  // No-op — trend page now uses the global date range picker
-}
+let trendRoiC=null, trendFunnelC=null, trendCostC=null;
 
 function renderTrendPage(dateFrom, dateTo){
   const slice = dates.filter(d => d >= dateFrom && d <= dateTo);
   const labels = slice.map(d => d.slice(5));
 
-  const mkLine = (label, data, color, fill=false) => ({
+  const mkLine = (label, data, color, fill=false, dash=[]) => ({
     label, data,
-    borderColor: color, backgroundColor: fill ? color.replace(')',',0.08)').replace('rgb','rgba') : 'transparent',
-    fill, tension:.35, pointRadius:2, pointHoverRadius:5
+    borderColor: color,
+    backgroundColor: fill ? color.replace('rgb(','rgba(').replace(')',',0.08)') : 'transparent',
+    fill, tension:.35, pointRadius:2, pointHoverRadius:5,
+    borderDash: dash, spanGaps:true
   });
 
-  // Spend chart
+  const tOpts = (prefix='', dual=false) => ({
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'top',labels:{boxWidth:8,font:{size:10},color:'#4a5068'}},
+      tooltip:{backgroundColor:'#fff',titleColor:'#0f1628',bodyColor:'#4a5068',
+        borderColor:'#e4e8f0',borderWidth:1,padding:8}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:15}},
+      y:{grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9},callback:v=>prefix?prefix+v:v},position:'left'},
+      ...(dual?{y2:{grid:{display:false},ticks:{color:'#aab0be',font:{size:9},callback:v=>'¥'+v},position:'right'}}:{})
+    }
+  });
+
+  // Chart 1: 消耗 & 注册成本（双轴）
   if(trendSpendC){ trendSpendC.destroy(); trendSpendC=null; }
   trendSpendC = new Chart(document.getElementById('trendSpendChart').getContext('2d'),{
     type:'line',
-    data:{labels, datasets:[mkLine('消耗(¥)', slice.map(d=>byDate[d].spend), 'rgb(245,158,11)', true)]},
-    options: chartOpts('¥')
+    data:{labels, datasets:[
+      {...mkLine('消耗(¥)', slice.map(d=>byDate[d].spend), 'rgb(245,158,11)', true), yAxisID:'y'},
+      {...mkLine('注册成本(¥)', slice.map(d=>byDate[d].regCost), 'rgb(99,102,241)', false), yAxisID:'y2'},
+      {...mkLine('付费成本(¥)', slice.map(d=>byDate[d].payCost), 'rgb(239,68,68)', false, [4,3]), yAxisID:'y2'}
+    ]},
+    options: tOpts('',true)
   });
 
-  // Reg/pay chart
+  // Chart 2: 注册/激活/付费人数
   if(trendRegC){ trendRegC.destroy(); trendRegC=null; }
   trendRegC = new Chart(document.getElementById('trendRegChart').getContext('2d'),{
     type:'line',
     data:{labels, datasets:[
       mkLine('净注册', slice.map(d=>byDate[d].reg), 'rgb(16,185,129)', true),
-      mkLine('新增付费', slice.map(d=>byDate[d].payCount), 'rgb(239,68,68)')
+      mkLine('激活UV', slice.map(d=>byDate[d].ai), 'rgb(74,124,240)'),
+      mkLine('新增付费', slice.map(d=>byDate[d].payCount), 'rgb(239,68,68)', false, [4,3])
     ]},
-    options: chartOpts()
+    options: tOpts()
   });
 
-  // Pay rate / reg cost
-  if(trendPayRateC){ trendPayRateC.destroy(); trendPayRateC=null; }
-  trendPayRateC = new Chart(document.getElementById('trendPayRateChart').getContext('2d'),{
+  // Chart 3: ROI0/ROI3/ROI7
+  if(trendRoiC){ trendRoiC.destroy(); trendRoiC=null; }
+  trendRoiC = new Chart(document.getElementById('trendRoiChart').getContext('2d'),{
     type:'line',
     data:{labels, datasets:[
-      mkLine('付费率(%)', slice.map(d=>byDate[d].payRate), 'rgb(99,102,241)'),
-      mkLine('注册成本(¥)', slice.map(d=>byDate[d].regCost), 'rgb(234,179,8)')
+      mkLine('ROI0(%)', slice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[0]:null), 'rgb(74,124,240)', true),
+      mkLine('ROI3(%)', slice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[1]:null), 'rgb(16,185,129)'),
+      mkLine('ROI7(%)', slice.map(d=>byDate[d].roiCurve?byDate[d].roiCurve[2]:null), 'rgb(245,158,11)', false, [4,3])
     ]},
-    options: chartOpts()
+    options: tOpts('%')
+  });
+
+  // Chart 4: 进房率/连麦率/付费率
+  if(trendFunnelC){ trendFunnelC.destroy(); trendFunnelC=null; }
+  trendFunnelC = new Chart(document.getElementById('trendFunnelChart').getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[
+      mkLine('进房率(%)', slice.map(d=>byDate[d].enterRoomRate), 'rgb(16,185,129)', true),
+      mkLine('连麦率(%)', slice.map(d=>byDate[d].micRate), 'rgb(147,51,234)'),
+      mkLine('付费率(%)', slice.map(d=>byDate[d].payRate), 'rgb(239,68,68)', false, [4,3])
+    ]},
+    options: tOpts('%')
+  });
+
+  // Chart 5: 注册成本/付费成本（原独立）现在用 trendCostC 画次日留存
+  if(trendCostC){ trendCostC.destroy(); trendCostC=null; }
+  trendCostC = new Chart(document.getElementById('trendCostChart').getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[
+      mkLine('次日留存(%)', slice.map(d=>byDate[d].nextRetention!=null?byDate[d].nextRetention*100:null), 'rgb(6,182,212)', true),
+      mkLine('注册成本(¥)', slice.map(d=>byDate[d].regCost), 'rgb(234,179,8)', false, [4,3])
+    ]},
+    options: tOpts()
   });
 }
 
