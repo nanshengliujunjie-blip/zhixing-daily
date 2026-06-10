@@ -1536,8 +1536,15 @@ function _renderAdDetailTable(dateFrom, dateTo){
     return (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo);
   });
 
-  // Sort by reg_date desc
-  rows.sort((a,b) => (b[10]||'').localeCompare(a[10]||''));
+  // Sort: 首日付费 desc first, then reg_date desc, then amt desc
+  // Pre-compute firstAmt for sorting (use u[3] roi_pay_amt as quick estimate)
+  rows.sort((a,b) => {
+    const aAmt = a[3]||0, bAmt = b[3]||0;
+    const aPaid = aAmt>0?1:0, bPaid = bAmt>0?1:0;
+    if(bPaid !== aPaid) return bPaid - aPaid;          // paid first
+    if(bPaid && aPaid) return bAmt - aAmt < 0 ? 1 : -1; // higher amt first
+    return (b[10]||'').localeCompare(a[10]||'');       // then by date desc
+  });
 
   const tbody = document.getElementById('addetail-tbody');
   const emptyEl = document.getElementById('addetail-empty');
