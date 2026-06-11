@@ -1326,9 +1326,9 @@ function renderUsersPage(dateFrom, dateTo){
   document.getElementById('users-spinner').style.display = 'block';
   document.getElementById('users-content').style.display = 'none';
   Promise.all([
-    _userData ? Promise.resolve(_userData) : fetch('user_data.json').then(r=>r.json()),
-    _consultantAllData ? Promise.resolve(_consultantAllData) : fetch('consultant_all_data.json').then(r=>r.json()),
-    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json').then(r=>r.json())
+    _userData ? Promise.resolve(_userData) : fetch('user_data.json',{cache:'no-cache'}).then(r=>r.json()),
+    _consultantAllData ? Promise.resolve(_consultantAllData) : fetch('consultant_all_data.json',{cache:'no-cache'}).then(r=>r.json()),
+    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json',{cache:'no-cache'}).then(r=>r.json())
   ]).then(([userData, consData, orderData])=>{
     _userData = userData;
     _consultantAllData = consData;
@@ -1570,9 +1570,9 @@ function doUserPageSearch(){
   if(!uid && !cons){ resultEl.innerHTML=''; return; }
 
   const needs = [];
-  if(!_orderData) needs.push(fetch('user_orders.json').then(r=>r.json()).then(d=>{ _orderData=d; }));
-  if(!_userData)  needs.push(fetch('user_data.json').then(r=>r.json()).then(d=>{ _userData=d; _userMap={}; d.users.forEach(u=>_userMap[u[0]]=u); }));
-  if(!_adData)    needs.push(fetch('ad_users.json').then(r=>r.json()).then(d=>{ _adData=d; _adMap={}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
+  if(!_orderData) needs.push(fetch('user_orders.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _orderData=d; }));
+  if(!_userData)  needs.push(fetch('user_data.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _userData=d; _userMap={}; d.users.forEach(u=>_userMap[u[0]]=u); }));
+  if(!_adData)    needs.push(fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _adData=d; _adMap={}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
 
   if(needs.length){
     loadEl.style.display='block';
@@ -1716,9 +1716,9 @@ function renderAdUsersPage(dateFrom, dateTo){
   document.getElementById('adusers-spinner').style.display = 'block';
   document.getElementById('adusers-content').style.display = 'none';
   Promise.all([
-    _adData ? Promise.resolve(_adData) : fetch('ad_users.json').then(r=>r.json()),
-    _consultantData ? Promise.resolve(_consultantData) : fetch('consultant_data.json').then(r=>r.json()),
-    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json').then(r=>r.json())
+    _adData ? Promise.resolve(_adData) : fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()),
+    _consultantData ? Promise.resolve(_consultantData) : fetch('consultant_data.json',{cache:'no-cache'}).then(r=>r.json()),
+    _orderData ? Promise.resolve(_orderData) : fetch('user_orders.json',{cache:'no-cache'}).then(r=>r.json())
   ]).then(([adData, consData, orderData])=>{
     _adData = adData;
     _consultantData = consData;
@@ -2066,8 +2066,8 @@ function renderAdDetailPage(dateFrom, dateTo){
   dateTo   = dateTo   || elTo.value;
   const spinner = document.getElementById('addetail-spinner');
   const needs = [];
-  if(!_adData)    needs.push(fetch('ad_users.json').then(r=>r.json()).then(d=>{ _adData=d; _adMap={}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
-  if(!_orderData) needs.push(fetch('user_orders.json').then(r=>r.json()).then(d=>{ _orderData=d; }));
+  if(!_adData)    needs.push(fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _adData=d; _adMap={}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
+  if(!_orderData) needs.push(fetch('user_orders.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _orderData=d; }));
   if(needs.length){
     spinner.style.display = 'block';
     Promise.all(needs).then(()=>{ spinner.style.display='none'; _renderAdDetailTable(dateFrom, dateTo); })
@@ -2192,9 +2192,9 @@ function doSearch(){
 
   // Ensure all three data sources loaded
   const needs = [];
-  if(!_orderData)    needs.push(fetch('user_orders.json').then(r=>r.json()).then(d=>{ _orderData = d; }));
-  if(!_userData)     needs.push(fetch('user_data.json').then(r=>r.json()).then(d=>{ _userData = d; _userMap = {}; d.users.forEach(u=>_userMap[u[0]]=u); }));
-  if(!_adData)       needs.push(fetch('ad_users.json').then(r=>r.json()).then(d=>{ _adData = d; _adMap = {}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
+  if(!_orderData)    needs.push(fetch('user_orders.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _orderData = d; }));
+  if(!_userData)     needs.push(fetch('user_data.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _userData = d; _userMap = {}; d.users.forEach(u=>_userMap[u[0]]=u); }));
+  if(!_adData)       needs.push(fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{ _adData = d; _adMap = {}; d.users.forEach(u=>_adMap[String(u[0])]=u); }));
 
   if(needs.length){
     loadingEl.style.display = 'block';
