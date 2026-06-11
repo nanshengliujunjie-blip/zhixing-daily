@@ -598,6 +598,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
             <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">注册日期</th>
             <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">UID</th>
             <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">承接咨询师</th>
+            <th style="padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">媒体来源</th>
             <th style="padding:10px 14px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">首日充值</th>
             <th style="padding:10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">D+1</th>
             <th style="padding:10px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">D+3</th>
@@ -2168,6 +2169,7 @@ function _renderAdDetailTable(dateFrom, dateTo){
       <td style="padding:6px 14px;color:#6b7280;font-size:13px;white-space:nowrap">${u[10]||'—'}</td>
       <td style="padding:6px 14px;color:#0f1628;font-weight:500;font-size:13px">${u[0]}</td>
       <td style="padding:6px 14px;color:${consColor};font-size:13px">${cons}</td>
+      <td style="padding:6px 14px;font-size:12px">${_mediaBadge(u[12])}</td>
       <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:${amtColor}">${amtDisplay}</td>
       ${d1}${d3}
     </tr>`;
