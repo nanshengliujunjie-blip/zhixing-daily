@@ -120,6 +120,7 @@ import openpyxl, tempfile
 with open(AD_USERS) as f:
     ad = json.load(f)
 existing_uids = set(str(u[0]) for u in ad['users'])
+admap = {str(u[0]): u for u in ad['users']}
 existing_reg_dates = set(u[10] for u in ad['users'] if u[10])
 last_ad_date = max(existing_reg_dates) if existing_reg_dates else '2025-04-30'
 
@@ -134,6 +135,8 @@ with open(USER_ORDERS) as f:
     orders_data_fresh = json.load(f)
 
 total_ad_new = 0
+paid_fixed = 0
+orders_dirty = False
 if fetch_attr_from > fetch_attr_to:
     print(f'  ad_users 已是最新 ({last_ad_date})，跳过')
 else:
@@ -150,38 +153,88 @@ else:
         else:
             try:
                 wb = openpyxl.load_workbook(tmp_xlsx, data_only=True)
-                rows_xlsx = list(wb.active.iter_rows(values_only=True))
-                new_uids = [str(r2[16]) for r2 in rows_xlsx[1:] if r2[3] == '新增注册' and r2[16]]
+                # 优先用「点击归因明细数据」sheet（含首日付费事件）
+                ws = wb['点击归因明细数据'] if '点击归因明细数据' in wb.sheetnames else wb.active
+                rows_xlsx = list(ws.iter_rows(values_only=True))
+                # 解析新增注册 + 首日付费（权威付费源，金额单位 分→元）
+                new_uids = []
+                pay_orders = {}   # uid -> [元金额,...]
+                for r2 in rows_xlsx[1:]:
+                    ev = r2[3]; uid = str(r2[16]) if r2[16] else None
+                    if not uid: continue
+                    if ev == '新增注册':
+                        new_uids.append(uid)
+                    elif ev == '首日付费' and r2[17]:
+                        pay_orders.setdefault(uid, []).append(round(r2[17] / 100.0, 2))
+
+                # 1) 新增注册用户入库（首日付费额取权威首日付费事件，缺则0）
                 truly_new = [u for u in new_uids if u not in existing_uids]
                 for uid in truly_new:
                     uu = ud_map.get(uid)
                     gender = uu[2] if uu and len(uu) > 2 else 0
                     age    = uu[3] if uu and len(uu) > 3 else None
                     orders = orders_data_fresh.get(uid, [])
-                    first_day = [o for o in orders if o['d'] == ds]
-                    roi_pay = round(sum(o['amt'] for o in first_day), 2)
-                    total_amt = round(sum(o['amt'] for o in orders), 2)
+                    roi_pay = round(sum(pay_orders.get(uid, [])), 2)
+                    paid_cnt = len(pay_orders.get(uid, []))
+                    total_amt = round(max(sum(o['amt'] for o in orders), roi_pay), 2)
                     order_cnt = len(orders)
                     q_cnt  = sum(1 for o in orders if o.get('type') == '提问')
                     lm_cnt = sum(1 for o in orders if o.get('type') == '连麦')
                     zx_cnt = sum(1 for o in orders if o.get('type') == '咨询')
-                    paid = [o for o in orders if o.get('amt', 0) > 0]
-                    consultant = paid[0].get('c', '未知') if paid else '未知'
-                    ad['users'].append([uid, gender, age, roi_pay, total_amt,
-                                        order_cnt, q_cnt, lm_cnt, zx_cnt, consultant, ds])
-                    existing_uids.add(uid)
+                    fd_cons = [o.get('c') for o in orders if o['d'] == ds and o.get('c') and o.get('c') != '未知']
+                    consultant = fd_cons[0] if fd_cons else ('知小i' if roi_pay > 0 else '未知')
+                    u = [uid, gender, age, roi_pay, total_amt,
+                         order_cnt, q_cnt, lm_cnt, zx_cnt, consultant, ds, paid_cnt]
+                    ad['users'].append(u)
+                    existing_uids.add(uid); admap[uid] = u
                     total_ad_new += 1
-                print(f'    新增 {len(truly_new)} 个投放用户')
+
+                # 2) 用首日付费事件校正所有当日付费用户（含已存在用户），避免漏计AI小额付费
+                for uid, amts in pay_orders.items():
+                    u = admap.get(uid)
+                    if not u: continue
+                    target = round(sum(amts), 2)
+                    cnt = len(amts)
+                    # ad_users 首日付费/付费单数
+                    if (u[3] or 0) != target:
+                        u[3] = target
+                        u[4] = round(max(u[4] or 0, target), 2)
+                        u[5] = max(u[5] or 0, cnt)
+                        if len(u) <= 11: u.append(cnt)
+                        else: u[11] = cnt
+                        paid_fixed += 1
+                    # user_orders 当日付费记录按权威重建（保留非当日 + 当日免费记录）
+                    existing = orders_data_fresh.get(uid, [])
+                    cur_day = [x for x in existing if x['d'] == ds]
+                    cur_paid = round(sum(x['amt'] for x in cur_day if x['amt'] > 0), 2)
+                    if abs(cur_paid - target) > 0.01:
+                        cc = [x['c'] for x in cur_day if x.get('c') and x['c'] != '未知']
+                        consultant = cc[0] if cc else '知小i'
+                        g = cur_day[0].get('gender') if cur_day else (u[1] or 0)
+                        a = cur_day[0].get('age') if cur_day else u[2]
+                        otype = (cur_day[0].get('type') if cur_day else None) or '提问'
+                        kept = [x for x in existing if x['d'] != ds]
+                        for amt in amts:
+                            kept.append({'d': ds, 'c': consultant, 'amt': amt,
+                                         'type': otype, 'gender': g, 'age': a})
+                        orders_data_fresh[uid] = kept
+                        orders_dirty = True
+
+                print(f'    新增 {len(truly_new)} 人 / 校正付费 {len(pay_orders)} 人')
                 os.unlink(tmp_xlsx)
             except Exception as e:
                 print(f'    ⚠ 解析失败: {e}')
         ds = (date.fromisoformat(ds) + timedelta(days=1)).isoformat()
 
-if total_ad_new > 0:
+if total_ad_new > 0 or paid_fixed > 0:
     ad['users'].sort(key=lambda u: u[10] or '')
     with open(AD_USERS, 'w') as f:
         json.dump(ad, f, ensure_ascii=False, separators=(',', ':'))
-    print(f'  ✓ ad_users.json 新增 {total_ad_new} 人（共 {len(ad["users"])} 人）')
+    print(f'  ✓ ad_users.json 新增 {total_ad_new} 人, 校正付费 {paid_fixed} 人（共 {len(ad["users"])} 人）')
+if orders_dirty:
+    with open(USER_ORDERS, 'w') as f:
+        json.dump(orders_data_fresh, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  ✓ user_orders.json 已按权威首日付费校正')
 
 # ═══════════════════════════════════════════════════════
 # Step 4: 重建 consultant_data.json + consultant_all_data.json
