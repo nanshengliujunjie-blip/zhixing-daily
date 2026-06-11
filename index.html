@@ -110,6 +110,49 @@ input[type=date]{background:#fff;border:1px solid #dde0f0;color:#1a1d2e;padding:
 </head>
 <body>
 
+<!-- ═══ 登录门（简单访问保护，非强加密）═══ -->
+<div id="zx-login" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1e2746,#0f1628);display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <div style="background:#fff;border-radius:16px;padding:36px 32px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center">
+    <div style="font-size:34px;margin-bottom:6px">📋</div>
+    <div style="font-size:18px;font-weight:700;color:#0f1628;margin-bottom:4px">知星投放日报</div>
+    <div style="font-size:12px;color:#8892a4;margin-bottom:22px">请输入账号密码访问</div>
+    <input id="zx-user" placeholder="账号" autocomplete="username"
+      style="width:100%;box-sizing:border-box;padding:11px 13px;margin-bottom:11px;border:1px solid #d0d5e0;border-radius:8px;font-size:14px;outline:none">
+    <input id="zx-pass" type="password" placeholder="密码" autocomplete="current-password"
+      style="width:100%;box-sizing:border-box;padding:11px 13px;margin-bottom:6px;border:1px solid #d0d5e0;border-radius:8px;font-size:14px;outline:none">
+    <div id="zx-err" style="color:#ef4444;font-size:12px;height:16px;text-align:left;margin-bottom:10px"></div>
+    <button id="zx-btn" style="width:100%;padding:11px;background:#4a7cf0;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">登 录</button>
+    <label style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:14px;font-size:12px;color:#8892a4;cursor:pointer">
+      <input type="checkbox" id="zx-remember" checked style="cursor:pointer"> 记住我（本设备）
+    </label>
+  </div>
+</div>
+<script>
+(function(){
+  var OK = "emhpeGluZzp6aGl4aW5nMjAyNg=="; // base64("zhixing:zhixing2026")
+  var KEY = "zx_auth_v1";
+  var el = document.getElementById('zx-login');
+  function authed(){ try{ return localStorage.getItem(KEY)===OK || sessionStorage.getItem(KEY)===OK; }catch(e){ return false; } }
+  function unlock(){ el.parentNode && el.parentNode.removeChild(el); }
+  if(authed()){ unlock(); return; }
+  function tryLogin(){
+    var u=document.getElementById('zx-user').value.trim();
+    var p=document.getElementById('zx-pass').value;
+    var token; try{ token=btoa(u+":"+p); }catch(e){ token=""; }
+    if(token===OK){
+      try{ (document.getElementById('zx-remember').checked?localStorage:sessionStorage).setItem(KEY,OK); }catch(e){}
+      unlock();
+    } else {
+      document.getElementById('zx-err').textContent="账号或密码错误";
+      document.getElementById('zx-pass').value="";
+    }
+  }
+  document.getElementById('zx-btn').addEventListener('click',tryLogin);
+  el.addEventListener('keydown',function(e){ if(e.key==='Enter') tryLogin(); });
+  document.getElementById('zx-user').focus();
+})();
+</script>
+
 <div class="header">
   <h1>⭐ 知星<span>日报</span></h1>
   <div class="hright">
