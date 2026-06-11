@@ -78,8 +78,8 @@ def discover_tables(force=False):
     """)
     tables2 = rows_to_dicts(result2)
     tables1 = rows_to_dicts(result1)
-    print(f'[discover] 表2候选: {list({f"{t["table_schema"]}.{t["table_name"]}" for t in tables2})}')
-    print(f'[discover] 表1候选: {list({f"{t["table_schema"]}.{t["table_name"]}" for t in tables1})}')
+    print(f"[discover] 表2候选: {list({t['table_schema']+'.'+t['table_name'] for t in tables2})}")
+    print(f"[discover] 表1候选: {list({t['table_schema']+'.'+t['table_name'] for t in tables1})}")
 
     # 合并用于手动选择
     all_schemas = set()

@@ -35,23 +35,27 @@ print(f'{"="*55}\n')
 
 # ═══════════════════════════════════════════════════════
 # Step 1: 更新 FALLBACK（复用 update_daily.py）
+# 可用 SKIP_FALLBACK=1 跳过（表1表2约中午才更新时，先只更新用户/投放数据）
 # ═══════════════════════════════════════════════════════
-print('【Step 1】更新 FALLBACK (index.html + dashboard.html)...')
-result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO)
-if result.returncode != 0:
-    print('  ⚠ update_daily.py 失败，继续其他步骤')
+if os.environ.get('SKIP_FALLBACK'):
+    print('【Step 1】跳过 FALLBACK 更新 (SKIP_FALLBACK=1)')
 else:
-    print('  ✓ index.html FALLBACK 已更新')
-    # 同步 dashboard.html 的 FALLBACK（与 index.html 保持一致）
-    idx = INDEX_HTML.read_text(encoding='utf-8')
-    m = re.search(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)', idx, re.DOTALL)
-    if m:
-        fb_content = m.group(2)
-        dash = DASHBOARD_HTML.read_text(encoding='utf-8')
-        dash2 = re.sub(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)',
-                       lambda x: x.group(1) + fb_content + x.group(3), dash, flags=re.DOTALL)
-        DASHBOARD_HTML.write_text(dash2, encoding='utf-8')
-        print('  ✓ dashboard.html FALLBACK 已同步')
+    print('【Step 1】更新 FALLBACK (index.html + dashboard.html)...')
+    result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO)
+    if result.returncode != 0:
+        print('  ⚠ update_daily.py 失败，继续其他步骤')
+    else:
+        print('  ✓ index.html FALLBACK 已更新')
+        # 同步 dashboard.html 的 FALLBACK（与 index.html 保持一致）
+        idx = INDEX_HTML.read_text(encoding='utf-8')
+        m = re.search(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)', idx, re.DOTALL)
+        if m:
+            fb_content = m.group(2)
+            dash = DASHBOARD_HTML.read_text(encoding='utf-8')
+            dash2 = re.sub(r'(const FALLBACK\s*=\s*\[)(.*?)(\];)',
+                           lambda x: x.group(1) + fb_content + x.group(3), dash, flags=re.DOTALL)
+            DASHBOARD_HTML.write_text(dash2, encoding='utf-8')
+            print('  ✓ dashboard.html FALLBACK 已同步')
 
 # ═══════════════════════════════════════════════════════
 # Step 2: 增量更新 user_orders.json
@@ -156,12 +160,15 @@ else:
                 # 优先用「点击归因明细数据」sheet（含首日付费事件）
                 ws = wb['点击归因明细数据'] if '点击归因明细数据' in wb.sheetnames else wb.active
                 rows_xlsx = list(ws.iter_rows(values_only=True))
-                # 解析新增注册 + 首日付费（权威付费源，金额单位 分→元）
+                # 解析新增注册 + 首日付费（权威付费源，金额单位 分→元）+ 媒体来源
                 new_uids = []
                 pay_orders = {}   # uid -> [元金额,...]
+                media_map = {}    # uid -> 媒体（优先新增注册事件）
                 for r2 in rows_xlsx[1:]:
                     ev = r2[3]; uid = str(r2[16]) if r2[16] else None
-                    if not uid: continue
+                    if not uid or uid == '0': continue
+                    if r2[5] and (uid not in media_map or ev == '新增注册'):
+                        media_map[uid] = r2[5]
                     if ev == '新增注册':
                         new_uids.append(uid)
                     elif ev == '首日付费' and r2[17]:
@@ -184,7 +191,8 @@ else:
                     fd_cons = [o.get('c') for o in orders if o['d'] == ds and o.get('c') and o.get('c') != '未知']
                     consultant = fd_cons[0] if fd_cons else ('知小i' if roi_pay > 0 else '未知')
                     u = [uid, gender, age, roi_pay, total_amt,
-                         order_cnt, q_cnt, lm_cnt, zx_cnt, consultant, ds, paid_cnt]
+                         order_cnt, q_cnt, lm_cnt, zx_cnt, consultant, ds, paid_cnt,
+                         media_map.get(uid, '')]
                     ad['users'].append(u)
                     existing_uids.add(uid); admap[uid] = u
                     total_ad_new += 1
@@ -219,6 +227,14 @@ else:
                                          'type': otype, 'gender': g, 'age': a})
                         orders_data_fresh[uid] = kept
                         orders_dirty = True
+
+                # 3) 回填媒体来源 u[12]（已存在用户补齐；索引11=付费单数, 12=媒体）
+                for uid, media in media_map.items():
+                    u = admap.get(uid)
+                    if not u or not media: continue
+                    if len(u) < 12: u.append(0)      # 补 paid_cnt(11)
+                    if len(u) < 13: u.append('')     # 补 media(12)
+                    u[12] = media
 
                 print(f'    新增 {len(truly_new)} 人 / 校正付费 {len(pay_orders)} 人')
                 os.unlink(tmp_xlsx)

@@ -521,6 +521,18 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
         </div>
       </div>
 
+      <div class="section-header"><h3>渠道来源</h3></div>
+      <div class="chart-2col">
+        <div class="chart-half">
+          <div class="chart-half-title">媒体来源分布<span id="ad-media-coverage" style="font-size:10px;color:#8892a4;margin-left:6px;font-weight:400"></span></div>
+          <div class="chart-half-wrap"><canvas id="adMediaChart"></canvas></div>
+        </div>
+        <div class="chart-half">
+          <div class="chart-half-title">各媒体付费表现（人数 / 首充¥）</div>
+          <div class="chart-half-wrap"><canvas id="adMediaPayChart"></canvas></div>
+        </div>
+      </div>
+
       <div class="section-header"><h3>消费分析</h3></div>
       <div class="chart-2col">
         <div class="chart-half">
@@ -1709,6 +1721,7 @@ function _renderUqResult(uid, cons, resultEl){
 let _adData = null, _adMap = null, _adDailyChart = null, _adDailyMode = 'cnt';
 let _consultantData = null;
 let _adGenderC = null, _adAgeC = null, _adAmtC = null, _adOrderTypeC = null;
+let _adMediaC = null, _adMediaPayC = null;
 
 function renderAdUsersPage(dateFrom, dateTo){
   dateFrom = dateFrom || elFrom.value;
@@ -1842,6 +1855,9 @@ function _renderAdContent(allUsers, dateFrom, dateTo){
         tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}次`}}}}
   });
 
+  // 媒体来源分布 + 各媒体付费表现
+  _renderAdMediaCharts(displayUsers);
+
   // 每日趋势（从过滤后的用户动态聚合）
   _renderAdDailyChart(_adDailyMode, displayUsers);
 
@@ -1908,6 +1924,59 @@ function _renderAdDailyTable(users){
       </table>
     </div>`;
   }).join('');
+}
+
+function _renderAdMediaCharts(users){
+  const elD = document.getElementById('adMediaChart');
+  const elP = document.getElementById('adMediaPayChart');
+  if(!elD || !elP) return;
+  const COLORS = {'今日头条':'#ef4444','华为商店':'#f59e0b','OPPO':'#22c55e','苹果商店':'#3b82f6','vivo':'#8b5cf6','广点通':'#06b6d4'};
+  const fallback = ['#94a3b8','#64748b','#cbd5e1'];
+  // 聚合：每个媒体的 投放人数 / 付费人数 / 首充额
+  const agg = {};
+  let known = 0;
+  users.forEach(u=>{
+    const m = (u.length>12 && u[12]) ? u[12] : '未知';
+    if(m!=='未知') known++;
+    if(!agg[m]) agg[m]={total:0,paid:0,amt:0};
+    agg[m].total++;
+    if((u[3]||0)>0){ agg[m].paid++; agg[m].amt += u[3]||0; }
+  });
+  // 分布按投放人数排序
+  const items = Object.entries(agg).map(([name,v])=>({name,...v})).sort((a,b)=>b.total-a.total);
+  const colorOf = (name,i)=> COLORS[name] || (name==='未知' ? '#e2e8f0' : fallback[i%fallback.length]);
+
+  const cov = document.getElementById('ad-media-coverage');
+  if(cov) cov.textContent = users.length ? `覆盖 ${(known/users.length*100).toFixed(1)}%` : '';
+
+  // 媒体来源分布（投放人数 doughnut）
+  if(_adMediaC){ _adMediaC.destroy(); _adMediaC=null; }
+  _adMediaC = new Chart(elD.getContext('2d'),{
+    type:'doughnut',
+    data:{labels:items.map(d=>d.name),datasets:[{
+      data:items.map(d=>d.total),
+      backgroundColor:items.map((d,i)=>colorOf(d.name,i)),
+      borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},color:'#4a5068',boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}人`}}}}
+  });
+
+  // 各媒体付费表现（付费人数柱 + 首充额折线，仅有付费的媒体）
+  const payItems = items.filter(d=>d.paid>0);
+  if(_adMediaPayC){ _adMediaPayC.destroy(); _adMediaPayC=null; }
+  _adMediaPayC = new Chart(elP.getContext('2d'),{
+    type:'bar',
+    data:{labels:payItems.map(d=>d.name),datasets:[
+      {label:'付费人数',data:payItems.map(d=>d.paid),backgroundColor:'rgba(74,124,240,0.8)',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'首充¥',data:payItems.map(d=>Math.round(d.amt)),borderColor:'#16a34a',backgroundColor:'#16a34a',tension:.3,yAxisID:'y1',pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10},color:'#8892a4'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#aab0be',font:{size:10}}},
+        y:{position:'left',grid:{color:'#f0f2f7'},ticks:{color:'#aab0be',font:{size:9}}},
+        y1:{position:'right',grid:{display:false},ticks:{color:'#16a34a',font:{size:9},callback:v=>'¥'+v}}}}
+  });
 }
 
 function _renderConsultantFunnel(users){
