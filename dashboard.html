@@ -1149,24 +1149,31 @@ function renderRoiPage(dateFrom, dateTo){
       }
     });
 
-    // ROI 进度卡片（最新日期）
-    const rc = cur.roiCurve||[];
+    // ROI 进度卡片：单日取该日，区间取区间均值（与曲线"区间均值"口径一致）
+    const cardVal = (idx) => {
+      if(isSingle){ return cur.roiCurve ? cur.roiCurve[idx] : null; }
+      const vals = rangeSlice.map(d=>byDate[d].roiCurve&&byDate[d].roiCurve[idx]).filter(v=>v!=null);
+      return vals.length ? Math.round(vals.reduce((a,b)=>a+b)/vals.length*100)/100 : null;
+    };
+    const cardCnt = (idx) => isSingle ? null : rangeSlice.filter(d=>byDate[d].roiCurve&&byDate[d].roiCurve[idx]!=null).length;
     const cards = [
-      {label:'ROI0',val:rc[0],target:15,idx:0},
-      {label:'ROI3',val:rc[1],target:30,idx:1},
-      {label:'ROI7',val:rc[2],target:45,idx:2},
-      {label:'ROI30',val:rc[4],target:null,idx:4}
+      {label:'ROI0',val:cardVal(0),target:15,idx:0},
+      {label:'ROI3',val:cardVal(1),target:30,idx:1},
+      {label:'ROI7',val:cardVal(2),target:45,idx:2},
+      {label:'ROI30',val:cardVal(4),target:null,idx:4}
     ];
     document.getElementById('roi-progress-cards').innerHTML = cards.map(c=>{
+      const cnt = cardCnt(c.idx);
+      const subLabel = isSingle ? '' : `<span style="font-size:9px;color:#aab0be;font-weight:400"> · ${cnt}日均值</span>`;
       if(c.val==null) return `<div class="trend-card" style="padding:14px">
-        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}</div>
+        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}${subLabel}</div>
         <div style="font-size:20px;font-weight:700;color:#aab0be">—</div>
         <div style="font-size:10px;color:#bbc0cc;margin-top:4px">待回填</div></div>`;
       const pct = c.target ? Math.min(c.val/c.target*100,120) : 100;
       const color = c.target ? (c.val>=c.target?'#10b981':'#f59e0b') : '#4a7cf0';
       const status = c.target ? (c.val>=c.target?'✓ 达标':'✗ 未达标') : '';
       return `<div class="trend-card" style="padding:14px">
-        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}${c.target?` 目标${c.target}%`:''}</div>
+        <div style="font-size:11px;color:#8892a4;margin-bottom:6px">${c.label}${c.target?` 目标${c.target}%`:''}${subLabel}</div>
         <div style="font-size:22px;font-weight:700;color:${color}">${c.val.toFixed(2)}%</div>
         ${c.target?`<div style="margin-top:8px;background:#f1f5f9;border-radius:4px;height:5px;overflow:hidden">
           <div style="width:${Math.min(pct,100)}%;height:100%;background:${color};border-radius:4px;transition:.3s"></div></div>
