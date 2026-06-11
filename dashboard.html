@@ -793,6 +793,12 @@ function _tierBadge(amt){
   if(amt>=10) return '<span style="display:inline-block;padding:0 4px;border-radius:2px;font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;margin-left:3px;vertical-align:middle">中</span>';
   return '';
 }
+function _mediaBadge(m){
+  if(!m) return '<span style="color:#cbd5e1">—</span>';
+  const C={'今日头条':['#fff1f0','#cf1322'],'华为商店':['#fff7e6','#d46b08'],'OPPO':['#f6ffed','#389e0d'],'苹果商店':['#f0f5ff','#1d39c4'],'vivo':['#f9f0ff','#531dab'],'广点通':['#e6fffb','#08979c']};
+  const c=C[m]||['#f1f5f9','#475569'];
+  return `<span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${c[0]};color:${c[1]}">${m}</span>`;
+}
 
 function setCard(id, valHtml, label1, delta1, label2, delta2){
   document.getElementById('v-'+id).innerHTML = valHtml;
@@ -1877,6 +1883,7 @@ function _renderAdDailyTable(users){
       return `<tr style="border-bottom:1px solid #f1f5f9;${i%2?'background:#f8f9fc':''}">
         <td style="padding:6px 14px;font-weight:500;font-size:13px;color:#0f1628">${u[0]}</td>
         <td style="padding:6px 14px;font-size:13px;color:#4a5068">${cons}</td>
+        <td style="padding:6px 14px;font-size:12px">${_mediaBadge(u[12])}</td>
         <td style="padding:6px 14px;text-align:right;font-weight:600;font-size:13px;color:#16a34a">¥${amt.toLocaleString('zh-CN',{maximumFractionDigits:2})}${_tierBadge(amt)}</td>
         ${d1}${d3}
       </tr>`;
@@ -1891,6 +1898,7 @@ function _renderAdDailyTable(users){
         <thead><tr style="background:#fafbff;color:#4a5068;font-size:11px">
           <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">用户UID</th>
           <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">承接咨询师</th>
+          <th style="padding:6px 14px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0">媒体来源</th>
           <th style="padding:6px 14px;text-align:right;font-weight:600;border-bottom:1px solid #e2e8f0">首日充值</th>
           <th style="padding:6px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">D+1</th>
           <th style="padding:6px 10px;text-align:center;font-weight:600;border-bottom:1px solid #e2e8f0">D+3</th>
