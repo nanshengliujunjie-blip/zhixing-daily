@@ -239,6 +239,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
     <a class="nav-item" href="#" onclick="switchPage('alert',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       ROI预警
+      <span id="alert-badge" style="display:none;margin-left:auto;min-width:16px;text-align:center;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px"></span>
     </a>
     <a class="nav-item" href="index.html" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -291,6 +292,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
         <div class="snapshot-item"><div class="si-label">快照版本</div><div class="si-val">zhixing_daily_v2</div></div>
         <div class="snapshot-item"><div class="si-label">期间总消耗</div><div class="si-val" id="snap-spend">—</div></div>
         <div class="snapshot-item"><div class="si-label">期间总收入</div><div class="si-val" id="snap-conv">—</div></div>
+        <div class="snapshot-item"><div class="si-label">期间总ROI</div><div class="si-val" id="snap-roi">—</div></div>
         <div class="snapshot-item"><div class="si-label">数据来源</div><div class="si-val">Nexita 导出</div></div>
       </div>
       <div class="snapshot-ok" id="snap-status">当前业务日快照已回齐</div>
@@ -793,6 +795,7 @@ function setPreset(n){
 
 function onRangeChange(){
   if(elFrom.value > elTo.value) elTo.value = elFrom.value;
+  if(typeof updateAlertBadge==='function') updateAlertBadge(elFrom.value, elTo.value);
   const pid = (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-','');
   if(pid === 'overview' || pid === '') renderRange(elFrom.value, elTo.value);
   if(pid === 'roi')     renderRoiPage(elFrom.value, elTo.value);
@@ -816,6 +819,7 @@ elTo.addEventListener('change', onRangeChange);
 })();
 
 renderRange(elFrom.value, elTo.value);
+updateAlertBadge(elFrom.value, elTo.value);
 
 // 预取 ad_users 算出"用户数据最新日期"，让投放用户页默认显示到自己最新一天(不被营销总览卡住)
 fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{
@@ -940,6 +944,10 @@ function renderRange(dateFrom, dateTo){
   document.getElementById('snap-date').textContent = dateTo.replace(/-/g,'–');
   document.getElementById('snap-spend').textContent = '¥'+fmt(cur.spend);
   document.getElementById('snap-conv').textContent = '¥'+fmt(cur.payAmount);
+  const _totRoi = cur.spend>0 ? (cur.payAmount/cur.spend*100) : null;
+  const _roiEl = document.getElementById('snap-roi');
+  _roiEl.textContent = _totRoi!=null ? _totRoi.toFixed(2)+'%' : '—';
+  _roiEl.style.color = _totRoi==null ? '' : (_totRoi>=20 ? '#16a34a' : '#dc2626');
   if(!isSingle) document.getElementById('snap-status').textContent = `共 ${cur.n} 日数据`;
   else document.getElementById('snap-status').textContent = cur.spend>0 ? '当前业务日快照已回齐' : '当日无投放数据';
 
@@ -2461,32 +2469,39 @@ function _showSearchResult(uid){
 }
 
 // ──── ROI预警 PAGE ────
+// 计算某日预警(返回 {d,e,roi0,roi3,roi7,warnings} 或 null)
+function computeAlert(d){
+  const e = byDate[d];
+  if(!e || !e.spend || e.spend === 0) return null;  // 无投放日跳过
+  const rc = e.roiCurve || [];
+  const roi0 = rc[0], roi3 = rc[1], roi7 = rc[2];
+  const warnings = [];
+  // 首日ROI风险：若ROI3已回填且≥35%、ROI7已回填且≥50%，则后续弥补，取消首日预警
+  const roi0Risk = roi0 != null && roi0 < 20;
+  const roi3OK   = roi3 != null && roi3 >= 35;
+  const roi7OK   = roi7 != null && roi7 >= 50;
+  if(roi0Risk && !(roi3OK && roi7OK))
+    warnings.push({label:'⚠️ 首日ROI '+fmtPct(roi0), style:'color:#92400e;background:#fef9ec;border-color:#fde68a'});
+  if(roi3 != null && roi3 < 35)
+    warnings.push({label:'⚠️ ROI3 '+fmtPct(roi3), style:'color:#92400e;background:#fef3c7;border-color:#fcd34d'});
+  if(roi7 != null && roi7 < 50)
+    warnings.push({label:'⚠️ ROI7 '+fmtPct(roi7), style:'color:#9a3412;background:#fff7ed;border-color:#fed7aa'});
+  return warnings.length ? {d, e, roi0, roi3, roi7, warnings} : null;
+}
+
+// 更新侧边栏预警角标(当前日期范围内的预警天数)
+function updateAlertBadge(dateFrom, dateTo){
+  const badge = document.getElementById('alert-badge');
+  if(!badge) return;
+  const n = dates.filter(d => d >= dateFrom && d <= dateTo).map(computeAlert).filter(Boolean).length;
+  if(n > 0){ badge.textContent = n; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+}
+
 function renderAlertPage(dateFrom, dateTo){
   const wrap = document.getElementById('alert-table-wrap');
   const recent = dates.filter(d => d >= dateFrom && d <= dateTo);
-
-  const alerts = recent.map(d => {
-    const e = byDate[d];
-    if(!e.spend || e.spend === 0) return null;  // 无投放日跳过
-    const rc = e.roiCurve || [];
-    const roi0 = rc[0];  // 首日ROI
-    const roi3 = rc[1];  // ROI3（index 1）
-    const roi7 = rc[2];  // ROI7（index 2）
-    const warnings = [];
-
-    // 首日ROI风险：若ROI3已回填且≥35%、ROI7已回填且≥50%，则后续弥补，取消首日预警
-    const roi0Risk = roi0 != null && roi0 < 20;
-    const roi3OK   = roi3 != null && roi3 >= 35;
-    const roi7OK   = roi7 != null && roi7 >= 50;
-    if(roi0Risk && !(roi3OK && roi7OK))
-      warnings.push({label:'⚠️ 首日ROI '+fmtPct(roi0), style:'color:#92400e;background:#fef9ec;border-color:#fde68a'});
-    if(roi3 != null && roi3 < 35)
-      warnings.push({label:'⚠️ ROI3 '+fmtPct(roi3), style:'color:#92400e;background:#fef3c7;border-color:#fcd34d'});
-    if(roi7 != null && roi7 < 50)
-      warnings.push({label:'⚠️ ROI7 '+fmtPct(roi7), style:'color:#9a3412;background:#fff7ed;border-color:#fed7aa'});
-
-    return {d, e, roi0, roi3, roi7, warnings};
-  }).filter(r => r && r.warnings.length > 0).reverse();
+  const alerts = recent.map(computeAlert).filter(Boolean).reverse();
 
   if(!alerts.length){
     wrap.innerHTML = '<div style="text-align:center;padding:24px;color:#aab0be;font-size:13px">所选日期范围内无ROI预警 ✅</div>';
