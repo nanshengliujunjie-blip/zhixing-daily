@@ -273,6 +273,18 @@ except Exception as e:
     print(f'  ⚠ backfill_gender 异常: {e}，继续')
 
 # ═══════════════════════════════════════════════════════
+# Step 3.6: 捡漏付费（订单系统首日付费 > 记录值则补，针对xlsx漏记大单）
+# ═══════════════════════════════════════════════════════
+print('\n【Step 3.6】捡漏付费...')
+try:
+    r = subprocess.run([sys.executable, str(REPO / 'reconcile_payments.py')],
+                       cwd=REPO, timeout=120)
+    if r.returncode != 0:
+        print('  ⚠ reconcile_payments 失败，继续')
+except Exception as e:
+    print(f'  ⚠ reconcile_payments 异常: {e}，继续')
+
+# ═══════════════════════════════════════════════════════
 # Step 4: 重建 consultant_data.json + consultant_all_data.json
 # ═══════════════════════════════════════════════════════
 print('\n【Step 4】重建 consultant 数据...')

@@ -19,6 +19,7 @@ if [ "$MODE" = "data" ]; then
 fi
 
 cd "$REPO" || exit 1
+RUN_LOG="$(mktemp)"
 {
   echo ""
   echo "════════════════════════════════════════════════════════"
@@ -26,4 +27,22 @@ cd "$REPO" || exit 1
   echo "════════════════════════════════════════════════════════"
   /usr/bin/python3 "$REPO/auto_update.py"
   echo "  退出码: $?"
-} >> "$LOG" 2>&1
+} > "$RUN_LOG" 2>&1
+cat "$RUN_LOG" >> "$LOG"
+
+# ── 会话失效主动提醒（带哨兵，避免每30分钟重复弹窗）──
+FLAG="$REPO/.session_alert"
+if grep -qE "cookie获取用户信息错误|session 已过期|用户未登录|请重新执行" "$RUN_LOG"; then
+  if [ ! -f "$FLAG" ]; then
+    /usr/bin/osascript -e 'display notification "Nexita 会话已过期，数据停止更新。请运行 login.mjs 重新登录。" with title "知星数据更新 ⚠️" sound name "Basso"' 2>/dev/null
+    touch "$FLAG"
+    echo "  ⚠ 已发送会话失效通知" >> "$LOG"
+  fi
+else
+  # 本次正常 → 若之前报过警，提示已恢复并清除哨兵
+  if [ -f "$FLAG" ]; then
+    /usr/bin/osascript -e 'display notification "Nexita 会话已恢复，数据更新正常。" with title "知星数据更新 ✓"' 2>/dev/null
+    rm -f "$FLAG"
+  fi
+fi
+rm -f "$RUN_LOG"
