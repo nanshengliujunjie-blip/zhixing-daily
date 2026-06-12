@@ -367,7 +367,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
             <div style="font-size:11px;color:#8892a4;margin-top:2px" id="roi-curve-date"></div>
           </div>
           <div style="display:flex;gap:8px;font-size:11px;color:#6b7280">
-            <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:#10b981;display:inline-block"></span>达标线(15/30/45%)</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:2px;background:#10b981;display:inline-block"></span>达标线(20/35/50%)</span>
           </div>
         </div>
         <div style="position:relative;height:240px"><canvas id="roiCurveChart"></canvas></div>
@@ -719,11 +719,11 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;font-size:12px">
         <div style="background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:14px">
           <div style="font-weight:700;color:#92400e;margin-bottom:6px">⚠️ 首日ROI风险</div>
-          <div style="color:#78350f;line-height:1.6">首日ROI &lt; 15%，且 ROI3 未达 30% 或 ROI7 未达 45%。若后续回收弥补（ROI3 ≥ 30% 且 ROI7 ≥ 45%），则自动解除。</div>
+          <div style="color:#78350f;line-height:1.6">首日ROI &lt; 20%，且 ROI3 未达 35% 或 ROI7 未达 50%。若后续回收弥补（ROI3 ≥ 35% 且 ROI7 ≥ 50%），则自动解除。</div>
         </div>
         <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px">
           <div style="font-weight:700;color:#92400e;margin-bottom:6px">⚠️ ROI3风险</div>
-          <div style="color:#78350f;line-height:1.6">3日ROI &lt; 30%，短期回收不达标，用户留存较差。</div>
+          <div style="color:#78350f;line-height:1.6">3日ROI &lt; 35%，短期回收不达标，用户留存较差。</div>
         </div>
         <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px">
           <div style="font-weight:700;color:#9a3412;margin-bottom:6px">⚠️ ROI7风险</div>
@@ -731,7 +731,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
         </div>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px">
           <div style="font-weight:700;color:#166534;margin-bottom:6px">✅ 正常</div>
-          <div style="color:#14532d;line-height:1.6">首日ROI ≥ 15%，ROI3 ≥ 30%，ROI7 ≥ 45%，整体健康。</div>
+          <div style="color:#14532d;line-height:1.6">首日ROI ≥ 20%，ROI3 ≥ 35%，ROI7 ≥ 50%，整体健康。</div>
         </div>
       </div>
     </div>
@@ -1166,7 +1166,7 @@ function renderRoiPage(dateFrom, dateTo){
 
   if(_roiView === 'curve'){
     // ── 回收曲线 ──
-    const targets = [15, 30, 45, null, null, null, null];
+    const targets = [20, 35, 50, null, null, null, null];
     const curveData = roiIdxs.map(i => cur.roiCurve ? cur.roiCurve[i] : null);
     const datasets = [{
       label: lastDate,
@@ -1202,12 +1202,12 @@ function renderRoiPage(dateFrom, dateTo){
             borderColor:'#e4e8f0',borderWidth:1,padding:10,
             callbacks:{label:c=>c.raw!=null?`${c.dataset.label}: ${c.raw.toFixed(2)}%`:'待回填'}},
           annotation:{annotations:{
-            line15:{type:'line',yMin:15,yMax:15,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
-              label:{content:'15%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
-            line30:{type:'line',yMin:30,yMax:30,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
-              label:{content:'30%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
-            line45:{type:'line',yMin:45,yMax:45,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
-              label:{content:'45%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}}
+            line20:{type:'line',yMin:20,yMax:20,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'20%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
+            line35:{type:'line',yMin:35,yMax:35,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'35%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}},
+            line50:{type:'line',yMin:50,yMax:50,borderColor:'rgba(16,185,129,.4)',borderWidth:1,borderDash:[4,4],
+              label:{content:'50%',enabled:true,position:'end',backgroundColor:'rgba(16,185,129,.8)',font:{size:9},padding:2}}
           }}
         },
         scales:{
@@ -1226,9 +1226,9 @@ function renderRoiPage(dateFrom, dateTo){
     };
     const cardCnt = (idx) => isSingle ? null : rangeSlice.filter(d=>byDate[d].roiCurve&&byDate[d].roiCurve[idx]!=null).length;
     const cards = [
-      {label:'ROI0',val:cardVal(0),target:15,idx:0},
-      {label:'ROI3',val:cardVal(1),target:30,idx:1},
-      {label:'ROI7',val:cardVal(2),target:45,idx:2},
+      {label:'ROI0',val:cardVal(0),target:20,idx:0},
+      {label:'ROI3',val:cardVal(1),target:35,idx:1},
+      {label:'ROI7',val:cardVal(2),target:50,idx:2},
       {label:'ROI30',val:cardVal(4),target:null,idx:4}
     ];
     document.getElementById('roi-progress-cards').innerHTML = cards.map(c=>{
@@ -1291,7 +1291,7 @@ function renderRoiPage(dateFrom, dateTo){
       <td style="text-align:center;padding:8px 10px;color:#374151">¥${fmt(e.spend)}</td>
       <td style="text-align:center;padding:8px 10px;color:#374151">${e.reg??'—'}</td>
       <td style="text-align:center;padding:8px 10px;color:#374151">${e.payCount??'—'}</td>
-      ${cell(rc[0],15,15)}${cell(rc[1],30,30)}${cell(rc[2],45,45)}${cell(rc[3],null,null)}${cell(rc[4],null,null)}${cell(rc[5],null,null)}
+      ${cell(rc[0],20,20)}${cell(rc[1],35,35)}${cell(rc[2],50,50)}${cell(rc[3],null,null)}${cell(rc[4],null,null)}${cell(rc[5],null,null)}
     </tr>`;
   }).join('');
 }
@@ -2474,15 +2474,15 @@ function renderAlertPage(dateFrom, dateTo){
     const roi7 = rc[2];  // ROI7（index 2）
     const warnings = [];
 
-    // 首日ROI风险：若ROI3已回填且>30%、ROI7已回填且>45%，则后续弥补，取消首日预警
-    const roi0Risk = roi0 != null && roi0 < 15;
-    const roi3OK   = roi3 != null && roi3 >= 30;
-    const roi7OK   = roi7 != null && roi7 >= 45;
+    // 首日ROI风险：若ROI3已回填且≥35%、ROI7已回填且≥50%，则后续弥补，取消首日预警
+    const roi0Risk = roi0 != null && roi0 < 20;
+    const roi3OK   = roi3 != null && roi3 >= 35;
+    const roi7OK   = roi7 != null && roi7 >= 50;
     if(roi0Risk && !(roi3OK && roi7OK))
       warnings.push({label:'⚠️ 首日ROI '+fmtPct(roi0), style:'color:#92400e;background:#fef9ec;border-color:#fde68a'});
-    if(roi3 != null && roi3 < 30)
+    if(roi3 != null && roi3 < 35)
       warnings.push({label:'⚠️ ROI3 '+fmtPct(roi3), style:'color:#92400e;background:#fef3c7;border-color:#fcd34d'});
-    if(roi7 != null && roi7 < 45)
+    if(roi7 != null && roi7 < 50)
       warnings.push({label:'⚠️ ROI7 '+fmtPct(roi7), style:'color:#9a3412;background:#fff7ed;border-color:#fed7aa'});
 
     return {d, e, roi0, roi3, roi7, warnings};
@@ -2503,18 +2503,18 @@ function renderAlertPage(dateFrom, dateTo){
 
   wrap.innerHTML = `<table class="roi-table"><thead><tr>
     <th>日期</th><th>消耗(¥)</th><th>付费数</th>
-    <th>首日ROI<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标15% · 差值</span></th>
-    <th>ROI3<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标30% · 差值</span></th>
-    <th>ROI7<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标45% · 差值</span></th>
+    <th>首日ROI<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标20% · 差值</span></th>
+    <th>ROI3<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标35% · 差值</span></th>
+    <th>ROI7<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标50% · 差值</span></th>
     <th style="text-align:left">预警项</th>
   </tr></thead><tbody>`+
   alerts.map(r=>`<tr>
     <td>${r.d}</td>
     <td>¥${fmt(r.e.spend)}</td>
     <td>${r.e.payCount}</td>
-    <td style="${r.roi0!=null&&r.roi0<15?'color:#b45309;font-weight:600':''}">${r.roi0!=null?fmtPct(r.roi0)+dlt(r.roi0,15):'—'}</td>
-    <td style="${r.roi3!=null&&r.roi3<30?'color:#b45309;font-weight:600':''}">${r.roi3!=null?fmtPct(r.roi3)+dlt(r.roi3,30):'待回填'}</td>
-    <td style="${r.roi7!=null&&r.roi7<45?'color:#9a3412;font-weight:600':''}">${r.roi7!=null?fmtPct(r.roi7)+dlt(r.roi7,45):'待回填'}</td>
+    <td style="${r.roi0!=null&&r.roi0<20?'color:#b45309;font-weight:600':''}">${r.roi0!=null?fmtPct(r.roi0)+dlt(r.roi0,20):'—'}</td>
+    <td style="${r.roi3!=null&&r.roi3<35?'color:#b45309;font-weight:600':''}">${r.roi3!=null?fmtPct(r.roi3)+dlt(r.roi3,35):'待回填'}</td>
+    <td style="${r.roi7!=null&&r.roi7<50?'color:#9a3412;font-weight:600':''}">${r.roi7!=null?fmtPct(r.roi7)+dlt(r.roi7,50):'待回填'}</td>
     <td style="text-align:left">${r.warnings.map(w=>`<span style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid;margin-right:4px;${w.style}">${w.label}</span>`).join('')}</td>
   </tr>`).join('')+
   '</tbody></table>';
