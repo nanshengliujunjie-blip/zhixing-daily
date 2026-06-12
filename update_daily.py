@@ -414,69 +414,147 @@ def git_push(added, updated):
     subprocess.run(['git', 'push'], cwd=REPO_DIR, check=True)
     print(f'[git] 推送成功: {msg}')
 
-# ── 主流程 ────────────────────────────────────────────────────
+# ── compass 取数（替代旧 SQL 路径，更可靠） ──────────────────────
+def run_fallback_fetch(dates):
+    """调用 fetch_fallback.mjs(compass API) 拉取指定日期的 表1+表2 汇总。返回 {date: fields}"""
+    if not dates:
+        return {}
+    env = {**os.environ}
+    for k in ('HTTP_PROXY','HTTPS_PROXY','http_proxy','https_proxy','ALL_PROXY','all_proxy'):
+        env.pop(k, None)
+    proc = subprocess.run(
+        ['node', 'fetch_fallback.mjs', '--dates=' + ','.join(sorted(dates))],
+        capture_output=True, text=True, cwd=REPO_DIR, timeout=600, env=env
+    )
+    out = {}
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            o = json.loads(line)
+            out[o['date']] = o
+        except Exception:
+            pass
+    if not out and proc.returncode != 0:
+        raise RuntimeError(f'fetch_fallback 失败:\n{proc.stderr[-600:]}')
+    if proc.stderr.strip():
+        print('[fallback]', proc.stderr.strip()[-300:])
+    return out
+
+def _rpct(v):
+    """分数→百分比；0/None→None（待回填）"""
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if f == 0 else round(f * 100, 4)
+
+def build_entry(d):
+    """从 fetch_fallback 输出（flat dict）构建 FALLBACK entry"""
+    spend  = d.get('spend') or 0
+    reg    = int(d.get('reg') or 0)
+    pay    = int(d.get('payCount') or 0)
+    payAmt = d.get('payAmount') or 0
+    act    = int(d.get('activate') or 0)
+    ai     = int(d.get('ai') or 0)
+    room   = int(d.get('enterRoom') or 0)
+    mic_n  = int(d.get('mic') or 0)
+    roi0   = round(payAmt / spend * 100, 4) if spend and payAmt else None
+    roi_curve = [
+        roi0,
+        _rpct(d.get('roi3')),  _rpct(d.get('roi7')),  _rpct(d.get('roi15')),
+        _rpct(d.get('roi30')), _rpct(d.get('roi60')), _rpct(d.get('roi90')),
+        _rpct(d.get('roi120')),_rpct(d.get('roi150')),_rpct(d.get('roi180')),
+        None, None, None, None, None, None,
+    ]
+    return {
+        'date':          d['date'],
+        'spend':         round(spend, 2),
+        'activate':      act,
+        'reg':           reg,
+        'regCost':       round(spend / reg, 4) if reg else None,
+        'ai':            ai,
+        'payCount':      pay,
+        'payAmount':     round(payAmt, 2),
+        'payCost':       round(spend / pay, 4) if pay else None,
+        'payRate':       round(pay / reg * 100, 4) if reg and pay else None,
+        'roi':           roi0,
+        'enterRoom':     room,
+        'enterRoomRate': round(room / reg * 100, 4) if reg else None,
+        'mic':           mic_n,
+        'micRate':       round(mic_n / reg * 100, 4) if reg else None,
+        'nextRetention': _rpct(d.get('nextRetention')),
+        'roiCurve':      roi_curve,
+        'pret':          None,
+    }
+
+# ── 主流程（compass 版） ──────────────────────────────────────
 def main():
-    force_discover = '--discover' in sys.argv
     today = date.today()
+    do_roi = ('--roi' in sys.argv) or bool(os.environ.get('FALLBACK_ROI'))
+    do_push = ('--push' in sys.argv)
 
     print(f'\n{"="*50}')
-    print(f'  知星日报自动更新  {today}')
+    print(f'  知星日报自动更新(compass)  {today}')
     print(f'{"="*50}\n')
 
-    # 1. 发现/加载表名
-    table1, table2 = discover_tables(force=force_discover)
-
-    # 2. 加载现有 FALLBACK，确定需要查询的日期范围
+    # 加载现有 FALLBACK
     html = INDEX_HTML.read_text(encoding='utf-8')
     fb_match = re.search(r'const FALLBACK\s*=\s*\[(.*?)\];', html, re.DOTALL)
     existing = json.loads('[' + fb_match.group(1).rstrip(',').rstrip() + ']')
     existing_dates = {e['date'] for e in existing}
-
-    # 需要新增的日期（最后已有日期+1 到 昨天）
     last_date = max(existing_dates) if existing_dates else '2026-04-08'
-    start_new = (date.fromisoformat(last_date) + timedelta(days=1)).isoformat()
-    end_new   = (today - timedelta(days=1)).isoformat()  # 昨天（今天数据可能不全）
 
-    # 需要补充 ROI 的日期（最近30天内的已有记录）
-    roi_start = (today - timedelta(days=35)).isoformat()
+    # 新增日期：最后已有日期+1 到 昨天（表1未出的天 fetch_fallback 会自动跳过）
+    d = date.fromisoformat(last_date) + timedelta(days=1)
+    end_new = today - timedelta(days=1)
+    new_dates = []
+    while d <= end_new:
+        new_dates.append(d.isoformat()); d += timedelta(days=1)
 
-    print(f'[plan] 新日期范围: {start_new} ~ {end_new}')
-    print(f'[plan] ROI补充范围: {roi_start} ~ {last_date}')
+    # ROI 补充窗口（仅 full/--roi 时）：最近35天的已有记录
+    roi_dates = []
+    if do_roi:
+        rs = (today - timedelta(days=35)).isoformat()
+        roi_dates = [ds for ds in existing_dates if rs <= ds <= last_date]
 
-    # 3. 查询数据
-    t2_new  = query_table2(table2, start_new, end_new)
-    t1_new  = query_table1(table1, start_new, end_new)
-    t2_roi  = query_table2(table2, roi_start, last_date)
+    fetch_dates = sorted(set(new_dates) | set(roi_dates))
+    print(f'[plan] 新增日期: {new_dates or "无"}')
+    print(f'[plan] ROI补充: {len(roi_dates)} 天' if do_roi else '[plan] ROI补充: 跳过(非full模式)')
+    if not fetch_dates:
+        print('[done] 无需更新'); return
 
-    # 4. 生成新 entries
-    new_entries = merge_entries(t1_new, t2_new)
-    print(f'[data] 获取到 {len(new_entries)} 条新数据')
+    # compass 取数
+    data = run_fallback_fetch(fetch_dates)
+    print(f'[data] 取到 {len(data)} 天数据')
 
-    # 5. 整理 ROI 更新（已有记录的 D3/D7/D15/D30 补充）
+    # 新 entries
+    new_entries = [build_entry(data[ds]) for ds in new_dates if ds in data]
+
+    # ROI 更新
     roi_updates = {}
-    slot_days = [3, 7, 15, 30, 60]
-    for r2 in t2_roi:
-        ds = str(r2['dt'])[:10]
-        d = date.fromisoformat(ds)
+    for ds in roi_dates:
+        if ds not in data:
+            continue
+        dd = date.fromisoformat(ds)
         updates = {}
-        for days in slot_days:
-            if (d + timedelta(days=days)) <= today:
-                col = f'roi{days}'
-                v = pct(r2.get(col))
-                if v: updates[days] = v
+        for days, key in [(3,'roi3'),(7,'roi7'),(15,'roi15'),(30,'roi30'),(60,'roi60')]:
+            if dd + timedelta(days=days) <= today:
+                v = _rpct(data[ds].get(key))
+                if v:
+                    updates[days] = v
         if updates:
             roi_updates[ds] = updates
 
-    # 6. 更新 index.html
     added, updated = update_index(new_entries, roi_updates)
 
-    # 7. Git push
-    if added > 0 or updated > 0:
+    if do_push and (added or updated):
         git_push(added, updated)
-    else:
-        print('[git] 没有变更，跳过 push')
 
-    print(f'\n✅ 完成！访问 https://nanshengliujunjie-blip.github.io/zhixing-daily/')
+    print(f'\n✅ 完成！')
 
 if __name__ == '__main__':
     main()

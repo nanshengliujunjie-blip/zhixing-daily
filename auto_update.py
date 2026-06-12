@@ -37,11 +37,16 @@ print(f'{"="*55}\n')
 # Step 1: 更新 FALLBACK（复用 update_daily.py）
 # 可用 SKIP_FALLBACK=1 跳过（表1表2约中午才更新时，先只更新用户/投放数据）
 # ═══════════════════════════════════════════════════════
-if os.environ.get('SKIP_FALLBACK'):
-    print('【Step 1】跳过 FALLBACK 更新 (SKIP_FALLBACK=1)')
-else:
-    print('【Step 1】更新 FALLBACK (index.html + dashboard.html)...')
-    result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO)
+# 日报FALLBACK改用 compass(表1+表2)，可靠且快：每次都补新日期；
+# full模式(非SKIP_FALLBACK)额外回填最近35天历史ROI曲线。
+if True:
+    print('【Step 1】更新 FALLBACK (compass: 表1+表2)...')
+    _env = {**os.environ}
+    if os.environ.get('SKIP_FALLBACK'):
+        print('  (轻量模式: 只补新日期，跳过历史ROI回填)')
+    else:
+        _env['FALLBACK_ROI'] = '1'
+    result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO, env=_env)
     if result.returncode != 0:
         print('  ⚠ update_daily.py 失败，继续其他步骤')
     else:
