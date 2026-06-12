@@ -143,6 +143,35 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .uid-tag-zx{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff}
 .uid-not-found{color:#dc2626;font-size:13px;padding:12px 0}
 .users-spinner{text-align:center;padding:60px;color:#aab0be;font-size:13px}
+
+/* ───── 移动端适配 (≤768px) ───── */
+@media (max-width:768px){
+  body{display:block}
+  /* 侧边栏变顶部横向滚动条 */
+  .sidebar{position:sticky;top:0;width:100%;min-height:0;height:auto;flex-direction:row;align-items:center;overflow-x:auto;overflow-y:hidden;padding:6px 8px;gap:4px;-webkit-overflow-scrolling:touch}
+  .sb-logo{padding:4px 8px;border-bottom:none;flex-shrink:0}
+  .sb-logo-text p{display:none}
+  .sb-logo-text h2{font-size:14px;white-space:nowrap}
+  .sb-section{display:flex;flex-direction:row;gap:4px;padding:0;flex-shrink:0}
+  .sb-section-label{display:none}
+  .nav-item{white-space:nowrap;padding:7px 11px;margin-bottom:0;border-left:none;border-radius:7px;font-size:12px}
+  .nav-item svg{width:14px;height:14px;flex-shrink:0}
+  .main{margin-left:0}
+  /* 顶栏堆叠 */
+  .topbar{height:auto;flex-direction:column;align-items:stretch;padding:10px 14px;gap:8px;position:static}
+  .topbar-right{flex-wrap:wrap;gap:6px}
+  .drp-wrap{flex-wrap:wrap}
+  .content{padding:14px !important}
+  /* 卡片网格降列 */
+  .metric-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .snapshot-grid{grid-template-columns:repeat(2,1fr);gap:8px 16px}
+  .chart-2col{grid-template-columns:1fr;gap:12px}
+  .uid-result-grid{grid-template-columns:repeat(2,1fr)}
+  .full-chart-card,.trend-card,.snapshot-card{padding:14px}
+  /* 宽表格横向滚动 */
+  .full-chart-card,#alert-table-wrap,#weekly-summary{overflow-x:auto}
+  table{font-size:12px}
+}
 </style>
 </head>
 <body>
