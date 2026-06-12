@@ -2493,18 +2493,28 @@ function renderAlertPage(dateFrom, dateTo){
     return;
   }
 
+  // 与达标线的差值：负=未达标(红) 正=超出(绿)
+  const dlt = (v, target) => {
+    if(v == null) return '';
+    const d = Math.round((v - target) * 100) / 100;
+    const c = d < 0 ? '#dc2626' : '#16a34a';
+    return ` <span style="font-size:10px;color:${c};font-weight:600">${d>=0?'+':''}${d}</span>`;
+  };
+
   wrap.innerHTML = `<table class="roi-table"><thead><tr>
     <th>日期</th><th>消耗(¥)</th><th>付费数</th>
-    <th>首日ROI</th><th>ROI3</th><th>ROI7</th>
+    <th>首日ROI<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标15% · 差值</span></th>
+    <th>ROI3<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标30% · 差值</span></th>
+    <th>ROI7<br><span style="font-size:10px;color:#aab0be;font-weight:400">达标45% · 差值</span></th>
     <th style="text-align:left">预警项</th>
   </tr></thead><tbody>`+
   alerts.map(r=>`<tr>
     <td>${r.d}</td>
     <td>¥${fmt(r.e.spend)}</td>
     <td>${r.e.payCount}</td>
-    <td style="${r.roi0!=null&&r.roi0<15?'color:#b45309;font-weight:600':''}">${r.roi0!=null?fmtPct(r.roi0):'—'}</td>
-    <td style="${r.roi3!=null&&r.roi3<30?'color:#b45309;font-weight:600':''}">${r.roi3!=null?fmtPct(r.roi3):'待回填'}</td>
-    <td style="${r.roi7!=null&&r.roi7<45?'color:#9a3412;font-weight:600':''}">${r.roi7!=null?fmtPct(r.roi7):'待回填'}</td>
+    <td style="${r.roi0!=null&&r.roi0<15?'color:#b45309;font-weight:600':''}">${r.roi0!=null?fmtPct(r.roi0)+dlt(r.roi0,15):'—'}</td>
+    <td style="${r.roi3!=null&&r.roi3<30?'color:#b45309;font-weight:600':''}">${r.roi3!=null?fmtPct(r.roi3)+dlt(r.roi3,30):'待回填'}</td>
+    <td style="${r.roi7!=null&&r.roi7<45?'color:#9a3412;font-weight:600':''}">${r.roi7!=null?fmtPct(r.roi7)+dlt(r.roi7,45):'待回填'}</td>
     <td style="text-align:left">${r.warnings.map(w=>`<span style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid;margin-right:4px;${w.style}">${w.label}</span>`).join('')}</td>
   </tr>`).join('')+
   '</tbody></table>';
