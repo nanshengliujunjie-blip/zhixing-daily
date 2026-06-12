@@ -2279,6 +2279,12 @@ function _renderAdDetailTable(dateFrom, dateTo){
     return { u, cons, firstAmt };
   });
 
+  // 按充值金额降序（从高到低）；未付费(¥0)排最后，金额相同按注册日期倒序
+  rowsWithCons.sort((a,b)=>{
+    if(b.firstAmt !== a.firstAmt) return b.firstAmt - a.firstAmt;
+    return (b.u[10]||'').localeCompare(a.u[10]||'');
+  });
+
   // Summary stats (use order-derived amounts)
   const totalAmt = rowsWithCons.reduce((s,r)=>s+r.firstAmt, 0);
   const paidRows = rowsWithCons.filter(r=>r.firstAmt>0);
