@@ -3,3 +3,4 @@ ad_users.json.bak
 *.bak
 *.bak2
 logs/
+.session_alert
