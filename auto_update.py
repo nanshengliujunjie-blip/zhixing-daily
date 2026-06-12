@@ -76,12 +76,11 @@ for orders in orders_data.values():
     for o in orders:
         all_dates.add(o['d'])
 last_order_date = max(all_dates) if all_dates else '2025-04-30'
+fetch_to   = today.isoformat()   # 含今天：实时累积今日订单
 fetch_from = (date.fromisoformat(last_order_date) + timedelta(days=1)).isoformat()
-fetch_to   = yesterday.isoformat()
-
 if fetch_from > fetch_to:
-    print(f'  orders 已是最新 ({last_order_date})，跳过')
-else:
+    fetch_from = fetch_to        # 今天已抓过，仍重抓今天以刷新(dedup去重)
+if True:
     print(f'  拉取 {fetch_from} ~ {fetch_to} 的订单...')
     proc = subprocess.run(
         ['node', str(FETCH_ORDERS), f'--from={fetch_from}', f'--to={fetch_to}'],
@@ -133,8 +132,10 @@ admap = {str(u[0]): u for u in ad['users']}
 existing_reg_dates = set(u[10] for u in ad['users'] if u[10])
 last_ad_date = max(existing_reg_dates) if existing_reg_dates else '2025-04-30'
 
+fetch_attr_to   = today.isoformat()   # 含今天：实时累积今日注册/付费
 fetch_attr_from = (date.fromisoformat(last_ad_date) + timedelta(days=1)).isoformat()
-fetch_attr_to   = yesterday.isoformat()
+if fetch_attr_from > fetch_attr_to:
+    fetch_attr_from = fetch_attr_to    # 今天已抓过，仍重抓今天以刷新
 
 with open(USER_DATA) as f:
     ud = json.load(f)

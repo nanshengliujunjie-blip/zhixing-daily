@@ -33,7 +33,7 @@ def main():
         if len(u) > 10 and u[10]:
             by_date[u[10]].append(u)
 
-    window = {(today - timedelta(days=i)).isoformat() for i in range(1, days + 1)}
+    window = {(today - timedelta(days=i)).isoformat() for i in range(0, days + 1)}
     pending = sorted(d for d in window
                      if d in by_date and not any((x[1] or 0) != 0 for x in by_date[d]))
     if not pending:
