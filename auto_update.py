@@ -258,6 +258,21 @@ if orders_dirty:
     print(f'  ✓ user_orders.json 已按权威首日付费校正')
 
 # ═══════════════════════════════════════════════════════
+# Step 3.5: 回填近期注册用户的 gender/age（来自订单画像，幂等）
+# ═══════════════════════════════════════════════════════
+print('\n【Step 3.5】回填 gender/age...')
+try:
+    _genv = {**os.environ}
+    for _k in ('HTTP_PROXY','HTTPS_PROXY','http_proxy','https_proxy','ALL_PROXY','all_proxy'):
+        _genv.pop(_k, None)
+    r = subprocess.run([sys.executable, str(REPO / 'backfill_gender.py')],
+                       cwd=REPO, env=_genv, timeout=600)
+    if r.returncode != 0:
+        print('  ⚠ backfill_gender 失败，继续')
+except Exception as e:
+    print(f'  ⚠ backfill_gender 异常: {e}，继续')
+
+# ═══════════════════════════════════════════════════════
 # Step 4: 重建 consultant_data.json + consultant_all_data.json
 # ═══════════════════════════════════════════════════════
 print('\n【Step 4】重建 consultant 数据...')
