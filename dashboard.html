@@ -348,6 +348,11 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
       <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
     </div>
 
+    <div class="section-header"><h3>周维度汇总</h3></div>
+    <div class="full-chart-card" style="padding:0;overflow:hidden">
+      <div id="weekly-summary"></div>
+    </div>
+
   </div><!-- /page-overview -->
 
   <!-- ═══ PAGE: ROI 追踪 ═══ -->
@@ -917,6 +922,45 @@ function aggregateRange(dateFrom, dateTo){
   };
 }
 
+// 周维度汇总（按周一~周日分组，复用 aggregateRange）
+function renderWeeklySummary(dateFrom, dateTo){
+  const el = document.getElementById('weekly-summary');
+  if(!el) return;
+  const inRange = dates.filter(d => d >= dateFrom && d <= dateTo);
+  if(!inRange.length){ el.innerHTML='<div style="padding:20px;color:#aab0be;font-size:13px;text-align:center">无数据</div>'; return; }
+  const wkStart = ds => { const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d.toISOString().slice(0,10); };
+  const groups = {};
+  inRange.forEach(d => { (groups[wkStart(d)] = groups[wkStart(d)]||[]).push(d); });
+  const weeks = Object.keys(groups).sort().reverse();
+  const rows = weeks.map(wk => {
+    const g = groups[wk]; const a = aggregateRange(g[0], g[g.length-1]);
+    if(!a) return '';
+    const label = `${g[0].slice(5)}~${g[g.length-1].slice(5)}`;
+    const roiColor = a.roi==null ? '#374151' : (a.roi>=20?'#16a34a':'#dc2626');
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:9px 14px;font-weight:500;white-space:nowrap">${label}<span style="color:#aab0be;font-size:11px"> · ${g.length}天</span></td>
+      <td style="text-align:right;padding:9px 12px">¥${fmt(a.spend)}</td>
+      <td style="text-align:right;padding:9px 12px">${a.reg.toLocaleString()}</td>
+      <td style="text-align:right;padding:9px 12px">${a.payCount.toLocaleString()}</td>
+      <td style="text-align:right;padding:9px 12px">¥${fmt(a.payAmount)}</td>
+      <td style="text-align:right;padding:9px 12px;color:${roiColor};font-weight:600">${a.roi!=null?a.roi.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:right;padding:9px 12px">${a.enterRoomRate!=null?a.enterRoomRate.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:right;padding:9px 14px">${a.micRate!=null?a.micRate.toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:#f8f9fc;color:#8892a4;font-size:12px">
+      <th style="text-align:left;padding:10px 14px">周(周一~周日)</th>
+      <th style="text-align:right;padding:10px 12px">消耗</th>
+      <th style="text-align:right;padding:10px 12px">净注册</th>
+      <th style="text-align:right;padding:10px 12px">付费数</th>
+      <th style="text-align:right;padding:10px 12px">付费金额</th>
+      <th style="text-align:right;padding:10px 12px">ROI</th>
+      <th style="text-align:right;padding:10px 12px">进房率</th>
+      <th style="text-align:right;padding:10px 14px">连麦率</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 // Shift a range backwards by its own length
 function prevPeriod(dateFrom, dateTo){
   const iFrom = dates.indexOf(dateFrom), iTo = dates.indexOf(dateTo);
@@ -1052,6 +1096,7 @@ function renderRange(dateFrom, dateTo){
 
   // Refresh chart – use the range
   renderChart(dateFrom, dateTo, currentChartMode);
+  renderWeeklySummary(dateFrom, dateTo);
 }
 
 // ════════ CHART ════════
