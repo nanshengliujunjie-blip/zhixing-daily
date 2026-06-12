@@ -763,14 +763,30 @@ const elTo   = document.getElementById('dateTo');
 // elFrom.min = elTo.min = minDate;
 // elFrom.max = elTo.max = maxDate;
 
+// ── 用户数据页日期上限：独立于营销总览(FALLBACK)，因 ad_users 通常比 表1/表2 早一天 ──
+let userMaxDate = null;
+function isUserPage(pid){ return pid==='adusers'||pid==='addetail'||pid==='users'; }
+function curPid(){ return (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-',''); }
+function activeMaxDate(){ return (isUserPage(curPid()) && userMaxDate && userMaxDate>maxDate) ? userMaxDate : maxDate; }
+function syncDateCeiling(){
+  const target = activeMaxDate();
+  // 仅在处于默认上限(没手动自定义)时才自动调整，避免覆盖用户手选的范围
+  const atDefault = (elTo.value === maxDate) || (userMaxDate && elTo.value === userMaxDate);
+  if(atDefault && elTo.value !== target){
+    elTo.value = target;
+    if(elFrom.value > elTo.value) elFrom.value = elTo.value;
+  }
+}
+
 function setPreset(n){
   document.querySelectorAll('.drp-preset').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
-  elTo.value = maxDate;
+  if(window.event && event.target) event.target.classList.add('active');
+  const mx = activeMaxDate();
+  elTo.value = mx;
   if(n === 0){ elFrom.value = minDate; }
   else {
-    const idx = Math.max(0, dates.length - n);
-    elFrom.value = dates[idx];
+    const d = new Date(mx+'T00:00:00'); d.setDate(d.getDate()-(n-1));
+    elFrom.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   onRangeChange();
 }
@@ -800,6 +816,15 @@ elTo.addEventListener('change', onRangeChange);
 })();
 
 renderRange(elFrom.value, elTo.value);
+
+// 预取 ad_users 算出"用户数据最新日期"，让投放用户页默认显示到自己最新一天(不被营销总览卡住)
+fetch('ad_users.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{
+  const arr = d.users||d;
+  let mx = maxDate;
+  arr.forEach(u=>{ if(u[10] && u[10] > mx) mx = u[10]; });
+  userMaxDate = mx;
+  if(isUserPage(curPid())){ syncDateCeiling(); onRangeChange(); }
+}).catch(()=>{});
 
 // ════════ HELPERS ════════
 function fmt(v, dp=2){ if(v==null) return '—'; return v.toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:dp}); }
@@ -1106,6 +1131,7 @@ function switchPage(id, el){
   if(page) page.classList.add('active');
   if(el) el.classList.add('active');
 
+  syncDateCeiling();
   // Lazy-render page content
   if(id === 'roi')     renderRoiPage(elFrom.value, elTo.value);
   if(id === 'trend')   renderTrendPage(elFrom.value, elTo.value);
