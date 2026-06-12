@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 知星全自动更新脚本 - 一键完成所有数据更新
-用法: python3 ~/Desktop/知星/auto_update.py
+用法: python3 ~/zhixing/auto_update.py
 
 更新内容:
   1. FALLBACK (index.html + dashboard.html) ← update_daily.py 逻辑
@@ -272,6 +272,7 @@ for uid, orders in orders_data_final.items():
     if not reg_date: continue
     for o in orders:
         if o['d'] != reg_date: continue   # 仅首日
+        if o.get('amt', 0) <= 0: continue # 付费金额=0不计入付费统计
         cons = o.get('c', '未知') or '未知'
         d = o['d']
         if d not in daily: daily[d] = {}

@@ -2,7 +2,7 @@
 """
 知星日报自动更新脚本
 使用方式：关闭 VPN 后在终端运行：
-    cd ~/Desktop/知星 && python3 update_daily.py
+    cd ~/zhixing && python3 update_daily.py
 
 功能：
   1. 查询 Nexita 获取最新投放数据（表1 + 表2）
@@ -22,7 +22,7 @@ REPO_DIR   = Path(__file__).parent
 CONFIG     = Path(__file__).parent / '.update_config.json'
 
 # ── 工具函数 ─────────────────────────────────────────────────
-def run_sql(sql, timeout=90):
+def run_sql(sql, timeout=300):
     """通过 query.mjs 执行 SQL，返回 {columns, rows}"""
     r = subprocess.run(
         ['node', 'scripts/query.mjs'],

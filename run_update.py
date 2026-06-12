@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""运行方式：python3 ~/Desktop/知星/run_update.py 表1路径 表2路径"""
+"""运行方式：python3 ~/zhixing/run_update.py 表1路径 表2路径"""
 import sys, json, re, openpyxl
 from datetime import date
 
@@ -25,8 +25,8 @@ def sv(v):
 
 ROI_COLS = [29,31,33,35,37,39,41,43,45]
 
-INDEX = '/Users/oulei/Desktop/知星/index.html'
-DASHBOARD = '/Users/oulei/Desktop/知星/dashboard.html'
+INDEX = '/Users/oulei/zhixing/index.html'
+DASHBOARD = '/Users/oulei/zhixing/dashboard.html'
 with open(INDEX, encoding='utf-8') as f:
     html = f.read()
 fb = re.search(r'const FALLBACK\s*=\s*\[(.*?)\];', html, re.DOTALL)
@@ -235,10 +235,10 @@ print(f"CH_FALLBACK 新增 {ch_added} 渠道条目（index.html）")
 import subprocess, os, tempfile
 
 # ── 更新 ad_users.json（自动下载归因 Excel + 补录新用户）────────
-AD_USERS = '/Users/oulei/Desktop/知星/ad_users.json'
-USER_DATA_PATH = '/Users/oulei/Desktop/知星/user_data.json'
-FETCH_MJS = '/Users/oulei/Desktop/知星/fetch_attribution.mjs'
-USER_ORDERS_PATH = '/Users/oulei/Desktop/知星/user_orders.json'
+AD_USERS = '/Users/oulei/zhixing/ad_users.json'
+USER_DATA_PATH = '/Users/oulei/zhixing/user_data.json'
+FETCH_MJS = '/Users/oulei/zhixing/fetch_attribution.mjs'
+USER_ORDERS_PATH = '/Users/oulei/zhixing/user_orders.json'
 
 def load_ad_users():
     with open(AD_USERS) as f: return json.load(f)
@@ -321,7 +321,7 @@ new_ad_dates = sorted(entry_map.keys())[-added:] if added > 0 else []
 update_ad_users(new_ad_dates)
 
 # ── Git push ──────────────────────────────────────────────────
-subprocess.run(['git','add','index.html','dashboard.html','ad_users.json'], cwd='/Users/oulei/Desktop/知星', check=True)
-subprocess.run(['git','commit','-m',f'日报更新 {date.today()}: 新增{added}条 ROI补充{updated}条 (index+dashboard+ad_users同步)'], cwd='/Users/oulei/Desktop/知星', check=True)
-subprocess.run(['git','push'], cwd='/Users/oulei/Desktop/知星', check=True)
+subprocess.run(['git','add','index.html','dashboard.html','ad_users.json'], cwd='/Users/oulei/zhixing', check=True)
+subprocess.run(['git','commit','-m',f'日报更新 {date.today()}: 新增{added}条 ROI补充{updated}条 (index+dashboard+ad_users同步)'], cwd='/Users/oulei/zhixing', check=True)
+subprocess.run(['git','push'], cwd='/Users/oulei/zhixing', check=True)
 print("✅ 已推送到 GitHub Pages!")

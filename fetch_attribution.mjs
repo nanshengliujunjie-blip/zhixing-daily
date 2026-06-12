@@ -29,7 +29,7 @@ function arg(name) {
 
 async function main() {
   const date    = arg("date") || new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const outPath = arg("out")  || resolve(process.env.HOME, `Desktop/知星/_attr_${date}.xlsx`);
+  const outPath = arg("out")  || resolve(process.env.HOME, `zhixing/_attr_${date}.xlsx`);
   const dateFrom = `${date} 00:00:00`;
   const dateTo   = `${date} 23:59:59`;
 
