@@ -2798,11 +2798,11 @@ function renderMaterials() {
     const videoUrl = origUrl.replace('http://', 'https://');
     // Qiniu CDN 截帧：?vframe/jpg/offset/0
     const thumbUrl = videoUrl ? videoUrl + '?vframe/jpg/offset/0' : '';
-    // 充值金额：pay_amt 单位分→元
-    const payYuan = (m.pay_amt || 0) / 100;
-    // 首日ROI：成本加权平均（使用 API 原始 roi 字段）
-    const roi = m._aggRoi != null ? m._aggRoi.toFixed(1) : '—';
-    const roiColor = roi !== '—' && +roi >= 20 ? '#16a34a' : '#aab0be';
+    // pay_amt 已是元
+    const payYuan = m.pay_amt || 0;
+    // 首日ROI：倍数（如 6.19 = 消耗1元回收6.19元）
+    const roi = m._aggRoi != null ? m._aggRoi.toFixed(2) : '—';
+    const roiColor = roi !== '—' && +roi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
     const mJson = JSON.stringify({...m, _payYuan: payYuan, _roi: roi}).replace(/</g,'\\u003c');
     return `<div class="mat-card" onclick='openVideoModal(${i},${JSON.stringify(origUrl)},${JSON.stringify(m.name||"")},${mJson})'>
@@ -2815,7 +2815,7 @@ function renderMaterials() {
     <div class="mat-meta">${mediaBadge(m.media)}<span style="font-size:10px;color:#aab0be">${m._days}天</span></div>
     <div class="mat-stats">
       <div class="mat-stat">消耗 <b>¥${m.cost>0?m.cost.toFixed(0):'0'}</b></div>
-      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi==='—'?'—':roi+'%'}</b></div>
+      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi==='—'?'—':roi+'x'}</b></div>
       <div class="mat-stat">展示 <b>${showK(m.show)}</b></div>
       <div class="mat-stat">充值金额 <b>¥${payYuan.toFixed(0)}</b></div>
     </div>
@@ -2837,8 +2837,8 @@ function openVideoModal(idx, url, name, m) {
   _currentVideoUrl = m.url || url;
   document.getElementById('modal-play-btn').href = _currentVideoUrl || '#';
 
-  const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0) / 100;
-  const roi = m._roi != null && m._roi !== '—' ? m._roi+'%' : (m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—');
+  const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0);
+  const roi = m._roi != null && m._roi !== '—' ? m._roi+'x' : (m.cost > 0 ? (payYuan / m.cost).toFixed(2)+'x' : '—');
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
   const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
