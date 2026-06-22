@@ -2765,14 +2765,19 @@ function renderMaterials() {
     if (media && m.media !== media) continue;
     const key = m.url || m.id;
     if (!agg[key]) {
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0 };
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _roi_wsum:0, _days:0 };
     }
     const a = agg[key];
     a.cost = +(a.cost + (m.cost||0)).toFixed(2);
     a.show += m.show||0; a.click += m.click||0;
     a.active += m.active||0; a.reg += m.reg||0;
     a.pay_amt = +(a.pay_amt + (m.pay_amt||0)).toFixed(2);
+    a._roi_wsum += (m.roi||0) * (m.cost||0);  // 成本加权 ROI 分子
     a._days++;
+  }
+  // 补算聚合 ROI（成本加权平均）
+  for (const a of Object.values(agg)) {
+    a._aggRoi = a.cost > 0 ? +(a._roi_wsum / a.cost).toFixed(2) : null;
   }
 
   let list = Object.values(agg);
@@ -2789,14 +2794,19 @@ function renderMaterials() {
   empty.style.display = 'none';
 
   grid.innerHTML = list.map((m, i) => {
-    const videoUrl = (m.url || '').replace('http://', 'https://');
-    // pay_amt 单位是分，除以100得元；首日ROI = pay_amt(元) / cost * 100
+    const origUrl = m.url || '';
+    const videoUrl = origUrl.replace('http://', 'https://');
+    const thumbUrl = videoUrl.replace(/\.mp4$/i, '.jpg');
+    // 充值金额：pay_amt 单位分→元
     const payYuan = (m.pay_amt || 0) / 100;
-    const roi = m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1) : '—';
+    // 首日ROI：成本加权平均（使用 API 原始 roi 字段）
+    const roi = m._aggRoi != null ? m._aggRoi.toFixed(1) : '—';
     const roiColor = roi !== '—' && +roi >= 20 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
-    return `<div class="mat-card" onclick="openVideoModal(${i}, ${JSON.stringify(videoUrl)}, ${JSON.stringify(m.name||'')}, ${JSON.stringify({...m, _payYuan: payYuan})})">
+    const mJson = JSON.stringify({...m, _payYuan: payYuan, _roi: roi}).replace(/</g,'\\u003c');
+    return `<div class="mat-card" onclick='openVideoModal(${i},${JSON.stringify(origUrl)},${JSON.stringify(m.name||"")},${mJson})'>
   <div class="mat-thumb">
+    <img src="${thumbUrl}" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none">
     <div class="mat-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   </div>
   <div class="mat-info">
@@ -2826,7 +2836,7 @@ function openVideoModal(idx, url, name, m) {
   _currentVideoUrl = m.url || url;  // 保留原始 http 链接用于新标签页
 
   const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0) / 100;
-  const roi = m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—';
+  const roi = m._roi != null && m._roi !== '—' ? m._roi+'%' : (m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—');
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
   const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
