@@ -2773,54 +2773,58 @@ function renderMaterials() {
 
   // 聚合：同一素材 url 在区间内汇总
   // 第一遍：按 (dt, pay_amt) 分组，统计每组的总消耗
-  // 同一天相同 pay_amt 的所有计划属于同一创意组，共享这笔收入
-  const groupCost = {};  // groupCost['dt:pay_amt'] = 总消耗
+  // Pass 1: 每个 (dt, pay_amt) 组的总消耗 — 同一天相同收入值视为同一创意组
+  const groupCost = {};
+  const matGroupCost = {};  // matGroupCost[name][gk] = 该素材在该组的消耗
   for (const m of _matData.list) {
     if (m.dt < from || m.dt > to) continue;
     if (media && m.media !== media) continue;
-    if (!m.url || !m.url.startsWith('http')) continue;
-    if (!m.pay_amt || !m.cost) continue;
+    if (!m.url || !m.url.startsWith('http') || !m.pay_amt || !m.cost) continue;
     const gk = `${m.dt}:${m.pay_amt}`;
+    const key = m.name || m.url;
     groupCost[gk] = (groupCost[gk] || 0) + m.cost;
+    if (!matGroupCost[key]) matGroupCost[key] = {};
+    matGroupCost[key][gk] = (matGroupCost[key][gk] || 0) + m.cost;
   }
 
-  // 第二遍：聚合素材，ROI 按创意组真实比例计算
+  // Pass 2: 聚合素材基础指标
   const agg = {};
-  const _seenGroup = {};  // 每个素材已累加过哪些 (dt, pay_amt) 组
   for (const m of _matData.list) {
     if (m.dt < from || m.dt > to) continue;
     if (media && m.media !== media) continue;
     if (!m.url || !m.url.startsWith('http')) continue;
-
     const key = m.name || m.url;
     if (!agg[key]) {
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _roiNum:0, _days:0, _dtSet:new Set() };
-      _seenGroup[key] = new Set();
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _fairPay:0, _days:0, _dtSet:new Set() };
     }
     const a = agg[key];
     if ((m.cost||0) > (a._bestCost||0)) { a.url = m.url; a._bestCost = m.cost; }
-
-    a.cost  = +(a.cost  + (m.cost||0)).toFixed(2);
+    a.cost   = +(a.cost   + (m.cost||0)).toFixed(2);
     a.show  += m.show||0; a.click  += m.click||0;
-    a.active += m.active||0; a.reg += m.reg||0;
-
-    // pay_amt & ROI：每个 (dt, pay_amt) 组只计一次
-    if (m.pay_amt > 0) {
-      const gk = `${m.dt}:${m.pay_amt}`;
-      if (!_seenGroup[key].has(gk)) {
-        _seenGroup[key].add(gk);
-        a.pay_amt = +(a.pay_amt + m.pay_amt).toFixed(2);
-        // 该组真实 ROI = pay_amt / 该天共享这笔收入的所有计划总消耗
-        const gc = groupCost[gk] || m.cost;
-        a._roiNum += m.pay_amt / gc * m.pay_amt;  // 按 pay_amt 加权
-      }
-    }
+    a.active += m.active||0; a.reg  += m.reg||0;
     if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
   }
-  // 最终 ROI = 真实收益 / 真实消耗（剔除重复归因）
+
+  // Pass 3: 公平分摊收益 fairPay = Σ pay_amt × (本素材该组消耗 / 全组消耗)
+  const seenGk = {};
+  for (const m of _matData.list) {
+    if (m.dt < from || m.dt > to) continue;
+    if (media && m.media !== media) continue;
+    if (!m.url || !m.url.startsWith('http') || !m.pay_amt || !m.cost) continue;
+    const key = m.name || m.url;
+    const gk = `${m.dt}:${m.pay_amt}`;
+    if (!seenGk[key]) seenGk[key] = new Set();
+    if (seenGk[key].has(gk)) continue;
+    seenGk[key].add(gk);
+    const myCost = matGroupCost[key]?.[gk] || 0;
+    const totCost = groupCost[gk] || myCost;
+    const fair = totCost > 0 ? m.pay_amt * (myCost / totCost) : 0;
+    agg[key]._fairPay = +(agg[key]._fairPay + fair).toFixed(4);
+    agg[key].pay_amt  = +(agg[key].pay_amt  + m.pay_amt).toFixed(2);
+  }
+
   for (const a of Object.values(agg)) {
-    a._aggRoi = a.pay_amt > 0 ? a.pay_amt > 0 && a._roiNum > 0
-      ? +(a._roiNum / a.pay_amt) : null : null;
+    a._aggRoi = a.cost > 0 && a._fairPay > 0 ? +(a._fairPay / a.cost) : null;
   }
 
   let list = Object.values(agg);
@@ -2839,7 +2843,7 @@ function renderMaterials() {
   grid.innerHTML = list.map((m, i) => {
     const origUrl = m.url || '';
     const videoUrl = origUrl.replace('http://', 'https://');
-    const payYuan = m.pay_amt || 0;
+    const payYuan = m._fairPay || 0;
     const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1) + '%' : '—';
     const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
@@ -2892,7 +2896,7 @@ function openVideoModal(idx) {
   const m = window._matList[idx];
   if (!m) return;
 
-  const payYuan = m.pay_amt || 0;
+  const payYuan = m._fairPay || 0;
   const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1)+'%' : '—';
   const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#4ade80' : '#f87171';
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
