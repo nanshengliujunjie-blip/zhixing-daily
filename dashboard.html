@@ -866,7 +866,8 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       <!-- ROI 大字 -->
       <div style="text-align:center;margin-bottom:20px;padding:14px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)">
         <div id="modal-roi" style="font-size:36px;font-weight:800;letter-spacing:-1px">—</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">首日 ROI</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">区间 ROI <span style="opacity:.7">（充值 / 消耗）</span></div>
+        <div id="modal-roi-note" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;display:none">* 消耗低于 ¥10，数据仅供参考</div>
       </div>
       <!-- 8格指标 -->
       <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
@@ -2761,60 +2762,29 @@ function renderMaterials() {
   const media = document.getElementById('mat-media').value;
   const sortKey = document.getElementById('mat-sort').value;
 
-  // 聚合：同一素材 url 在区间内汇总
-  // 第一遍：按 (dt, pay_amt) 分组，统计每组的总消耗
-  // Pass 1: 每个 (dt, pay_amt) 组的总消耗 — 同一天相同收入值视为同一创意组
-  const groupCost = {};
-  const matGroupCost = {};  // matGroupCost[name][gk] = 该素材在该组的消耗
-  for (const m of _matData.list) {
-    if (m.dt < from || m.dt > to) continue;
-    if (media && m.media !== media) continue;
-    if (!m.url || !m.url.startsWith('http') || !m.pay_amt || !m.cost) continue;
-    const gk = `${m.dt}:${m.pay_amt}`;
-    const key = m.name || m.url;
-    groupCost[gk] = (groupCost[gk] || 0) + m.cost;
-    if (!matGroupCost[key]) matGroupCost[key] = {};
-    matGroupCost[key][gk] = (matGroupCost[key][gk] || 0) + m.cost;
-  }
-
-  // Pass 2: 聚合素材基础指标
+  // 聚合：同一素材(url 与 name 一一对应)在区间内逐日汇总
+  // 数据已确认无重复归因：每个 url+日期 仅一条记录，故直接求和即可
   const agg = {};
   for (const m of _matData.list) {
     if (m.dt < from || m.dt > to) continue;
     if (media && m.media !== media) continue;
     if (!m.url || !m.url.startsWith('http')) continue;
-    const key = m.name || m.url;
+    const key = m.url;
     if (!agg[key]) {
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _fairPay:0, _days:0, _dtSet:new Set() };
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0, _dtSet:new Set() };
     }
     const a = agg[key];
-    if ((m.cost||0) > (a._bestCost||0)) { a.url = m.url; a._bestCost = m.cost; }
-    a.cost   = +(a.cost   + (m.cost||0)).toFixed(2);
+    a.cost    = +(a.cost    + (m.cost||0)).toFixed(2);
+    a.pay_amt = +(a.pay_amt + (m.pay_amt||0)).toFixed(2);
     a.show  += m.show||0; a.click  += m.click||0;
     a.active += m.active||0; a.reg  += m.reg||0;
     if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
   }
 
-  // Pass 3: 公平分摊收益 fairPay = Σ pay_amt × (本素材该组消耗 / 全组消耗)
-  const seenGk = {};
-  for (const m of _matData.list) {
-    if (m.dt < from || m.dt > to) continue;
-    if (media && m.media !== media) continue;
-    if (!m.url || !m.url.startsWith('http') || !m.pay_amt || !m.cost) continue;
-    const key = m.name || m.url;
-    const gk = `${m.dt}:${m.pay_amt}`;
-    if (!seenGk[key]) seenGk[key] = new Set();
-    if (seenGk[key].has(gk)) continue;
-    seenGk[key].add(gk);
-    const myCost = matGroupCost[key]?.[gk] || 0;
-    const totCost = groupCost[gk] || myCost;
-    const fair = totCost > 0 ? m.pay_amt * (myCost / totCost) : 0;
-    agg[key]._fairPay = +(agg[key]._fairPay + fair).toFixed(4);
-    agg[key].pay_amt  = +(agg[key].pay_amt  + m.pay_amt).toFixed(2);
-  }
-
+  // ROI = 充值 / 消耗；消耗过低(<¥10)时不可靠，标记为噪音
   for (const a of Object.values(agg)) {
-    a._aggRoi = a.cost > 0 && a._fairPay > 0 ? +(a._fairPay / a.cost) : null;
+    a._aggRoi  = a.cost > 0 ? +(a.pay_amt / a.cost) : null;
+    a._lowSpend = a.cost < 10;  // 低消耗素材 ROI 仅供参考
   }
 
   let list = Object.values(agg);
@@ -2833,9 +2803,12 @@ function renderMaterials() {
   grid.innerHTML = list.map((m, i) => {
     const origUrl = m.url || '';
     const videoUrl = origUrl.replace('http://', 'https://');
-    const payYuan = m._fairPay || 0;
+    const payYuan = m.pay_amt || 0;
     const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1) + '%' : '—';
-    const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be';
+    // 低消耗素材 ROI 不可靠，标灰；否则回正(≥100%)绿色
+    const roiColor = m._lowSpend ? '#c0c4cc'
+      : (m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be');
+    const roiTxt = m._lowSpend && m._aggRoi != null ? roi + '*' : roi;
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
     return `<div class="mat-card" onclick='openVideoModal(${i})'>
   <div class="mat-thumb" ${videoUrl ? `data-vsrc="${videoUrl}"` : ''}>
@@ -2851,7 +2824,7 @@ function renderMaterials() {
     <div class="mat-meta">${mediaBadge(m.media)}<span style="font-size:10px;color:#aab0be">${m._days}天</span></div>
     <div class="mat-stats">
       <div class="mat-stat">消耗 <b>¥${m.cost>0?m.cost.toFixed(0):'0'}</b></div>
-      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi}</b></div>
+      <div class="mat-stat">ROI <b style="color:${roiColor}">${roiTxt}</b></div>
       <div class="mat-stat">展示 <b>${showK(m.show)}</b></div>
       <div class="mat-stat">充值金额 <b>¥${payYuan.toFixed(0)}</b></div>
     </div>
@@ -2886,9 +2859,9 @@ function openVideoModal(idx) {
   const m = window._matList[idx];
   if (!m) return;
 
-  const payYuan = m._fairPay || 0;
-  const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1)+'%' : '—';
-  const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#4ade80' : '#f87171';
+  const payYuan = m.pay_amt || 0;
+  const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1)+'%' + (m._lowSpend ? '*' : '') : '—';
+  const roiColor = m._lowSpend ? '#9aa0aa' : (m._aggRoi != null && m._aggRoi >= 1 ? '#4ade80' : '#f87171');
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
   const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
@@ -2902,6 +2875,7 @@ function openVideoModal(idx) {
   document.getElementById('modal-name').textContent = m.name || '未知素材';
   document.getElementById('modal-roi').textContent = roi;
   document.getElementById('modal-roi').style.color = roiColor;
+  document.getElementById('modal-roi-note').style.display = m._lowSpend ? 'block' : 'none';
   document.getElementById('modal-stats').innerHTML = [
     ['¥'+(m.cost||0).toFixed(0), '消耗'],
     ['¥'+payYuan.toFixed(0), '充值金额'],
