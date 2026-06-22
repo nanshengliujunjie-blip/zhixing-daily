@@ -866,12 +866,15 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
 
   <!-- 视频播放弹窗 -->
   <div id="video-modal" onclick="closeVideoModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;display:none">
-    <div style="position:relative;max-width:520px;width:calc(100vw - 40px)">
-      <button onclick="closeVideoModal()" style="position:absolute;top:-36px;right:0;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;opacity:.8">✕</button>
-      <video id="modal-video" controls autoplay style="width:100%;border-radius:10px;max-height:70vh;background:#000;display:block"></video>
+    <div style="position:relative;background:rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;max-width:560px;width:calc(100vw - 40px)" onclick="event.stopPropagation()">
+      <button onclick="closeVideoModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      <div id="modal-name" style="color:#fff;font-size:13px;font-weight:600;line-height:1.5;margin-bottom:14px;padding-right:24px"></div>
+      <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button id="modal-play-btn" onclick="playVideoNewTab()" style="background:#4a7cf0;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer">▶ 播放视频</button>
+        <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer">关闭</button>
+      </div>
     </div>
-    <div id="modal-stats" style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 20px;max-width:520px;width:calc(100vw - 40px);display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
-    <div id="modal-name" style="color:rgba(255,255,255,.6);font-size:12px;max-width:520px;text-align:center;line-height:1.5"></div>
   </div>
 
   </div><!-- /content -->
@@ -2813,13 +2816,15 @@ function renderMaterials() {
   window._matList = list;
 }
 
+let _currentVideoUrl = '';
+
 function openVideoModal(idx, url, name, m) {
   const modal = document.getElementById('video-modal');
-  const video = document.getElementById('modal-video');
   const stats = document.getElementById('modal-stats');
   const nameEl = document.getElementById('modal-name');
 
-  // pay_amt 单位分，_payYuan 是已换算的元（卡片渲染时注入）
+  _currentVideoUrl = m.url || url;  // 保留原始 http 链接用于新标签页
+
   const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0) / 100;
   const roi = m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—';
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
@@ -2832,27 +2837,23 @@ function openVideoModal(idx, url, name, m) {
     [roi, '首日ROI'],
     [fmtK(m.show||0), '展示'],
     ['¥'+payYuan.toFixed(0), '充值金额'],
-    [m.click||0, '点击 '+ctr],
+    [m.click||0, '点击'],
+    [ctr, '点击率'],
     [m.reg||0, '注册'],
-    [m.active||0, '激活'],
     [regCost, '注册成本'],
   ].map(([v,l]) => `<div class="modal-stat-item"><div class="msv">${v}</div><div class="msl">${l}</div></div>`).join('');
 
-  // 先显示弹窗，再加载视频（避免 autoplay 被阻止）
   modal.style.display = 'flex';
-  video.src = url;
-  video.load();
-  video.play().catch(() => {
-    // autoplay 被拦截时不报错，用户手动点播放
-  });
+}
+
+function playVideoNewTab() {
+  if (_currentVideoUrl) window.open(_currentVideoUrl, '_blank');
 }
 
 function closeVideoModal(e) {
   if (e && e.target !== document.getElementById('video-modal')) return;
-  const modal = document.getElementById('video-modal');
-  const video = document.getElementById('modal-video');
-  video.pause(); video.src = '';
-  modal.style.display = 'none';
+  document.getElementById('video-modal').style.display = 'none';
+  _currentVideoUrl = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
 </script>
