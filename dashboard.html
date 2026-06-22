@@ -2809,8 +2809,8 @@ function renderMaterials() {
     // pay_amt 已是元
     const payYuan = m.pay_amt || 0;
     // 首日ROI：倍数（如 6.19 = 消耗1元回收6.19元）
-    const roi = m._aggRoi != null ? m._aggRoi.toFixed(2) : '—';
-    const roiColor = roi !== '—' && +roi >= 1 ? '#16a34a' : '#aab0be';
+    const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1) + '%' : '—';
+    const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
     return `<div class="mat-card" onclick='openVideoModal(${i})'>
   <div class="mat-thumb">
@@ -2822,7 +2822,7 @@ function renderMaterials() {
     <div class="mat-meta">${mediaBadge(m.media)}<span style="font-size:10px;color:#aab0be">${m._days}天</span></div>
     <div class="mat-stats">
       <div class="mat-stat">消耗 <b>¥${m.cost>0?m.cost.toFixed(0):'0'}</b></div>
-      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi==='—'?'—':roi+'x'}</b></div>
+      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi}</b></div>
       <div class="mat-stat">展示 <b>${showK(m.show)}</b></div>
       <div class="mat-stat">充值金额 <b>¥${payYuan.toFixed(0)}</b></div>
     </div>
@@ -2841,7 +2841,7 @@ function openVideoModal(idx) {
   if (!m) return;
 
   const payYuan = m.pay_amt || 0;
-  const roi = m._aggRoi != null ? m._aggRoi.toFixed(2)+'x' : '—';
+  const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1)+'%' : '—';
   const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#4ade80' : '#f87171';
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
