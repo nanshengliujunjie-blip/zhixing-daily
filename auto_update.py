@@ -24,7 +24,9 @@ CONSULTANT_D   = REPO / 'consultant_data.json'
 CONSULTANT_ALL = REPO / 'consultant_all_data.json'
 FETCH_ORDERS   = REPO / 'fetch_orders.mjs'
 FETCH_ATTR     = REPO / 'fetch_attribution.mjs'
+FETCH_MATERIALS= REPO / 'fetch_materials.mjs'
 UPDATE_DAILY   = REPO / 'update_daily.py'
+MATERIALS_JSON = REPO / 'materials.json'
 
 today = date.today()
 yesterday = today - timedelta(days=1)
@@ -371,11 +373,31 @@ with open(CONSULTANT_ALL, 'w') as f:
 print(f'  ✓ consultant_all_data.json: {len(daily_all_out)} 天, {len(totals_all)} 个顾问')
 
 # ═══════════════════════════════════════════════════════
+# Step 4.5: 更新素材数据（最近 30 天）
+# ═══════════════════════════════════════════════════════
+print('\n【Step 4.5】更新推广素材数据...')
+try:
+    mat_proc = subprocess.run(
+        ['node', str(FETCH_MATERIALS), '--days=30'],
+        cwd=REPO, capture_output=True, timeout=300
+    )
+    if mat_proc.returncode == 0 and mat_proc.stdout:
+        with open(MATERIALS_JSON, 'wb') as f:
+            f.write(mat_proc.stdout)
+        import json as _json
+        _mat = _json.loads(mat_proc.stdout)
+        print(f'  ✓ materials.json: {len(_mat.get("list", []))} 条，{_mat.get("startDate")}~{_mat.get("endDate")}')
+    else:
+        print(f'  ⚠ fetch_materials 失败: {mat_proc.stderr.decode()[-300:]}')
+except Exception as e:
+    print(f'  ⚠ 素材更新异常: {e}，继续')
+
+# ═══════════════════════════════════════════════════════
 # Step 5: Git commit + push
 # ═══════════════════════════════════════════════════════
 print('\n【Step 5】Git commit & push...')
 files = ['index.html', 'dashboard.html', 'user_orders.json', 'ad_users.json',
-         'consultant_data.json', 'consultant_all_data.json']
+         'consultant_data.json', 'consultant_all_data.json', 'materials.json']
 subprocess.run(['git', 'add'] + files, cwd=REPO, check=True)
 msg = f'全量自动更新 {today}: orders+ad_users+consultant+FALLBACK'
 try:
