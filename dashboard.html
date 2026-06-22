@@ -2774,26 +2774,43 @@ function renderMaterials() {
 
   // 聚合：同一素材 url 在区间内汇总
   const agg = {};
+  // _dayPay[key][dt] = Set of pay_amt values — 同一素材同一天只计一次 pay_amt
+  const _dayPay = {};
+
   for (const m of _matData.list) {
     if (from && m.dt < from) continue;
     if (to && m.dt > to) continue;
     if (media && m.media !== media) continue;
-    if (!m.url || !m.url.startsWith('http')) continue;  // 过滤无效URL
-    const key = m.url;
+    if (!m.url || !m.url.startsWith('http')) continue;
+
+    // 以素材名称聚合（同名视频可能有多个URL跑在不同计划）
+    const key = m.name || m.url;
+
     if (!agg[key]) {
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _roi_wsum:0, _days:0 };
+      // 优先选高消耗的 URL 做代表（用于封面/播放）
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0, _dtSet:new Set() };
+      _dayPay[key] = {};
     }
     const a = agg[key];
+    // 若当前 URL 消耗更高，换成更高消耗的 URL 做封面
+    if ((m.cost||0) > (a._bestCost||0)) { a.url = m.url; a._bestCost = m.cost; }
+
     a.cost = +(a.cost + (m.cost||0)).toFixed(2);
     a.show += m.show||0; a.click += m.click||0;
     a.active += m.active||0; a.reg += m.reg||0;
-    a.pay_amt = +(a.pay_amt + (m.pay_amt||0)).toFixed(2);
-    a._roi_wsum += (m.roi||0) * (m.cost||0);  // 成本加权 ROI 分子
-    a._days++;
+
+    // pay_amt：同一素材同一天只累加一次（去除多计划重复归因）
+    if (!_dayPay[key][m.dt]) _dayPay[key][m.dt] = new Set();
+    if (m.pay_amt > 0 && !_dayPay[key][m.dt].has(m.pay_amt)) {
+      _dayPay[key][m.dt].add(m.pay_amt);
+      a.pay_amt = +(a.pay_amt + m.pay_amt).toFixed(2);
+    }
+
+    if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
   }
-  // 补算聚合 ROI（成本加权平均）
+  // ROI = 去重后总充值 / 总消耗
   for (const a of Object.values(agg)) {
-    a._aggRoi = a.cost > 0 ? +(a._roi_wsum / a.cost).toFixed(2) : null;
+    a._aggRoi = a.cost > 0 ? +(a.pay_amt / a.cost).toFixed(4) : null;
   }
 
   let list = Object.values(agg);
