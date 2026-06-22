@@ -2743,10 +2743,10 @@ function initMaterialsPage() {
     const sel = document.getElementById('mat-media');
     sel.innerHTML = '<option value="">全部媒体</option>' +
       medias.map(m => `<option value="${m}">${m}</option>`).join('');
-    // 默认日期：最近7天
+    // 默认日期：最近30天
     const dates = d.list.map(m => m.dt).filter(Boolean).sort();
     const lastDate = dates[dates.length - 1] || d.endDate;
-    const firstDate = new Date(new Date(lastDate) - 6 * 86400000).toISOString().slice(0, 10);
+    const firstDate = dates[0] || new Date(new Date(lastDate) - 29 * 86400000).toISOString().slice(0, 10);
     document.getElementById('mat-from').value = firstDate;
     document.getElementById('mat-to').value = lastDate;
     renderMaterials();
@@ -2778,7 +2778,8 @@ function renderMaterials() {
     if (from && m.dt < from) continue;
     if (to && m.dt > to) continue;
     if (media && m.media !== media) continue;
-    const key = m.url || m.id;
+    if (!m.url || !m.url.startsWith('http')) continue;  // 过滤无效URL
+    const key = m.url;
     if (!agg[key]) {
       agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _roi_wsum:0, _days:0 };
     }
