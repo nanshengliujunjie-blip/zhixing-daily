@@ -871,7 +871,7 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       <div id="modal-name" style="color:#fff;font-size:13px;font-weight:600;line-height:1.5;margin-bottom:14px;padding-right:24px"></div>
       <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
       <div style="display:flex;gap:10px;justify-content:center">
-        <button id="modal-play-btn" onclick="playVideoNewTab()" style="background:#4a7cf0;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer">▶ 播放视频</button>
+        <a id="modal-play-btn" href="#" target="_blank" rel="noopener" style="background:#4a7cf0;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.4">▶ 播放视频</a>
         <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer">关闭</button>
       </div>
     </div>
@@ -2796,7 +2796,8 @@ function renderMaterials() {
   grid.innerHTML = list.map((m, i) => {
     const origUrl = m.url || '';
     const videoUrl = origUrl.replace('http://', 'https://');
-    const thumbUrl = videoUrl.replace(/\.mp4$/i, '.jpg');
+    // Qiniu CDN 截帧：?vframe/jpg/offset/0
+    const thumbUrl = videoUrl ? videoUrl + '?vframe/jpg/offset/0' : '';
     // 充值金额：pay_amt 单位分→元
     const payYuan = (m.pay_amt || 0) / 100;
     // 首日ROI：成本加权平均（使用 API 原始 roi 字段）
@@ -2833,7 +2834,8 @@ function openVideoModal(idx, url, name, m) {
   const stats = document.getElementById('modal-stats');
   const nameEl = document.getElementById('modal-name');
 
-  _currentVideoUrl = m.url || url;  // 保留原始 http 链接用于新标签页
+  _currentVideoUrl = m.url || url;
+  document.getElementById('modal-play-btn').href = _currentVideoUrl || '#';
 
   const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0) / 100;
   const roi = m._roi != null && m._roi !== '—' ? m._roi+'%' : (m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—');
