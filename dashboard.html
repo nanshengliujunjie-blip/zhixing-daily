@@ -877,9 +877,13 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       </div>
       <!-- 8格指标 -->
       <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
+      <!-- 视频播放器 -->
+      <div id="modal-video-wrap" style="display:none;margin-bottom:16px;border-radius:8px;overflow:hidden;background:#000">
+        <video id="modal-video" controls playsinline style="width:100%;max-height:300px;display:block"></video>
+      </div>
       <!-- 按钮 -->
       <div style="display:flex;gap:10px;justify-content:center">
-        <a id="modal-play-btn" href="#" target="_blank" rel="noopener" style="background:#4a7cf0;color:#fff;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.4">▶ 播放视频</a>
+        <button id="modal-play-btn" onclick="toggleModalVideo()" style="background:#4a7cf0;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">▶ 播放视频</button>
         <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer">关闭</button>
       </div>
     </div>
@@ -2804,17 +2808,13 @@ function renderMaterials() {
   grid.innerHTML = list.map((m, i) => {
     const origUrl = m.url || '';
     const videoUrl = origUrl.replace('http://', 'https://');
-    // Qiniu CDN 截帧：?vframe/jpg/offset/0
-    const thumbUrl = videoUrl ? videoUrl + '?vframe/jpg/offset/0' : '';
-    // pay_amt 已是元
     const payYuan = m.pay_amt || 0;
-    // 首日ROI：倍数（如 6.19 = 消耗1元回收6.19元）
     const roi = m._aggRoi != null ? (m._aggRoi * 100).toFixed(1) + '%' : '—';
     const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
     return `<div class="mat-card" onclick='openVideoModal(${i})'>
   <div class="mat-thumb">
-    <img src="${thumbUrl}" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none">
+    ${videoUrl ? `<video src="${videoUrl}" preload="metadata" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>` : ''}
     <div class="mat-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   </div>
   <div class="mat-info">
@@ -2847,8 +2847,12 @@ function openVideoModal(idx) {
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
   const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
 
-  _currentVideoUrl = m.url || '';
-  document.getElementById('modal-play-btn').href = _currentVideoUrl || '#';
+  _currentVideoUrl = (m.url || '').replace('http://', 'https://');
+  // 重置视频区
+  const vWrap = document.getElementById('modal-video-wrap');
+  const vEl = document.getElementById('modal-video');
+  vEl.pause(); vEl.src = ''; vWrap.style.display = 'none';
+  document.getElementById('modal-play-btn').textContent = '▶ 播放视频';
   document.getElementById('modal-name').textContent = m.name || '未知素材';
   document.getElementById('modal-roi').textContent = roi;
   document.getElementById('modal-roi').style.color = roiColor;
@@ -2870,8 +2874,27 @@ function playVideoNewTab() {
   if (_currentVideoUrl) window.open(_currentVideoUrl, '_blank');
 }
 
+function toggleModalVideo() {
+  const vWrap = document.getElementById('modal-video-wrap');
+  const vEl = document.getElementById('modal-video');
+  const btn = document.getElementById('modal-play-btn');
+  if (vWrap.style.display === 'none') {
+    vEl.src = _currentVideoUrl;
+    vWrap.style.display = 'block';
+    vEl.play().catch(()=>{});
+    btn.textContent = '⏹ 收起视频';
+  } else {
+    vEl.pause(); vEl.src = '';
+    vWrap.style.display = 'none';
+    btn.textContent = '▶ 播放视频';
+  }
+}
+
 function closeVideoModal(e) {
   if (e && e.target !== document.getElementById('video-modal')) return;
+  const vEl = document.getElementById('modal-video');
+  vEl.pause(); vEl.src = '';
+  document.getElementById('modal-video-wrap').style.display = 'none';
   document.getElementById('video-modal').style.display = 'none';
   _currentVideoUrl = '';
 }
