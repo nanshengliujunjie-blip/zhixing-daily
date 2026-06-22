@@ -843,20 +843,19 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     <div class="mat-filter-bar">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="font-size:12px;color:#8892a4;white-space:nowrap">日期</label>
-        <input id="mat-from" type="date" class="mat-input">
+        <input id="mat-from" type="date" class="mat-input" onchange="renderMaterials()">
         <span style="color:#aab0be;font-size:12px">—</span>
-        <input id="mat-to" type="date" class="mat-input">
+        <input id="mat-to" type="date" class="mat-input" onchange="renderMaterials()">
         <label style="font-size:12px;color:#8892a4;margin-left:8px;white-space:nowrap">媒体</label>
-        <select id="mat-media" class="mat-input" style="min-width:110px"></select>
+        <select id="mat-media" class="mat-input" style="min-width:110px" onchange="renderMaterials()"></select>
         <label style="font-size:12px;color:#8892a4;margin-left:8px;white-space:nowrap">排序</label>
-        <select id="mat-sort" class="mat-input" style="min-width:100px">
+        <select id="mat-sort" class="mat-input" style="min-width:100px" onchange="renderMaterials()">
           <option value="cost">消耗↓</option>
           <option value="reg">注册↓</option>
           <option value="show">展示↓</option>
           <option value="click">点击↓</option>
-          <option value="roi">ROI↓</option>
+          <option value="_aggRoi">ROI↓</option>
         </select>
-        <button class="mat-btn" onclick="renderMaterials()">查询</button>
         <span id="mat-count" style="font-size:12px;color:#8892a4;margin-left:4px"></span>
       </div>
     </div>
