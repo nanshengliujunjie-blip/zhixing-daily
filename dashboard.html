@@ -2772,44 +2772,55 @@ function renderMaterials() {
   const sortKey = document.getElementById('mat-sort').value;
 
   // 聚合：同一素材 url 在区间内汇总
-  const agg = {};
-  // _dayPay[key][dt] = Set of pay_amt values — 同一素材同一天只计一次 pay_amt
-  const _dayPay = {};
-
+  // 第一遍：按 (dt, pay_amt) 分组，统计每组的总消耗
+  // 同一天相同 pay_amt 的所有计划属于同一创意组，共享这笔收入
+  const groupCost = {};  // groupCost['dt:pay_amt'] = 总消耗
   for (const m of _matData.list) {
-    if (from && m.dt < from) continue;
-    if (to && m.dt > to) continue;
+    if (m.dt < from || m.dt > to) continue;
+    if (media && m.media !== media) continue;
+    if (!m.url || !m.url.startsWith('http')) continue;
+    if (!m.pay_amt || !m.cost) continue;
+    const gk = `${m.dt}:${m.pay_amt}`;
+    groupCost[gk] = (groupCost[gk] || 0) + m.cost;
+  }
+
+  // 第二遍：聚合素材，ROI 按创意组真实比例计算
+  const agg = {};
+  const _seenGroup = {};  // 每个素材已累加过哪些 (dt, pay_amt) 组
+  for (const m of _matData.list) {
+    if (m.dt < from || m.dt > to) continue;
     if (media && m.media !== media) continue;
     if (!m.url || !m.url.startsWith('http')) continue;
 
-    // 以素材名称聚合（同名视频可能有多个URL跑在不同计划）
     const key = m.name || m.url;
-
     if (!agg[key]) {
-      // 优先选高消耗的 URL 做代表（用于封面/播放）
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0, _dtSet:new Set() };
-      _dayPay[key] = {};
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _roiNum:0, _days:0, _dtSet:new Set() };
+      _seenGroup[key] = new Set();
     }
     const a = agg[key];
-    // 若当前 URL 消耗更高，换成更高消耗的 URL 做封面
     if ((m.cost||0) > (a._bestCost||0)) { a.url = m.url; a._bestCost = m.cost; }
 
-    a.cost = +(a.cost + (m.cost||0)).toFixed(2);
-    a.show += m.show||0; a.click += m.click||0;
+    a.cost  = +(a.cost  + (m.cost||0)).toFixed(2);
+    a.show  += m.show||0; a.click  += m.click||0;
     a.active += m.active||0; a.reg += m.reg||0;
 
-    // pay_amt：同一素材同一天只累加一次（去除多计划重复归因）
-    if (!_dayPay[key][m.dt]) _dayPay[key][m.dt] = new Set();
-    if (m.pay_amt > 0 && !_dayPay[key][m.dt].has(m.pay_amt)) {
-      _dayPay[key][m.dt].add(m.pay_amt);
-      a.pay_amt = +(a.pay_amt + m.pay_amt).toFixed(2);
+    // pay_amt & ROI：每个 (dt, pay_amt) 组只计一次
+    if (m.pay_amt > 0) {
+      const gk = `${m.dt}:${m.pay_amt}`;
+      if (!_seenGroup[key].has(gk)) {
+        _seenGroup[key].add(gk);
+        a.pay_amt = +(a.pay_amt + m.pay_amt).toFixed(2);
+        // 该组真实 ROI = pay_amt / 该天共享这笔收入的所有计划总消耗
+        const gc = groupCost[gk] || m.cost;
+        a._roiNum += m.pay_amt / gc * m.pay_amt;  // 按 pay_amt 加权
+      }
     }
-
     if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
   }
-  // ROI = 去重后总充值 / 总消耗
+  // 最终 ROI = 真实收益 / 真实消耗（剔除重复归因）
   for (const a of Object.values(agg)) {
-    a._aggRoi = a.cost > 0 ? +(a.pay_amt / a.cost).toFixed(4) : null;
+    a._aggRoi = a.pay_amt > 0 ? a.pay_amt > 0 && a._roiNum > 0
+      ? +(a._roiNum / a.pay_amt) : null : null;
   }
 
   let list = Object.values(agg);
