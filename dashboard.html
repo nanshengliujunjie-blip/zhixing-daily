@@ -879,7 +879,10 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
       <!-- 视频播放器 -->
       <div id="modal-video-wrap" style="display:none;margin-bottom:16px;border-radius:8px;overflow:hidden;background:#000">
-        <video id="modal-video" controls playsinline style="width:100%;max-height:300px;display:block"></video>
+        <video id="modal-video" controls playsinline style="width:100%;max-height:300px;display:block" onerror="onModalVideoError()"></video>
+        <div id="modal-video-err" style="display:none;padding:16px;text-align:center;color:rgba(255,255,255,.6);font-size:13px">
+          视频加载失败，<a id="modal-video-link" href="#" target="_blank" rel="noopener" style="color:#4a7cf0">点击在新标签页打开 ↗</a>
+        </div>
       </div>
       <!-- 按钮 -->
       <div style="display:flex;gap:10px;justify-content:center">
@@ -2878,7 +2881,11 @@ function toggleModalVideo() {
   const vWrap = document.getElementById('modal-video-wrap');
   const vEl = document.getElementById('modal-video');
   const btn = document.getElementById('modal-play-btn');
+  const errDiv = document.getElementById('modal-video-err');
   if (vWrap.style.display === 'none') {
+    errDiv.style.display = 'none';
+    vEl.style.display = 'block';
+    document.getElementById('modal-video-link').href = _currentVideoUrl;
     vEl.src = _currentVideoUrl;
     vWrap.style.display = 'block';
     vEl.play().catch(()=>{});
@@ -2888,6 +2895,12 @@ function toggleModalVideo() {
     vWrap.style.display = 'none';
     btn.textContent = '▶ 播放视频';
   }
+}
+
+function onModalVideoError() {
+  const vEl = document.getElementById('modal-video');
+  vEl.style.display = 'none';
+  document.getElementById('modal-video-err').style.display = 'block';
 }
 
 function closeVideoModal(e) {
