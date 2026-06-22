@@ -2816,8 +2816,8 @@ function renderMaterials() {
     const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
     return `<div class="mat-card" onclick='openVideoModal(${i})'>
-  <div class="mat-thumb">
-    ${videoUrl ? `<video src="${videoUrl}" preload="metadata" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>` : ''}
+  <div class="mat-thumb" ${videoUrl ? `data-vsrc="${videoUrl}"` : ''}>
+    <canvas class="thumb-canvas" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none"></canvas>
     <div class="mat-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   </div>
   <div class="mat-info">
@@ -2835,6 +2835,36 @@ function renderMaterials() {
 
   // 缓存列表供 modal 使用
   window._matList = list;
+
+  // 懒加载封面：仅在卡片进入视口时才抓取第一帧
+  if (window._thumbObserver) window._thumbObserver.disconnect();
+  window._thumbObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const thumb = entry.target;
+      const src = thumb.dataset.vsrc;
+      if (!src || thumb.dataset.loaded) return;
+      thumb.dataset.loaded = '1';
+      window._thumbObserver.unobserve(thumb);
+
+      const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'metadata';
+      v.crossOrigin = 'anonymous';
+      v.src = src;
+      v.addEventListener('loadedmetadata', () => { v.currentTime = 0.1; });
+      v.addEventListener('seeked', () => {
+        try {
+          const c = thumb.querySelector('.thumb-canvas');
+          c.width = v.videoWidth || 320; c.height = v.videoHeight || 180;
+          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+          c.style.display = 'block';
+        } catch(e) {}
+        v.src = '';
+      });
+    });
+  }, { rootMargin: '200px', threshold: 0 });
+
+  document.querySelectorAll('.mat-thumb[data-vsrc]').forEach(el => window._thumbObserver.observe(el));
 }
 
 let _currentVideoUrl = '';
