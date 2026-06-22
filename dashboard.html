@@ -865,14 +865,22 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
   </div>
 
   <!-- 视频播放弹窗 -->
-  <div id="video-modal" onclick="closeVideoModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;display:none">
-    <div style="position:relative;background:rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;max-width:560px;width:calc(100vw - 40px)" onclick="event.stopPropagation()">
-      <button onclick="closeVideoModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;line-height:1">✕</button>
-      <div id="modal-name" style="color:#fff;font-size:13px;font-weight:600;line-height:1.5;margin-bottom:14px;padding-right:24px"></div>
-      <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+  <div id="video-modal" onclick="closeVideoModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;align-items:center;justify-content:center;display:none">
+    <div style="position:relative;background:#1a2035;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px 28px;max-width:580px;width:calc(100vw - 32px);box-shadow:0 20px 60px rgba(0,0,0,.6)" onclick="event.stopPropagation()">
+      <button onclick="closeVideoModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;line-height:1;padding:4px">✕</button>
+      <!-- 素材名 -->
+      <div id="modal-name" style="color:#e2e8f0;font-size:13px;font-weight:600;line-height:1.5;margin-bottom:16px;padding-right:28px"></div>
+      <!-- ROI 大字 -->
+      <div style="text-align:center;margin-bottom:20px;padding:14px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)">
+        <div id="modal-roi" style="font-size:36px;font-weight:800;letter-spacing:-1px">—</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">首日 ROI</div>
+      </div>
+      <!-- 8格指标 -->
+      <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
+      <!-- 按钮 -->
       <div style="display:flex;gap:10px;justify-content:center">
-        <a id="modal-play-btn" href="#" target="_blank" rel="noopener" style="background:#4a7cf0;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.4">▶ 播放视频</a>
-        <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer">关闭</button>
+        <a id="modal-play-btn" href="#" target="_blank" rel="noopener" style="background:#4a7cf0;color:#fff;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.4">▶ 播放视频</a>
+        <button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer">关闭</button>
       </div>
     </div>
   </div>
@@ -2804,8 +2812,7 @@ function renderMaterials() {
     const roi = m._aggRoi != null ? m._aggRoi.toFixed(2) : '—';
     const roiColor = roi !== '—' && +roi >= 1 ? '#16a34a' : '#aab0be';
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
-    const mJson = JSON.stringify({...m, _payYuan: payYuan, _roi: roi}).replace(/</g,'\\u003c');
-    return `<div class="mat-card" onclick='openVideoModal(${i},${JSON.stringify(origUrl)},${JSON.stringify(m.name||"")},${mJson})'>
+    return `<div class="mat-card" onclick='openVideoModal(${i})'>
   <div class="mat-thumb">
     <img src="${thumbUrl}" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none">
     <div class="mat-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
@@ -2829,33 +2836,34 @@ function renderMaterials() {
 
 let _currentVideoUrl = '';
 
-function openVideoModal(idx, url, name, m) {
-  const modal = document.getElementById('video-modal');
-  const stats = document.getElementById('modal-stats');
-  const nameEl = document.getElementById('modal-name');
+function openVideoModal(idx) {
+  const m = window._matList[idx];
+  if (!m) return;
 
-  _currentVideoUrl = m.url || url;
-  document.getElementById('modal-play-btn').href = _currentVideoUrl || '#';
-
-  const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0);
-  const roi = m._roi != null && m._roi !== '—' ? m._roi+'x' : (m.cost > 0 ? (payYuan / m.cost).toFixed(2)+'x' : '—');
+  const payYuan = m.pay_amt || 0;
+  const roi = m._aggRoi != null ? m._aggRoi.toFixed(2)+'x' : '—';
+  const roiColor = m._aggRoi != null && m._aggRoi >= 1 ? '#4ade80' : '#f87171';
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
-  const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
+  const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
 
-  nameEl.textContent = name;
-  stats.innerHTML = [
+  _currentVideoUrl = m.url || '';
+  document.getElementById('modal-play-btn').href = _currentVideoUrl || '#';
+  document.getElementById('modal-name').textContent = m.name || '未知素材';
+  document.getElementById('modal-roi').textContent = roi;
+  document.getElementById('modal-roi').style.color = roiColor;
+  document.getElementById('modal-stats').innerHTML = [
     ['¥'+(m.cost||0).toFixed(0), '消耗'],
-    [roi, '首日ROI'],
-    [fmtK(m.show||0), '展示'],
     ['¥'+payYuan.toFixed(0), '充值金额'],
+    [fmtK(m.show||0), '展示'],
     [m.click||0, '点击'],
     [ctr, '点击率'],
     [m.reg||0, '注册'],
     [regCost, '注册成本'],
+    [m._days+'天', '投放天数'],
   ].map(([v,l]) => `<div class="modal-stat-item"><div class="msv">${v}</div><div class="msl">${l}</div></div>`).join('');
 
-  modal.style.display = 'flex';
+  document.getElementById('video-modal').style.display = 'flex';
 }
 
 function playVideoNewTab() {
