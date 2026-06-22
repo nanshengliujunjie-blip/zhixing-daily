@@ -213,11 +213,11 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
 .mat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
 .mat-card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:box-shadow .2s,transform .15s}
 .mat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.13);transform:translateY(-2px)}
-.mat-thumb{position:relative;padding-top:56.25%;background:#0f1628;overflow:hidden}
-.mat-thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.mat-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);transition:background .15s}
-.mat-card:hover .mat-play{background:rgba(0,0,0,.1)}
-.mat-play svg{width:40px;height:40px;fill:rgba(255,255,255,.9);filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.mat-thumb{position:relative;padding-top:56.25%;background:linear-gradient(135deg,#141b2e 0%,#1e2761 100%);overflow:hidden}
+.mat-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.15);transition:background .15s}
+.mat-card:hover .mat-play{background:rgba(0,0,0,.0)}
+.mat-play svg{width:44px;height:44px;fill:rgba(255,255,255,.85);filter:drop-shadow(0 2px 8px rgba(0,0,0,.6));transition:transform .15s}
+.mat-card:hover .mat-play svg{transform:scale(1.12)}
 .mat-info{padding:10px 12px 12px}
 .mat-name{font-size:12px;font-weight:600;color:#0f1628;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px;margin-bottom:8px}
 .mat-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px}
@@ -865,7 +865,7 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
   </div>
 
   <!-- 视频播放弹窗 -->
-  <div id="video-modal" onclick="closeVideoModal(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px" hidden>
+  <div id="video-modal" onclick="closeVideoModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;display:none">
     <div style="position:relative;max-width:520px;width:calc(100vw - 40px)">
       <button onclick="closeVideoModal()" style="position:absolute;top:-36px;right:0;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;opacity:.8">✕</button>
       <video id="modal-video" controls autoplay style="width:100%;border-radius:10px;max-height:70vh;background:#000;display:block"></video>
@@ -2787,11 +2787,13 @@ function renderMaterials() {
 
   grid.innerHTML = list.map((m, i) => {
     const videoUrl = (m.url || '').replace('http://', 'https://');
-    const roi = m.cost > 0 ? (m.pay_amt / m.cost * 100).toFixed(1) : '—';
-    const regCost = m.reg > 0 ? (m.cost / m.reg).toFixed(1) : '—';
-    return `<div class="mat-card" onclick="openVideoModal(${i}, ${JSON.stringify(videoUrl)}, ${JSON.stringify(m.name||'')}, ${JSON.stringify(m)})">
+    // pay_amt 单位是分，除以100得元；首日ROI = pay_amt(元) / cost * 100
+    const payYuan = (m.pay_amt || 0) / 100;
+    const roi = m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1) : '—';
+    const roiColor = roi !== '—' && +roi >= 20 ? '#16a34a' : '#aab0be';
+    const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
+    return `<div class="mat-card" onclick="openVideoModal(${i}, ${JSON.stringify(videoUrl)}, ${JSON.stringify(m.name||'')}, ${JSON.stringify({...m, _payYuan: payYuan})})">
   <div class="mat-thumb">
-    <video src="${videoUrl}" preload="metadata" muted playsinline></video>
     <div class="mat-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   </div>
   <div class="mat-info">
@@ -2799,9 +2801,9 @@ function renderMaterials() {
     <div class="mat-meta">${mediaBadge(m.media)}<span style="font-size:10px;color:#aab0be">${m._days}天</span></div>
     <div class="mat-stats">
       <div class="mat-stat">消耗 <b>¥${m.cost>0?m.cost.toFixed(0):'0'}</b></div>
-      <div class="mat-stat">注册 <b>${m.reg}</b></div>
-      <div class="mat-stat">展示 <b>${m.show>1000?(m.show/1000).toFixed(1)+'k':m.show}</b></div>
-      <div class="mat-stat">ROI <b style="color:${roi>=20?'#16a34a':'#aab0be'}">${roi==='—'?'—':roi+'%'}</b></div>
+      <div class="mat-stat">首日ROI <b style="color:${roiColor}">${roi==='—'?'—':roi+'%'}</b></div>
+      <div class="mat-stat">展示 <b>${showK(m.show)}</b></div>
+      <div class="mat-stat">充值金额 <b>¥${payYuan.toFixed(0)}</b></div>
     </div>
   </div>
 </div>`;
@@ -2817,28 +2819,32 @@ function openVideoModal(idx, url, name, m) {
   const stats = document.getElementById('modal-stats');
   const nameEl = document.getElementById('modal-name');
 
-  video.src = url;
-  video.play().catch(() => {});
-  nameEl.textContent = name;
-
-  const roi = m.cost > 0 ? (m.pay_amt / m.cost * 100).toFixed(1)+'%' : '—';
+  // pay_amt 单位分，_payYuan 是已换算的元（卡片渲染时注入）
+  const payYuan = m._payYuan != null ? m._payYuan : (m.pay_amt || 0) / 100;
+  const roi = m.cost > 0 ? (payYuan / m.cost * 100).toFixed(1)+'%' : '—';
   const ctr = m.show > 0 ? (m.click / m.show * 100).toFixed(2)+'%' : '—';
   const regCost = m.reg > 0 ? '¥'+(m.cost / m.reg).toFixed(1) : '—';
-  const fmt_ = v => v > 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
+  const fmtK = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
 
+  nameEl.textContent = name;
   stats.innerHTML = [
-    ['¥'+m.cost.toFixed(0), '消耗'],
-    [fmt_(m.show), '展示'],
-    [m.click, '点击 '+ctr],
-    [m.reg, '注册'],
-    [m.active, '激活'],
-    [roi, 'ROI'],
+    ['¥'+(m.cost||0).toFixed(0), '消耗'],
+    [roi, '首日ROI'],
+    [fmtK(m.show||0), '展示'],
+    ['¥'+payYuan.toFixed(0), '充值金额'],
+    [m.click||0, '点击 '+ctr],
+    [m.reg||0, '注册'],
+    [m.active||0, '激活'],
     [regCost, '注册成本'],
-    ['¥'+m.pay_amt.toFixed(0), '付费金额'],
   ].map(([v,l]) => `<div class="modal-stat-item"><div class="msv">${v}</div><div class="msl">${l}</div></div>`).join('');
 
-  modal.hidden = false;
+  // 先显示弹窗，再加载视频（避免 autoplay 被阻止）
   modal.style.display = 'flex';
+  video.src = url;
+  video.load();
+  video.play().catch(() => {
+    // autoplay 被拦截时不报错，用户手动点播放
+  });
 }
 
 function closeVideoModal(e) {
@@ -2846,7 +2852,6 @@ function closeVideoModal(e) {
   const modal = document.getElementById('video-modal');
   const video = document.getElementById('modal-video');
   video.pause(); video.src = '';
-  modal.hidden = true;
   modal.style.display = 'none';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
