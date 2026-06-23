@@ -203,6 +203,9 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
   table{font-size:12px}
   /* 素材卡片 mobile */
   .mat-grid{grid-template-columns:repeat(2,1fr)!important}
+  .mat-summary{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+  .mat-sum-val{font-size:18px}
+  .mat-rank{font-size:9px;padding:2px 6px}
 }
 /* ─── 素材页 ─── */
 .mat-filter-bar{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -364,8 +367,8 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
         <span>营销总览</span>
       </div>
       <div style="display:flex;align-items:baseline;gap:10px">
-        <div class="topbar-title">营销总览</div>
-        <div class="topbar-sub">查看投放快照状态、核心消耗与转化指标</div>
+        <div class="topbar-title" id="topbar-title">营销总览</div>
+        <div class="topbar-sub" id="topbar-sub">查看投放快照状态、核心消耗与转化指标</div>
       </div>
     </div>
     <div class="topbar-right">
@@ -1341,6 +1344,24 @@ function switchPage(id, el){
   const page = document.getElementById('page-'+id);
   if(page) page.classList.add('active');
   if(el) el.classList.add('active');
+
+  // 同步顶部标题
+  const PAGE_TITLES = {
+    overview:  ['营销总览', '查看投放快照状态、核心消耗与转化指标'],
+    roi:       ['ROI 追踪', '各阶段 ROI 回收曲线与达标情况'],
+    trend:     ['投放趋势', '消耗、注册、付费的时间走势'],
+    users:     ['用户概览', '投放用户的画像与付费分布'],
+    adusers:   ['投放用户画像', '注册用户的性别、年龄与来源分布'],
+    addetail:  ['投放用户明细', '逐用户的注册、付费与行为明细'],
+    search:    ['用户查询', '按 UID 查询用户付费记录'],
+    materials: ['推广素材', '各素材的消耗、ROI 与充值表现'],
+    alert:     ['ROI 预警', '首日 ROI 风险素材监控'],
+  };
+  const t = PAGE_TITLES[id];
+  if (t) {
+    document.getElementById('topbar-title').textContent = t[0];
+    document.getElementById('topbar-sub').textContent = t[1];
+  }
 
   syncDateCeiling();
   // Lazy-render page content
@@ -2905,6 +2926,14 @@ function renderMaterials() {
   }, { rootMargin: '300px', threshold: 0 });
 
   document.querySelectorAll('.mat-thumb[data-vsrc]').forEach(el => window._thumbObserver.observe(el));
+}
+
+// 鼠标悬停时静音自动预览播放，移开则回到首帧
+function matPreview(card, on) {
+  const v = card.querySelector('.thumb-video');
+  if (!v || !v.src) return;
+  if (on) { v.play().catch(()=>{}); }
+  else { v.pause(); try { v.currentTime = 0.5; } catch(e){} }
 }
 
 let _currentVideoUrl = '';
