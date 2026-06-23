@@ -2807,7 +2807,7 @@ function renderMaterials() {
     if (!m.url || !m.url.startsWith('http')) continue;
     const key = m.url;
     if (!agg[key]) {
-      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0, _dtSet:new Set() };
+      agg[key] = { ...m, cost:0, show:0, click:0, active:0, reg:0, pay_amt:0, _days:0, _dtSet:new Set(), _daily:[] };
     }
     const a = agg[key];
     a.cost    = +(a.cost    + (m.cost||0)).toFixed(2);
@@ -2815,6 +2815,7 @@ function renderMaterials() {
     a.show  += m.show||0; a.click  += m.click||0;
     a.active += m.active||0; a.reg  += m.reg||0;
     if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
+    a._daily.push({ dt:m.dt, cost:m.cost||0, pay:m.pay_amt||0, roi:(m.cost>0?(m.pay_amt||0)/m.cost:0) });
   }
 
   // ROI = 充值 / 消耗；消耗过低(<¥10)时不可靠，标记为噪音
