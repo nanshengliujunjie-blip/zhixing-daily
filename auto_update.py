@@ -400,11 +400,32 @@ files = ['index.html', 'dashboard.html', 'user_orders.json', 'ad_users.json',
          'consultant_data.json', 'consultant_all_data.json', 'materials.json']
 subprocess.run(['git', 'add'] + files, cwd=REPO, check=True)
 msg = f'全量自动更新 {today}: orders+ad_users+consultant+FALLBACK'
-try:
-    subprocess.run(['git', 'commit', '-m', msg], cwd=REPO, check=True)
-    subprocess.run(['git', 'push'], cwd=REPO, check=True)
+
+# 先提交（无变更则跳过）
+committed = subprocess.run(['git', 'commit', '-m', msg], cwd=REPO).returncode == 0
+if not committed:
+    print('  (无变更，跳过提交)')
+
+# 再推送，单独捕获 push 失败并给出可操作提示
+push = subprocess.run(
+    ['git', 'push'], cwd=REPO,
+    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'},
+    capture_output=True, text=True,
+)
+if push.returncode == 0:
     print('✅ 已推送到 GitHub Pages!')
-except subprocess.CalledProcessError:
-    print('  (无变更或 push 失败)')
+else:
+    err = (push.stderr or '') + (push.stdout or '')
+    if any(k in err for k in ('could not read Username', 'Authentication failed',
+                               'terminal prompts disabled', '403', 'invalid credentials')):
+        print('❌ Push 失败：缺少 GitHub 凭据。')
+        print('   本地已移除明文 token，需录入新 token：')
+        print('   在仓库目录手动执行一次  git push  ，按提示输入')
+        print('   用户名 = GitHub 账号，密码 = 新生成的 Personal Access Token(勾 repo 权限)')
+        print('   录入一次后 macOS 钥匙串会记住，后续自动推送即恢复正常。')
+        print('   ⚠️ 本次数据已在本地更新并提交，待凭据修好后再次运行即会推送。')
+    else:
+        print('❌ Push 失败：')
+        print('   ' + err.strip().replace('\n', '\n   '))
 
 print('\n✅ 全部更新完成！')
