@@ -210,9 +210,22 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
 .mat-input:focus{border-color:#4a7cf0;box-shadow:0 0 0 2px rgba(74,124,240,.12)}
 .mat-btn{background:#4a7cf0;color:#fff;border:none;border-radius:6px;padding:0 16px;height:32px;font-size:12px;font-weight:600;cursor:pointer}
 .mat-btn:hover{background:#3b6de0}
+/* 汇总指标栏 */
+.mat-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.mat-sum-item{background:#fff;border:1px solid rgba(20,28,46,.05);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(20,28,46,.04),0 6px 16px -6px rgba(20,28,46,.09);position:relative;overflow:hidden}
+.mat-sum-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#4a7cf0,#6c5ce7)}
+.mat-sum-label{font-size:11px;color:#8892a4;margin-bottom:6px}
+.mat-sum-val{font-size:22px;font-weight:700;color:#0f1628;line-height:1.1;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .mat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-.mat-card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:box-shadow .2s,transform .15s}
+.mat-card{position:relative;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:box-shadow .2s,transform .15s}
 .mat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.13);transform:translateY(-2px)}
+/* 最佳/最差素材角标 */
+.mat-rank{position:absolute;top:8px;left:8px;z-index:2;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.mat-rank.best{background:linear-gradient(135deg,#16a34a,#22c55e)}
+.mat-rank.worst{background:linear-gradient(135deg,#dc2626,#ef4444)}
+/* 消耗占比迷你进度条 */
+.mat-costbar{height:3px;background:#eef1f6;border-radius:2px;overflow:hidden;margin-top:8px}
+.mat-costbar i{display:block;height:100%;background:linear-gradient(90deg,#4a7cf0,#6c5ce7);border-radius:2px}
 .mat-thumb{position:relative;padding-top:56.25%;background:linear-gradient(135deg,#141b2e 0%,#1e2761 100%);overflow:hidden}
 .mat-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.15);transition:background .15s}
 .mat-card:hover .mat-play{background:rgba(0,0,0,.0)}
@@ -853,6 +866,8 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       </select>
       <span id="mat-count" style="font-size:12px;color:#8892a4;margin-left:4px"></span>
     </div>
+    <!-- 汇总指标栏 -->
+    <div id="mat-summary" class="mat-summary"></div>
     <div id="mat-grid" class="mat-grid"></div>
     <div id="mat-empty" style="display:none;text-align:center;padding:60px 0;color:#aab0be;font-size:14px">暂无素材数据</div>
   </div>
@@ -2788,17 +2803,50 @@ function renderMaterials() {
   }
 
   let list = Object.values(agg);
-  list.sort((a, b) => (b[sortKey]||0) - (a[sortKey]||0));
+  // 按 ROI 排序时，低消耗噪音素材统一沉底（避免¥2消耗的离谱ROI霸榜）
+  if (sortKey === '_aggRoi') {
+    list.sort((a, b) => {
+      if (a._lowSpend !== b._lowSpend) return a._lowSpend ? 1 : -1;
+      return (b._aggRoi||0) - (a._aggRoi||0);
+    });
+  } else {
+    list.sort((a, b) => (b[sortKey]||0) - (a[sortKey]||0));
+  }
 
   const grid = document.getElementById('mat-grid');
   const empty = document.getElementById('mat-empty');
   document.getElementById('mat-count').textContent = list.length ? `共 ${list.length} 条素材` : '';
 
+  // ── 汇总指标 ──
+  const sumBox = document.getElementById('mat-summary');
+  const totCost = list.reduce((s,a)=>s+(a.cost||0),0);
+  const totPay  = list.reduce((s,a)=>s+(a.pay_amt||0),0);
+  const totShow = list.reduce((s,a)=>s+(a.show||0),0);
+  const totReg  = list.reduce((s,a)=>s+(a.reg||0),0);
+  const ovRoi   = totCost>0 ? (totPay/totCost*100).toFixed(1)+'%' : '—';
+  const fmtMoney = v => v>=10000 ? '¥'+(v/10000).toFixed(1)+'万' : '¥'+v.toFixed(0);
+  const fmtNum   = v => v>=10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
+  sumBox.innerHTML = [
+    ['素材数', list.length],
+    ['总消耗', fmtMoney(totCost)],
+    ['总充值', fmtMoney(totPay)],
+    ['整体ROI', ovRoi],
+    ['总展示', fmtNum(totShow)],
+  ].map(([l,v])=>`<div class="mat-sum-item"><div class="mat-sum-label">${l}</div><div class="mat-sum-val">${v}</div></div>`).join('');
+
   if (!list.length) {
+    sumBox.innerHTML = '';
     grid.innerHTML = ''; empty.style.display = '';
     return;
   }
   empty.style.display = 'none';
+
+  // 最佳/最差标记：仅在有效消耗素材中评选（避免噪音）
+  const valid = list.filter(a => !a._lowSpend && a._aggRoi != null);
+  const bestUrl  = valid.length ? valid.reduce((p,c)=>c._aggRoi>p._aggRoi?c:p).url : null;
+  const worstUrl = valid.length>1 ? valid.reduce((p,c)=>c._aggRoi<p._aggRoi?c:p).url : null;
+  // 消耗占比基准（用最大消耗归一化进度条）
+  const maxCost = Math.max(...list.map(a=>a.cost||0), 1);
 
   grid.innerHTML = list.map((m, i) => {
     const origUrl = m.url || '';
@@ -2810,9 +2858,14 @@ function renderMaterials() {
       : (m._aggRoi != null && m._aggRoi >= 1 ? '#16a34a' : '#aab0be');
     const roiTxt = m._lowSpend && m._aggRoi != null ? roi + '*' : roi;
     const showK = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
-    return `<div class="mat-card" onclick='openVideoModal(${i})'>
+    const rank = m.url === bestUrl ? '<span class="mat-rank best">★ 最佳ROI</span>'
+      : (m.url === worstUrl ? '<span class="mat-rank worst">最差ROI</span>' : '');
+    const costPct = Math.min(100, (m.cost||0) / maxCost * 100).toFixed(0);
+    return `<div class="mat-card" onclick='openVideoModal(${i})'
+    onmouseenter="matPreview(this,true)" onmouseleave="matPreview(this,false)">
+  ${rank}
   <div class="mat-thumb" ${videoUrl ? `data-vsrc="${videoUrl}"` : ''}>
-    <video class="thumb-video" muted playsinline preload="none"
+    <video class="thumb-video" muted playsinline preload="none" loop
       style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s"
       onloadedmetadata="this.currentTime=0.5"
       onseeked="this.style.opacity=1"
@@ -2828,6 +2881,7 @@ function renderMaterials() {
       <div class="mat-stat">展示 <b>${showK(m.show)}</b></div>
       <div class="mat-stat">充值金额 <b>¥${payYuan.toFixed(0)}</b></div>
     </div>
+    <div class="mat-costbar" title="消耗占比"><i style="width:${costPct}%"></i></div>
   </div>
 </div>`;
   }).join('');
