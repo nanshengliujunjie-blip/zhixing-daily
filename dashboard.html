@@ -229,6 +229,21 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
 /* 消耗占比迷你进度条 */
 .mat-costbar{height:3px;background:#eef1f6;border-radius:2px;overflow:hidden;margin-top:8px}
 .mat-costbar i{display:block;height:100%;background:linear-gradient(90deg,#4a7cf0,#6c5ce7);border-radius:2px}
+/* 按媒体汇总 */
+.mat-media-summary{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.mat-media-card{flex:1;min-width:160px;background:#fff;border:1px solid rgba(20,28,46,.06);border-radius:10px;padding:11px 14px;box-shadow:0 1px 2px rgba(20,28,46,.04)}
+.mat-media-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mat-media-card-body{display:flex;gap:14px;font-size:11px;color:#8892a4}
+.mat-media-card-body b{color:#0f1628;font-weight:700;font-size:13px}
+/* 骨架屏 */
+.mat-skel{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.mat-skel .sk-thumb{padding-top:56.25%;background:#eef1f6}
+.mat-skel .sk-line{height:10px;margin:10px 12px;border-radius:5px;background:linear-gradient(90deg,#eef1f6 25%,#e2e6ee 37%,#eef1f6 63%);background-size:400% 100%;animation:skel 1.4s ease infinite}
+.mat-skel .sk-line.short{width:50%}
+@keyframes skel{0%{background-position:100% 0}100%{background-position:-100% 0}}
+/* 弹窗每日趋势 */
+.mat-trend-wrap{margin-bottom:18px}
+.mat-trend-title{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px}
 .mat-thumb{position:relative;padding-top:56.25%;background:linear-gradient(135deg,#141b2e 0%,#1e2761 100%);overflow:hidden}
 .mat-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.15);transition:background .15s}
 .mat-card:hover .mat-play{background:rgba(0,0,0,.0)}
@@ -868,9 +883,12 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
         <option value="_aggRoi">ROI↓</option>
       </select>
       <span id="mat-count" style="font-size:12px;color:#8892a4;margin-left:4px"></span>
+      <button class="mat-btn" style="margin-left:auto;background:#fff;color:#4a5068;border:1px solid #d0d5e0" onclick="exportMaterialsCSV()">⬇ 导出CSV</button>
     </div>
     <!-- 汇总指标栏 -->
     <div id="mat-summary" class="mat-summary"></div>
+    <!-- 按媒体汇总 -->
+    <div id="mat-media-summary" class="mat-media-summary" style="display:none"></div>
     <div id="mat-grid" class="mat-grid"></div>
     <div id="mat-empty" style="display:none;text-align:center;padding:60px 0;color:#aab0be;font-size:14px">暂无素材数据</div>
   </div>
@@ -889,6 +907,11 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       </div>
       <!-- 8格指标 -->
       <div id="modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
+      <!-- 每日趋势 -->
+      <div id="modal-trend" class="mat-trend-wrap" style="display:none">
+        <div class="mat-trend-title"><span style="color:rgba(74,124,240,.9)">▮</span> 每日消耗　<span style="color:#4ade80">━</span> 每日ROI</div>
+        <div id="modal-trend-svg"></div>
+      </div>
       <!-- 视频播放器 -->
       <div id="modal-video-wrap" style="display:none;margin-bottom:16px;border-radius:8px;overflow:hidden;background:#000">
         <video id="modal-video" controls playsinline style="width:100%;max-height:300px;display:block" onerror="onModalVideoError()"></video>
@@ -2767,6 +2790,10 @@ let _matData = null;
 
 function initMaterialsPage() {
   if (_matData) return;
+  // 骨架屏：加载期间占位，避免白屏闪烁
+  const grid = document.getElementById('mat-grid');
+  if (grid) grid.innerHTML = Array.from({length:8}).map(()=>
+    `<div class="mat-skel"><div class="sk-thumb"></div><div class="sk-line"></div><div class="sk-line short"></div></div>`).join('');
   fetch('materials.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
     _matData = d;
     // 初始化媒体筛选下拉
@@ -2856,8 +2883,37 @@ function renderMaterials() {
     ['总展示', fmtNum(totShow)],
   ].map(([l,v])=>`<div class="mat-sum-item"><div class="mat-sum-label">${l}</div><div class="mat-sum-val">${v}</div></div>`).join('');
 
+  // ── 按媒体汇总对比 ──
+  const mediaBox = document.getElementById('mat-media-summary');
+  const byMedia = {};
+  for (const a of list) {
+    const k = a.media || '未知';
+    if (!byMedia[k]) byMedia[k] = { cost:0, pay:0, n:0 };
+    byMedia[k].cost += a.cost||0; byMedia[k].pay += a.pay_amt||0; byMedia[k].n++;
+  }
+  const mediaArr = Object.entries(byMedia).sort((a,b)=>b[1].cost-a[1].cost);
+  if (mediaArr.length > 1) {
+    mediaBox.style.display = '';
+    mediaBox.innerHTML = mediaArr.map(([name, d]) => {
+      const roi = d.cost>0 ? (d.pay/d.cost*100).toFixed(1)+'%' : '—';
+      const roiColor = d.cost>0 && d.pay/d.cost>=1 ? '#16a34a' : '#6b7280';
+      const [bg, color] = MEDIA_COLORS[name] || ['#f0f2f7','#4a5068'];
+      return `<div class="mat-media-card">
+        <div class="mat-media-card-head"><span class="mat-media-badge" style="background:${bg};color:${color};border-color:${color}40">${name}</span><span style="font-size:10px;color:#aab0be">${d.n}条</span></div>
+        <div class="mat-media-card-body">
+          <span>消耗 <b>${fmtMoney(d.cost)}</b></span>
+          <span>充值 <b>${fmtMoney(d.pay)}</b></span>
+          <span>ROI <b style="color:${roiColor}">${roi}</b></span>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    mediaBox.style.display = 'none';
+  }
+
   if (!list.length) {
     sumBox.innerHTML = '';
+    mediaBox.style.display = 'none';
     grid.innerHTML = ''; empty.style.display = '';
     return;
   }
@@ -2937,6 +2993,57 @@ function matPreview(card, on) {
   else { v.pause(); try { v.currentTime = 0.5; } catch(e){} }
 }
 
+// 导出当前筛选的素材为 CSV
+function exportMaterialsCSV() {
+  const list = window._matList || [];
+  if (!list.length) { alert('当前无素材可导出'); return; }
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  const head = ['素材名称','媒体','投放天数','消耗(¥)','充值(¥)','ROI','展示','点击','点击率','注册','注册成本(¥)'];
+  const rows = list.map(m => {
+    const roi = m._aggRoi != null ? (m._aggRoi*100).toFixed(1)+'%' : '';
+    const ctr = m.show>0 ? (m.click/m.show*100).toFixed(2)+'%' : '';
+    const regCost = m.reg>0 ? (m.cost/m.reg).toFixed(1) : '';
+    return [m.name||'', m.media||'', m._days, m.cost.toFixed(2), m.pay_amt.toFixed(2),
+            roi, m.show, m.click, ctr, m.reg, regCost];
+  });
+  const esc = v => { v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const csv = '﻿' + [head, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `推广素材_${from}_${to}.csv`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// 生成每日趋势 SVG（消耗柱 + ROI 折线）
+function matTrendSVG(daily) {
+  if (!daily || daily.length < 2) return '';
+  const d = [...daily].sort((a,b)=>a.dt<b.dt?-1:1);
+  const W=520, H=90, padL=8, padR=8, padT=8, padB=18;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const maxCost = Math.max(...d.map(x=>x.cost), 1);
+  const maxRoi  = Math.max(...d.map(x=>x.roi), 0.01);
+  const n=d.length, bw=iw/n*0.6, gap=iw/n;
+  let bars='', line='', dots='';
+  d.forEach((x,i)=>{
+    const cx = padL + gap*i + gap/2;
+    const bh = x.cost/maxCost*ih;
+    bars += `<rect x="${(cx-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="1.5" fill="rgba(74,124,240,.45)"/>`;
+    const ry = padT + ih - (x.roi/maxRoi*ih);
+    line += `${i?'L':'M'}${cx.toFixed(1)},${ry.toFixed(1)}`;
+    dots += `<circle cx="${cx.toFixed(1)}" cy="${ry.toFixed(1)}" r="2.5" fill="#4ade80"/>`;
+  });
+  const labels = d.map((x,i)=>{
+    if (n>8 && i%2) return '';
+    const cx = padL + gap*i + gap/2;
+    return `<text x="${cx.toFixed(1)}" y="${H-5}" font-size="8" fill="rgba(255,255,255,.4)" text-anchor="middle">${x.dt.slice(5)}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+    ${bars}<path d="${line}" fill="none" stroke="#4ade80" stroke-width="1.5"/>${dots}${labels}</svg>`;
+}
+
 let _currentVideoUrl = '';
 
 function openVideoModal(idx) {
@@ -2970,6 +3077,12 @@ function openVideoModal(idx) {
     [regCost, '注册成本'],
     [m._days+'天', '投放天数'],
   ].map(([v,l]) => `<div class="modal-stat-item"><div class="msv">${v}</div><div class="msl">${l}</div></div>`).join('');
+
+  // 每日趋势（≥2天才显示）
+  const trendBox = document.getElementById('modal-trend');
+  const svg = matTrendSVG(m._daily);
+  if (svg) { document.getElementById('modal-trend-svg').innerHTML = svg; trendBox.style.display = ''; }
+  else { trendBox.style.display = 'none'; }
 
   document.getElementById('video-modal').style.display = 'flex';
 }
