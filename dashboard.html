@@ -2825,9 +2825,12 @@ function renderMaterials() {
   const media = document.getElementById('mat-media').value;
   const sortKey = document.getElementById('mat-sort').value;
 
-  // 聚合：同一素材(url 与 name 一一对应)在区间内逐日汇总
-  // 数据已确认无重复归因：每个 url+日期 仅一条记录，故直接求和即可
+  // 聚合：同一素材(url)在区间内逐日汇总
+  // pay_amt 是计划(ad_id)级归因，各素材卡片按平台原始值展示；
+  // 总充值(totPay)用全局 ad_id+dt 去重，避免同一计划多素材重复累加
   const agg = {};
+  const _seenPlanDay = new Set(); // 全局去重：ad_id+dt → 用于 totPay
+  let _totPayDedup = 0;
   for (const m of _matData.list) {
     if (m.dt < from || m.dt > to) continue;
     if (media && m.media !== media) continue;
@@ -2838,17 +2841,24 @@ function renderMaterials() {
     }
     const a = agg[key];
     a.cost    = +(a.cost    + (m.cost||0)).toFixed(2);
-    a.pay_amt = +(a.pay_amt + (m.pay_amt||0)).toFixed(2);
+    a.pay_amt = +(a.pay_amt + (m.pay_amt||0)).toFixed(2); // 素材卡片：保持平台原始值
     a.show  += m.show||0; a.click  += m.click||0;
     a.active += m.active||0; a.reg  += m.reg||0;
     if (!a._dtSet.has(m.dt)) { a._dtSet.add(m.dt); a._days++; }
     a._daily.push({ dt:m.dt, cost:m.cost||0, pay:m.pay_amt||0, roi:(m.cost>0?(m.pay_amt||0)/m.cost:0) });
+    // 全局去重：每个计划每天只计一次 pay_amt
+    if (m.ad_id) {
+      const pdKey = m.ad_id + '|' + m.dt;
+      if (!_seenPlanDay.has(pdKey)) { _seenPlanDay.add(pdKey); _totPayDedup += m.pay_amt||0; }
+    } else {
+      _totPayDedup += m.pay_amt||0;
+    }
   }
 
   // ROI = 充值 / 消耗；消耗过低(<¥10)时不可靠，标记为噪音
   for (const a of Object.values(agg)) {
     a._aggRoi  = a.cost > 0 ? +(a.pay_amt / a.cost) : null;
-    a._lowSpend = a.cost < 10;  // 低消耗素材 ROI 仅供参考
+    a._lowSpend = a.cost < 10;
   }
 
   let list = Object.values(agg);
@@ -2869,7 +2879,7 @@ function renderMaterials() {
   // ── 汇总指标 ──
   const sumBox = document.getElementById('mat-summary');
   const totCost = list.reduce((s,a)=>s+(a.cost||0),0);
-  const totPay  = list.reduce((s,a)=>s+(a.pay_amt||0),0);
+  const totPay  = _totPayDedup; // 按 ad_id+dt 全局去重，避免同计划多素材重复累加
   const totShow = list.reduce((s,a)=>s+(a.show||0),0);
   const totReg  = list.reduce((s,a)=>s+(a.reg||0),0);
   const ovRoi   = totCost>0 ? (totPay/totCost*100).toFixed(1)+'%' : '—';

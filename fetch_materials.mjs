@@ -87,6 +87,7 @@ const output = allItems.map(m => ({
   name: m.material_name,
   url: m.material_url,
   type: m.material_type,  // 2=视频
+  ad_id: m.ad_id,         // 广告计划ID，用于付费去重
   cost: m.cost,
   show: m.show_num,
   click: m.click,
