@@ -135,7 +135,7 @@ existing_reg_dates = set(u[10] for u in ad['users'] if u[10])
 last_ad_date = max(existing_reg_dates) if existing_reg_dates else '2025-04-30'
 
 fetch_attr_to   = today.isoformat()   # 含今天：实时累积今日注册/付费
-fetch_attr_from = (date.fromisoformat(last_ad_date) + timedelta(days=1)).isoformat()
+fetch_attr_from = date.fromisoformat(last_ad_date).isoformat()
 if fetch_attr_from > fetch_attr_to:
     fetch_attr_from = fetch_attr_to    # 今天已抓过，仍重抓今天以刷新
 
@@ -205,13 +205,34 @@ else:
                     existing_uids.add(uid); admap[uid] = u
                     total_ad_new += 1
 
-                # 2) 用首日付费事件校正所有当日付费用户（含已存在用户），避免漏计AI小额付费
+                # 2a) 用「真实付费用户统计明细」sheet 补齐 pay_orders（兜底点击归因遗漏的付费）
+                if '真实付费用户统计明细' in wb.sheetnames:
+                    ws_real = wb['真实付费用户统计明细']
+                    rows_real = list(ws_real.iter_rows(values_only=True))
+                    if rows_real and len(rows_real) > 1:
+                        rh = rows_real[0]
+                        r_uid_col = list(rh).index('uid') if 'uid' in rh else None
+                        r_amt_col = list(rh).index('付费金额') if '付费金额' in rh else None
+                        r_media_col = list(rh).index('媒体') if '媒体' in rh else None
+                        if r_uid_col is not None and r_amt_col is not None:
+                            real_pay = {}
+                            for rr in rows_real[1:]:
+                                ruid = str(rr[r_uid_col]) if rr[r_uid_col] else None
+                                if not ruid or ruid == '0': continue
+                                ramt = round(float(rr[r_amt_col] or 0) / 100.0, 2)
+                                if ramt <= 0: continue
+                                real_pay.setdefault(ruid, []).append(ramt)
+                                if r_media_col is not None and rr[r_media_col] and ruid not in media_map:
+                                    media_map[ruid] = rr[r_media_col]
+                            for ruid, ramts in real_pay.items():
+                                pay_orders[ruid] = ramts
+
+                # 2b) 用首日付费事件校正所有当日付费用户（含已存在用户），避免漏计AI小额付费
                 for uid, amts in pay_orders.items():
                     u = admap.get(uid)
                     if not u: continue
                     target = round(sum(amts), 2)
                     cnt = len(amts)
-                    # ad_users 首日付费/付费单数
                     if (u[3] or 0) != target:
                         u[3] = target
                         u[4] = round(max(u[4] or 0, target), 2)
@@ -219,7 +240,6 @@ else:
                         if len(u) <= 11: u.append(cnt)
                         else: u[11] = cnt
                         paid_fixed += 1
-                    # user_orders 当日付费记录按权威重建（保留非当日 + 当日免费记录）
                     existing = orders_data_fresh.get(uid, [])
                     cur_day = [x for x in existing if x['d'] == ds]
                     cur_paid = round(sum(x['amt'] for x in cur_day if x['amt'] > 0), 2)
