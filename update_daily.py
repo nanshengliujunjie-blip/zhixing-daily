@@ -21,6 +21,11 @@ INDEX_HTML = Path(__file__).parent / 'index.html'
 REPO_DIR   = Path(__file__).parent
 CONFIG     = Path(__file__).parent / '.update_config.json'
 
+MANUAL_FALLBACK_OVERRIDES = {
+    # 2026-07-01 compass 漏计今日头条消耗；实际总消耗 6,781.66，其中头条 5,622.69。
+    '2026-07-01': {'spend': 6781.66},
+}
+
 # ── 工具函数 ─────────────────────────────────────────────────
 def run_sql(sql, timeout=300):
     """通过 query.mjs 执行 SQL，返回 {columns, rows}"""
@@ -377,6 +382,26 @@ def update_index(new_entries, roi_updates):
         else:
             entry_map[e['date']] = e
             added += 1
+
+    # 应用手工修正，并重算所有直接依赖消耗的派生指标。
+    for ds, override in MANUAL_FALLBACK_OVERRIDES.items():
+        if ds not in entry_map:
+            continue
+        e = entry_map[ds]
+        if 'spend' in override:
+            spend = round(float(override['spend']), 2)
+            reg = e.get('reg') or 0
+            pay = e.get('payCount') or 0
+            pay_amount = e.get('payAmount') or 0
+            e['spend'] = spend
+            e['regCost'] = round(spend / reg, 4) if reg else None
+            e['payCost'] = round(spend / pay, 4) if pay else None
+            e['roi'] = round(pay_amount / spend * 100, 4) if spend and pay_amount else None
+            rc = e.get('roiCurve', [None] * 16)
+            while len(rc) < 16:
+                rc.append(None)
+            rc[0] = e['roi']
+            e['roiCurve'] = rc
 
     entries = sorted(entry_map.values(), key=lambda e: e['date'])
 
