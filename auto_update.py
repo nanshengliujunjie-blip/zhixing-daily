@@ -402,11 +402,15 @@ try:
         cwd=REPO, capture_output=True, timeout=300
     )
     if mat_proc.returncode == 0 and mat_proc.stdout:
-        with open(MATERIALS_JSON, 'wb') as f:
-            f.write(mat_proc.stdout)
         import json as _json
         _mat = _json.loads(mat_proc.stdout)
-        print(f'  ✓ materials.json: {len(_mat.get("list", []))} 条，{_mat.get("startDate")}~{_mat.get("endDate")}')
+        _items = _mat.get('list', [])
+        if _items:
+            with open(MATERIALS_JSON, 'wb') as f:
+                f.write(mat_proc.stdout)
+            print(f'  ✓ materials.json: {len(_items)} 条，{_mat.get("startDate")}~{_mat.get("endDate")}')
+        else:
+            print('  ⚠ 本次素材结果为空，保留原 materials.json')
     else:
         print(f'  ⚠ fetch_materials 失败: {mat_proc.stderr.decode()[-300:]}')
 except Exception as e:

@@ -7,16 +7,19 @@
  */
 
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(
-  resolve(process.env.HOME, ".claude/skills/zhixing-data-query/node_modules/playwright")
-);
-const STATE_PATH = resolve(
-  process.env.HOME, ".claude/skills/zhixing-data-query/.session/nexita-storage-state.json"
-);
+const SKILL_ROOTS = [
+  resolve(process.env.HOME, ".agents/skills/zhixing-data-query"),
+  resolve(process.env.HOME, ".claude/skills/zhixing-data-query"),
+];
+const SKILL_ROOT = SKILL_ROOTS.find((root) =>
+  existsSync(resolve(root, ".session/nexita-storage-state.json"))
+) || SKILL_ROOTS[0];
+const { chromium } = require(resolve(SKILL_ROOT, "node_modules/playwright"));
+const STATE_PATH = resolve(SKILL_ROOT, ".session/nexita-storage-state.json");
 
 function arg(name) {
   const hit = process.argv.find(a => a.startsWith(`--${name}=`));
