@@ -6,7 +6,7 @@
  *   node fetch_attribution.mjs --date=2026-06-09 --out=/tmp/attr.xlsx
  *
  * 成功时最后一行输出下载文件路径
- * 依赖 ~/.claude/skills/zhixing-data-query/.session/nexita-storage-state.json
+ * 依赖 ~/.agents/skills/zhixing-data-query/.session/nexita-storage-state.json
  */
 
 import { createRequire } from "node:module";
@@ -14,12 +14,15 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(
-  resolve(process.env.HOME, ".claude/skills/zhixing-data-query/node_modules/playwright")
-);
-const STATE_PATH = resolve(
-  process.env.HOME, ".claude/skills/zhixing-data-query/.session/nexita-storage-state.json"
-);
+const SKILL_ROOTS = [
+  resolve(process.env.HOME, ".agents/skills/zhixing-data-query"),
+  resolve(process.env.HOME, ".claude/skills/zhixing-data-query"),
+];
+const SKILL_ROOT = SKILL_ROOTS.find((root) =>
+  existsSync(resolve(root, ".session/nexita-storage-state.json"))
+) || SKILL_ROOTS[0];
+const { chromium } = require(resolve(SKILL_ROOT, "node_modules/playwright"));
+const STATE_PATH = resolve(SKILL_ROOT, ".session/nexita-storage-state.json");
 const TOOL_URL = "https://console.nexita.net/chl/smart-data/channel/attribution-tool";
 
 function arg(name) {
@@ -40,6 +43,13 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ storageState });
   const page = await ctx.newPage();
+  const network = [];
+  page.on("request", req => {
+    const url = req.url();
+    if (url.includes("/api_web/") || url.includes("attribution")) {
+      network.push({ method: req.method(), url, postData: req.postData() || null });
+    }
+  });
 
   try {
     await page.goto(TOOL_URL, { waitUntil: "networkidle", timeout: 30000 });
@@ -103,6 +113,11 @@ async function main() {
     const okBtn = page.locator(".ant-modal-footer .ant-btn-primary").first();
     await okBtn.click();
     console.log("[归因] 已提交，等待数据生成...");
+    if (arg("capture-network")) {
+      await page.waitForTimeout(2000);
+      console.log("[归因] 网络请求:", JSON.stringify(network, null, 2));
+      return;
+    }
     await page.waitForTimeout(2000);
 
     // ── 6. 等待导出按钮（最多 120s，每 8s 刷新） ────────────
