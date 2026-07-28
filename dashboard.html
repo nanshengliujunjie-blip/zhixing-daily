@@ -358,7 +358,11 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
   </div>
 
   <div class="sb-section">
-    <div class="sb-section-label">数据质量</div>
+    <div class="sb-section-label">治理与预警</div>
+    <a class="nav-item" href="#" onclick="switchPage('risk',this);return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      风控
+    </a>
     <a class="nav-item" href="#" onclick="switchPage('alert',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       ROI预警
@@ -867,6 +871,37 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     </div>
   </div>
 
+  <!-- ═══ PAGE: 风控 ═══ -->
+  <div id="page-risk" class="page">
+    <div class="section-header" style="margin-top:0"><h3>文本风控概览</h3></div>
+    <div class="snapshot-card" style="margin-bottom:16px">
+      <div class="snapshot-title">数据范围</div>
+      <div class="snapshot-grid">
+        <div class="snapshot-item"><div class="si-label">已覆盖日期</div><div class="si-val">2026-07-13 至 2026-07-26</div></div>
+        <div class="snapshot-item"><div class="si-label">数据环境</div><div class="si-val">Nexita 文本风控线上环境</div></div>
+        <div class="snapshot-item"><div class="si-label">统计口径</div><div class="si-val">通过 + 拒绝为分母</div></div>
+      </div>
+      <div class="snapshot-ok" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">仅展示 7 月已核验数据；策略统计按 request_id 去重，同一请求可命中多条策略。</div>
+    </div>
+    <div class="metric-grid" id="risk-kpis"></div>
+    <div class="chart-2col">
+      <div class="chart-half"><div class="chart-half-title">总体拒绝率对比</div><div class="chart-half-wrap"><canvas id="risk-rate-chart"></canvas></div></div>
+      <div class="chart-half"><div class="chart-half-title">主要策略拒绝量（7.20-7.26）</div><div class="chart-half-wrap"><canvas id="risk-strategy-chart"></canvas></div></div>
+    </div>
+    <div class="section-header"><h3>关注规则复核</h3></div>
+    <div class="trend-card" style="padding:0;overflow:auto;margin-bottom:16px">
+      <table class="roi-table" id="risk-focus-table"></table>
+    </div>
+    <div class="trend-card" style="margin-bottom:16px;background:#fffbeb;border-color:#fde68a">
+      <div class="trend-title" style="color:#92400e;margin-bottom:6px">规则状态说明</div>
+      <div style="font-size:12px;line-height:1.7;color:#78350f">数字+字母 6-11 字符、数字+字母两条规则于 7 月 23 日由灰度转为上线。本页的拒绝量变化主要受规则状态切换影响，不能直接等同于风险量自然增长。关注规则的真实命中和误伤结果来自周报中的逐条语义复核。</div>
+    </div>
+    <div class="section-header"><h3>策略拒绝明细</h3></div>
+    <div class="trend-card" style="padding:0;overflow:auto">
+      <table class="roi-table" id="risk-strategy-table"></table>
+    </div>
+  </div>
+
   <!-- ═══ PAGE: 推广素材 ═══ -->
   <div id="page-materials" class="page">
     <div class="section-header" style="margin-top:0"><h3>推广素材数据</h3></div>
@@ -1358,6 +1393,43 @@ let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = 
 let userGenderC = null, userAgeC = null, userAmtC = null;
 let _filteredUserStats = null;
 
+const RISK_JULY = {
+  previous:{label:'7.13-7.19',total:211964,pass:210141,reject:1823,passRate:.9913994829,rejectRate:.0086005171},
+  current:{label:'7.20-7.26',total:235358,pass:233310,reject:2048,passRate:.9912983625,rejectRate:.0087016375,focusUniqueRejects:94,trueHits:27,falsePositives:67},
+  focus:[
+    {name:'数字+字母6-11字符',stage:'上线',previous:0,current:92,prevTrue:0,prevFalse:0,curTrue:26,curFalse:66},
+    {name:'正则-纯手机号-11位纯数字',stage:'上线',previous:3,current:7,prevTrue:3,prevFalse:0,curTrue:7,curFalse:0},
+    {name:'数字+字母',stage:'上线',previous:0,current:31,prevTrue:0,prevFalse:0,curTrue:9,curFalse:22},
+    {name:'数美-微信号',stage:'上线',previous:8,current:2,prevTrue:7,prevFalse:1,curTrue:0,curFalse:2},
+  ],
+  strategies:[
+    ['通用_数美涉政、色情、辱骂','上线',482,615],['通用_自研词库标签','上线',585,609],['【推审拒绝】文本命中自研词库_引流','上线',441,508],['通用_数美_广告标签','灰度',388,389],['【推审拒绝】消息公聊评论_数美广告_疑似引流','上线',375,372],['多场景_自研联系方式3合1','灰度',172,190],['数字+字母6-11字符','上线',0,92,true],['通用_数盟风险','灰度',43,81],['数美规则_命中封建迷信','上线',57,79],['通用_命中纯数字','灰度',20,34],['加好友','灰度',41,31],['数字+字母','上线',0,31,true],['【推审】多场景_纯英文','上线',9,27],['数字+字母6-11字符','灰度',40,12],['数字+字母','灰度',15,10],['正则-纯手机号-11位纯数字','上线',3,7,true],['【推审】全场景_文本为纯数字','上线',3,3],['数美-微信号','上线',8,2,true],
+  ]
+};
+let riskRateChart = null, riskStrategyChart = null;
+function riskPct(value){ return value == null ? '—' : (value*100).toFixed(2)+'%'; }
+function riskNum(value){ return Number(value||0).toLocaleString('zh-CN'); }
+function riskRateClass(value){ return value >= .5 ? 'down' : 'up'; }
+function renderRiskPage(){
+  const p=RISK_JULY.previous,c=RISK_JULY.current;
+  const kpis=[
+    ['处理文本',riskNum(c.total),`较 ${p.label} ${c.total-p.total>=0?'+':''}${riskNum(c.total-p.total)} 条`,''],
+    ['总体通过率',riskPct(c.passRate),`通过 ${riskNum(c.pass)} 条`,'up'],
+    ['总体拒绝率',riskPct(c.rejectRate),`拒绝 ${riskNum(c.reject)} 条 · 较上周 ${(c.rejectRate-p.rejectRate)*100>=0?'+':''}${((c.rejectRate-p.rejectRate)*100).toFixed(2)}pp`,'down'],
+    ['关注规则拒绝',riskNum(c.focusUniqueRejects),`真实命中 ${c.trueHits} 条 · 误伤 ${c.falsePositives} 条`,'down'],
+  ];
+  document.getElementById('risk-kpis').innerHTML=kpis.map(([label,value,note,tone])=>`<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${c.label}</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
+  const focusHead=['关注规则','状态',`${p.label} 拒绝`,`${p.label} 真命中`,`${p.label} 误伤`,`${c.label} 拒绝`,`${c.label} 真命中`,`${c.label} 误伤`,`${c.label} 真命中率`];
+  document.getElementById('risk-focus-table').innerHTML=`<thead><tr>${focusHead.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${RISK_JULY.focus.map(r=>{const rate=r.current?(r.curTrue/r.current):null;return `<tr><td><b>${r.name}</b></td><td><span class="mc-badge">${r.stage}</span></td><td>${riskNum(r.previous)}</td><td>${riskNum(r.prevTrue)}</td><td class="roi-warn">${riskNum(r.prevFalse)}</td><td>${riskNum(r.current)}</td><td class="roi-ok">${riskNum(r.curTrue)}</td><td class="roi-warn">${riskNum(r.curFalse)}</td><td class="${riskRateClass(rate)}">${riskPct(rate)}</td></tr>`}).join('')}</tbody>`;
+  const strategyHead=['策略','状态',`${p.label} 拒绝`,`${c.label} 拒绝`,'变化','本周拒绝占比'];
+  document.getElementById('risk-strategy-table').innerHTML=`<thead><tr>${strategyHead.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${RISK_JULY.strategies.map(([name,stage,previous,current,focus])=>{const change=current-previous;return `<tr${focus?' style="background:#fff7ed"':''}><td><b>${name}</b>${focus?' <span class="mc-badge">关注</span>':''}</td><td><span class="mc-badge">${stage}</span></td><td>${riskNum(previous)}</td><td>${riskNum(current)}</td><td class="${change>0?'down':change<0?'up':''}">${change>0?'+':''}${riskNum(change)}</td><td>${riskPct(current/c.reject)}</td></tr>`}).join('')}</tbody>`;
+  if(riskRateChart) riskRateChart.destroy();
+  riskRateChart=new Chart(document.getElementById('risk-rate-chart'),{type:'bar',data:{labels:[p.label,c.label],datasets:[{label:'拒绝率',data:[p.rejectRate*100,c.rejectRate*100],backgroundColor:['#94a3b8','#dc2626'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'}}}}});
+  const top=RISK_JULY.strategies.slice(0,6);
+  if(riskStrategyChart) riskStrategyChart.destroy();
+  riskStrategyChart=new Chart(document.getElementById('risk-strategy-chart'),{type:'bar',data:{labels:top.map(x=>x[0].replace('【推审拒绝】','').replace('通用_','').slice(0,12)),datasets:[{label:'拒绝数',data:top.map(x=>x[3]),backgroundColor:'#4a7cf0',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:10}}}}}});
+}
+
 function switchPage(id, el){
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1378,6 +1450,7 @@ function switchPage(id, el){
     addetail:  ['投放用户明细', '逐用户的注册、付费与行为明细'],
     search:    ['用户查询', '按 UID 查询用户付费记录'],
     materials: ['推广素材', '各素材的消耗、ROI 与充值表现'],
+    risk:      ['风控', '7 月文本风控通过、拒绝与策略复核情况'],
     alert:     ['ROI 预警', '首日 ROI 风险素材监控'],
   };
   const t = PAGE_TITLES[id];
@@ -1396,6 +1469,7 @@ function switchPage(id, el){
   if(id === 'addetail')  renderAdDetailPage(elFrom.value, elTo.value);
   if(id === 'search')    renderSearchPage();
   if(id === 'materials') initMaterialsPage();
+  if(id === 'risk')      renderRiskPage();
 }
 
 // ──── ROI PAGE ────
