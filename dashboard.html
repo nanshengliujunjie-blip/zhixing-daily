@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>知星投放看板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="risk_daily_data.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;display:flex;min-height:100vh;color:#0f1628}
@@ -893,12 +894,18 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     <div class="risk-filter-bar" aria-label="风控日期筛选">
       <div class="risk-filter-copy"><span class="risk-filter-title">统计周期</span><span class="risk-filter-status" id="risk-filter-status" aria-live="polite">—</span></div>
       <div class="risk-period-buttons">
-        <button class="risk-period-btn" type="button" data-risk-period="previous" onclick="setRiskRange('previous')">7.13-7.19</button>
-        <button class="risk-period-btn" type="button" data-risk-period="current" onclick="setRiskRange('current')">7.20-7.26</button>
-        <button class="risk-period-btn" type="button" data-risk-period="all" onclick="setRiskRange('all')">已覆盖全部</button>
+        <button class="risk-period-btn" type="button" data-risk-period="day" onclick="setRiskRange('day')">近 1 日</button>
+        <button class="risk-period-btn" type="button" data-risk-period="week" onclick="setRiskRange('week')">近 7 日</button>
+        <button class="risk-period-btn" type="button" data-risk-period="month" onclick="setRiskRange('month')">近 30 日</button>
+        <button class="risk-period-btn" type="button" data-risk-period="all" onclick="setRiskRange('all')">全部可用</button>
       </div>
     </div>
-    <div id="risk-empty" class="risk-empty" style="display:none"><b>请选择完整的已核验周期</b><span>当前数据可按 7.13-7.19、7.20-7.26 或两段合并统计。</span></div>
+    <div class="risk-period-buttons" style="margin:-8px 0 16px" aria-label="风控汇总粒度">
+      <button class="risk-period-btn active" type="button" data-risk-granularity="day" onclick="setRiskGranularity('day')">按日</button>
+      <button class="risk-period-btn" type="button" data-risk-granularity="week" onclick="setRiskGranularity('week')">按周</button>
+      <button class="risk-period-btn" type="button" data-risk-granularity="month" onclick="setRiskGranularity('month')">按月</button>
+    </div>
+    <div id="risk-empty" class="risk-empty" style="display:none"><b>所选日期没有可用风控数据</b><span>当前接口可追溯最近 30 天；未返回的数据不会按零值展示。</span></div>
     <div id="risk-data-content">
     <div class="snapshot-card" style="margin-bottom:16px">
       <div class="snapshot-title">数据范围</div>
@@ -907,20 +914,20 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
         <div class="snapshot-item"><div class="si-label">数据环境</div><div class="si-val">Nexita 文本风控线上环境</div></div>
         <div class="snapshot-item"><div class="si-label">统计口径</div><div class="si-val">通过 + 拒绝为分母</div></div>
       </div>
-      <div class="snapshot-ok" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">仅展示 7 月已核验数据；策略统计按 request_id 去重，同一请求可命中多条策略。</div>
+      <div class="snapshot-ok" id="risk-source-note" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">策略统计按 request_id 去重；同一请求可命中多条策略。</div>
     </div>
     <div class="metric-grid" id="risk-kpis"></div>
     <div class="chart-2col">
       <div class="chart-half"><div class="chart-half-title" id="risk-rate-title">总体拒绝率</div><div class="chart-half-wrap"><canvas id="risk-rate-chart"></canvas></div></div>
       <div class="chart-half"><div class="chart-half-title" id="risk-strategy-title">主要策略拒绝量</div><div class="chart-half-wrap"><canvas id="risk-strategy-chart"></canvas></div></div>
     </div>
-    <div class="section-header"><h3>关注规则复核</h3></div>
+    <div class="section-header"><h3>关注规则拒绝</h3></div>
     <div class="trend-card" style="padding:0;overflow:auto;margin-bottom:16px">
       <table class="roi-table" id="risk-focus-table"></table>
     </div>
     <div class="trend-card" style="margin-bottom:16px;background:#fffbeb;border-color:#fde68a">
       <div class="trend-title" style="color:#92400e;margin-bottom:6px">规则状态说明</div>
-      <div style="font-size:12px;line-height:1.7;color:#78350f">数字+字母 6-11 字符、数字+字母两条规则于 7 月 23 日由灰度转为上线。本页的拒绝量变化主要受规则状态切换影响，不能直接等同于风险量自然增长。关注规则的真实命中和误伤结果来自周报中的逐条语义复核。</div>
+      <div style="font-size:12px;line-height:1.7;color:#78350f">数字+字母 6-11 字符、数字+字母两条规则于 7 月 23 日由灰度转为上线。本页的拒绝量变化主要受规则状态切换影响，不能直接等同于风险量自然增长。</div>
     </div>
     <div class="section-header"><h3>策略拒绝明细</h3></div>
     <div class="trend-card" style="padding:0;overflow:auto">
@@ -1421,92 +1428,33 @@ let roiCurveChart = null, trendSpendC = null, trendRegC = null, trendPayRateC = 
 let userGenderC = null, userAgeC = null, userAmtC = null;
 let _filteredUserStats = null;
 
-const RISK_JULY = {
-  previous:{id:'previous',label:'7.13-7.19',start:'2026-07-13',end:'2026-07-19',total:211964,pass:210141,reject:1823,passRate:.9913994829,rejectRate:.0086005171,focusUniqueRejects:11,trueHits:10,falsePositives:1},
-  current:{id:'current',label:'7.20-7.26',start:'2026-07-20',end:'2026-07-26',total:235358,pass:233310,reject:2048,passRate:.9912983625,rejectRate:.0087016375,focusUniqueRejects:94,trueHits:27,falsePositives:67},
-  focus:[
-    {name:'数字+字母6-11字符',stage:'上线',previous:0,current:92,prevTrue:0,prevFalse:0,curTrue:26,curFalse:66},
-    {name:'正则-纯手机号-11位纯数字',stage:'上线',previous:3,current:7,prevTrue:3,prevFalse:0,curTrue:7,curFalse:0},
-    {name:'数字+字母',stage:'上线',previous:0,current:31,prevTrue:0,prevFalse:0,curTrue:9,curFalse:22},
-    {name:'数美-微信号',stage:'上线',previous:8,current:2,prevTrue:7,prevFalse:1,curTrue:0,curFalse:2},
-  ],
-  strategies:[
-    ['通用_数美涉政、色情、辱骂','上线',482,615],['通用_自研词库标签','上线',585,609],['【推审拒绝】文本命中自研词库_引流','上线',441,508],['通用_数美_广告标签','灰度',388,389],['【推审拒绝】消息公聊评论_数美广告_疑似引流','上线',375,372],['多场景_自研联系方式3合1','灰度',172,190],['数字+字母6-11字符','上线',0,92,true],['通用_数盟风险','灰度',43,81],['数美规则_命中封建迷信','上线',57,79],['通用_命中纯数字','灰度',20,34],['加好友','灰度',41,31],['数字+字母','上线',0,31,true],['【推审】多场景_纯英文','上线',9,27],['数字+字母6-11字符','灰度',40,12],['数字+字母','灰度',15,10],['正则-纯手机号-11位纯数字','上线',3,7,true],['【推审】全场景_文本为纯数字','上线',3,3],['数美-微信号','上线',8,2,true],
-  ]
-};
-let riskRateChart = null, riskStrategyChart = null;
+let riskRateChart = null, riskStrategyChart = null, riskGranularity = 'day';
 function riskPct(value){ return value == null ? '—' : (value*100).toFixed(2)+'%'; }
 function riskNum(value){ return Number(value||0).toLocaleString('zh-CN'); }
-function riskPeriods(){ return [RISK_JULY.previous,RISK_JULY.current]; }
-function selectedRiskPeriods(dateFrom, dateTo){
-  const picked=riskPeriods().filter(period=>dateFrom<=period.start && dateTo>=period.end);
-  return picked.length && dateFrom===picked[0].start && dateTo===picked[picked.length-1].end ? picked : [];
-}
-function setRiskRange(key){
-  const ranges={previous:RISK_JULY.previous,current:RISK_JULY.current,all:{start:RISK_JULY.previous.start,end:RISK_JULY.current.end}};
-  const range=ranges[key];
-  if(!range) return;
-  elFrom.value=range.start;
-  elTo.value=range.end;
-  onRangeChange();
-}
-function syncRiskDateControls(pageId){
-  const riskActive=pageId==='risk';
-  document.getElementById('global-date-presets').style.display=riskActive?'none':'';
-  elFrom.min=elTo.min=riskActive?RISK_JULY.previous.start:'';
-  elFrom.max=elTo.max=riskActive?RISK_JULY.current.end:'';
-  if(riskActive && !selectedRiskPeriods(elFrom.value,elTo.value).length) setRiskRange('current');
-}
-function riskSummary(periods){
-  const sum=key=>periods.reduce((total,period)=>total+period[key],0);
-  const pass=sum('pass'),reject=sum('reject');
-  return {total:sum('total'),pass,reject,passRate:pass/(pass+reject),rejectRate:reject/(pass+reject),focusUniqueRejects:sum('focusUniqueRejects'),trueHits:sum('trueHits'),falsePositives:sum('falsePositives')};
-}
-function riskFocusRows(periods){
-  return RISK_JULY.focus.map(rule=>{
-    const get=(period,key)=>period.id==='previous'?rule[`prev${key}`]:rule[`cur${key}`];
-    return {name:rule.name,stage:rule.stage,reject:periods.reduce((total,period)=>total+(period.id==='previous'?rule.previous:rule.current),0),trueHits:periods.reduce((total,period)=>total+get(period,'True'),0),falsePositives:periods.reduce((total,period)=>total+get(period,'False'),0)};
-  });
-}
-function riskStrategyRows(periods){
-  return RISK_JULY.strategies.map(([name,stage,previous,current,focus])=>({name,stage,focus,reject:periods.reduce((total,period)=>total+(period.id==='previous'?previous:current),0)})).filter(item=>item.reject>0).sort((a,b)=>b.reject-a.reject);
-}
-function renderRiskPage(dateFrom=elFrom.value,dateTo=elTo.value){
-  const periods=selectedRiskPeriods(dateFrom,dateTo);
-  const empty=document.getElementById('risk-empty'),content=document.getElementById('risk-data-content');
-  const status=document.getElementById('risk-filter-status');
-  document.querySelectorAll('[data-risk-period]').forEach(button=>button.classList.toggle('active',periods.length && button.dataset.riskPeriod===((periods.length===2)?'all':periods[0].id)));
-  if(!periods.length){
-    status.textContent=`${dateFrom||'—'} 至 ${dateTo||'—'} 未覆盖完整核验周期`;
-    document.getElementById('risk-current-range').textContent='暂无完整可用数据';
-    empty.style.display='block'; content.style.display='none';
-    if(riskRateChart) riskRateChart.destroy(); if(riskStrategyChart) riskStrategyChart.destroy();
-    riskRateChart=null; riskStrategyChart=null;
-    return;
-  }
-  empty.style.display='none'; content.style.display='block';
-  const rangeLabel=periods.map(period=>period.label).join('、');
-  const summary=riskSummary(periods),focusRows=riskFocusRows(periods),strategies=riskStrategyRows(periods);
-  status.textContent=`已按完整周期统计：${rangeLabel}`;
-  document.getElementById('risk-current-range').textContent=`${periods[0].start} 至 ${periods[periods.length-1].end}`;
-  const kpis=[
-    ['处理文本',riskNum(summary.total),`通过 ${riskNum(summary.pass)} 条`,''],
-    ['总体通过率',riskPct(summary.passRate),`通过 + 拒绝为分母`,'up'],
-    ['总体拒绝率',riskPct(summary.rejectRate),`拒绝 ${riskNum(summary.reject)} 条`,'down'],
-    ['关注规则拒绝',riskNum(summary.focusUniqueRejects),`真实命中 ${summary.trueHits} 条 · 误伤 ${summary.falsePositives} 条`,'down'],
-  ];
-  document.getElementById('risk-kpis').innerHTML=kpis.map(([label,value,note,tone])=>`<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${rangeLabel}</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
-  const focusHead=['关注规则','状态','拒绝','真实命中','误伤','真实命中率','误伤率'];
-  document.getElementById('risk-focus-table').innerHTML=`<thead><tr>${focusHead.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${focusRows.map(row=>{const trueRate=row.reject?row.trueHits/row.reject:null;return `<tr><td><b>${row.name}</b></td><td><span class="mc-badge">${row.stage}</span></td><td>${riskNum(row.reject)}</td><td class="roi-ok">${riskNum(row.trueHits)}</td><td class="roi-warn">${riskNum(row.falsePositives)}</td><td>${riskPct(trueRate)}</td><td>${riskPct(row.reject?row.falsePositives/row.reject:null)}</td></tr>`}).join('')}</tbody>`;
-  const strategyHead=['策略','状态','拒绝','拒绝占比'];
-  document.getElementById('risk-strategy-table').innerHTML=`<thead><tr>${strategyHead.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${strategies.map(row=>`<tr${row.focus?' style="background:#fff7ed"':''}><td><b>${row.name}</b>${row.focus?' <span class="mc-badge">关注</span>':''}</td><td><span class="mc-badge">${row.stage}</span></td><td>${riskNum(row.reject)}</td><td>${riskPct(row.reject/summary.reject)}</td></tr>`).join('')}</tbody>`;
-  document.getElementById('risk-rate-title').textContent=periods.length>1?'总体拒绝率对比':'总体拒绝率';
-  document.getElementById('risk-strategy-title').textContent=`主要策略拒绝量（${rangeLabel}）`;
-  if(riskRateChart) riskRateChart.destroy();
-  riskRateChart=new Chart(document.getElementById('risk-rate-chart'),{type:'bar',data:{labels:periods.map(period=>period.label),datasets:[{label:'拒绝率',data:periods.map(period=>period.rejectRate*100),backgroundColor:periods.map((_,index)=>index===periods.length-1?'#dc2626':'#94a3b8'),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'}}}}});
-  const top=strategies.slice(0,6);
-  if(riskStrategyChart) riskStrategyChart.destroy();
-  riskStrategyChart=new Chart(document.getElementById('risk-strategy-chart'),{type:'bar',data:{labels:top.map(row=>row.name.replace('【推审拒绝】','').replace('通用_','').slice(0,12)),datasets:[{label:'拒绝数',data:top.map(row=>row.reject),backgroundColor:'#4a7cf0',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:10}}}}}});
+function riskDays(){ return (typeof RISK_DAILY==='undefined'?[]:RISK_DAILY.days.filter(day=>day.available)); }
+function selectedRiskDays(from,to){ return riskDays().filter(day=>day.date>=from&&day.date<=to); }
+function setRiskRange(key){ const days=riskDays(); const count={day:1,week:7,month:30}[key]; const picked=key==='all'?days:days.slice(-count); if(!picked.length)return; elFrom.value=picked[0].date; elTo.value=picked[picked.length-1].date; onRangeChange(); }
+function setRiskGranularity(mode){ riskGranularity=mode; document.querySelectorAll('[data-risk-granularity]').forEach(button=>button.classList.toggle('active',button.dataset.riskGranularity===mode)); renderRiskPage(); }
+function syncRiskDateControls(pageId){ const active=pageId==='risk',days=riskDays(); document.getElementById('global-date-presets').style.display=active?'none':''; elFrom.min=elTo.min=active&&days.length?days[0].date:''; elFrom.max=elTo.max=active&&days.length?days[days.length-1].date:''; if(active&&!selectedRiskDays(elFrom.value,elTo.value).length)setRiskRange('week'); }
+function riskSummary(days){ const sum=key=>days.reduce((total,day)=>total+day[key],0),pass=sum('pass'),reject=sum('reject'); return {total:sum('total'),pass,reject,focusRejects:sum('focusRejects'),passRate:pass/(pass+reject),rejectRate:reject/(pass+reject)}; }
+function riskStrategyRows(days){ const rows=new Map(); days.forEach(day=>day.strategies.forEach(item=>{const key=`${item.name}\u0000${item.stage}`,row=rows.get(key)||{...item,reject:0,focus:RISK_DAILY.focusRules.includes(item.name)};row.reject+=item.reject;rows.set(key,row)})); return [...rows.values()].sort((a,b)=>b.reject-a.reject); }
+function riskFocusRows(strategies){ return RISK_DAILY.focusRules.map(name=>{const matched=strategies.filter(row=>row.name===name),reject=matched.reduce((sum,row)=>sum+row.reject,0),stages=[...new Set(matched.map(row=>row.stage))];return {name,reject,stage:stages.length?stages.join(' / '):'—'}; }); }
+function riskBucketKey(day){ if(riskGranularity==='day')return day.date; if(riskGranularity==='month')return day.date.slice(0,7); const d=new Date(`${day.date}T00:00:00Z`);d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10); }
+function riskBuckets(days){ const buckets=new Map(); days.forEach(day=>{const key=riskBucketKey(day),bucket=buckets.get(key)||{key,first:day.date,last:day.date,total:0,pass:0,reject:0};bucket.last=day.date;bucket.total+=day.total;bucket.pass+=day.pass;bucket.reject+=day.reject;buckets.set(key,bucket)}); return [...buckets.values()]; }
+function riskBucketLabel(bucket){ if(riskGranularity==='day')return bucket.first.slice(5); if(riskGranularity==='month')return bucket.key; return `${bucket.first.slice(5)}~${bucket.last.slice(5)}`; }
+function renderRiskPage(from=elFrom.value,to=elTo.value){
+  const days=selectedRiskDays(from,to),empty=document.getElementById('risk-empty'),content=document.getElementById('risk-data-content'),status=document.getElementById('risk-filter-status');
+  if(!days.length){ status.textContent=`${from||'—'} 至 ${to||'—'} 没有可用数据`;document.getElementById('risk-current-range').textContent='暂无可用数据';empty.style.display='block';content.style.display='none';if(riskRateChart)riskRateChart.destroy();if(riskStrategyChart)riskStrategyChart.destroy();riskRateChart=riskStrategyChart=null;return; }
+  const summary=riskSummary(days),strategies=riskStrategyRows(days),focusRows=riskFocusRows(strategies),buckets=riskBuckets(days),rangeLabel=`${days[0].date} 至 ${days[days.length-1].date}`;
+  empty.style.display='none';content.style.display='block';status.textContent=`已按 ${days.length} 个自然日汇总`;document.getElementById('risk-current-range').textContent=rangeLabel;document.getElementById('risk-source-note').textContent=`可用数据 ${riskDays()[0].date} 至 ${riskDays().at(-1).date}；${RISK_DAILY.source}`;
+  document.querySelectorAll('[data-risk-period]').forEach(button=>button.classList.toggle('active',button.dataset.riskPeriod==='all'?days.length===riskDays().length:({day:1,week:7,month:30}[button.dataset.riskPeriod]===days.length)));
+  const kpis=[['处理文本',riskNum(summary.total),`通过 ${riskNum(summary.pass)} 条`,''],['总体通过率',riskPct(summary.passRate),'通过 + 拒绝为分母','up'],['总体拒绝率',riskPct(summary.rejectRate),`拒绝 ${riskNum(summary.reject)} 条`,'down'],['关注规则拒绝',riskNum(summary.focusRejects),'四条规则并集，按日去重','down']];
+  document.getElementById('risk-kpis').innerHTML=kpis.map(([label,value,note,tone])=>`<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
+  document.getElementById('risk-focus-table').innerHTML=`<thead><tr>${['关注规则','状态','拒绝','占全部拒绝'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${focusRows.map(row=>`<tr><td><b>${row.name}</b></td><td><span class="mc-badge">${row.stage}</span></td><td>${riskNum(row.reject)}</td><td>${riskPct(row.reject/summary.reject)}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('risk-strategy-table').innerHTML=`<thead><tr>${['策略','状态','拒绝','拒绝占比'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${strategies.map(row=>`<tr${row.focus?' style="background:#fff7ed"':''}><td><b>${row.name}</b>${row.focus?' <span class="mc-badge">关注</span>':''}</td><td><span class="mc-badge">${row.stage}</span></td><td>${riskNum(row.reject)}</td><td>${riskPct(row.reject/summary.reject)}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('risk-rate-title').textContent=`总体拒绝率（按${riskGranularity==='day'?'日':riskGranularity==='week'?'周':'月'}）`;document.getElementById('risk-strategy-title').textContent=`主要策略拒绝量（${rangeLabel}）`;
+  if(riskRateChart)riskRateChart.destroy();riskRateChart=new Chart(document.getElementById('risk-rate-chart'),{type:'bar',data:{labels:buckets.map(riskBucketLabel),datasets:[{label:'拒绝率',data:buckets.map(bucket=>bucket.reject/(bucket.pass+bucket.reject)*100),backgroundColor:'#dc2626',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:value=>value+'%'}}}}});
+  const top=strategies.slice(0,6);if(riskStrategyChart)riskStrategyChart.destroy();riskStrategyChart=new Chart(document.getElementById('risk-strategy-chart'),{type:'bar',data:{labels:top.map(row=>row.name.replace('【推审拒绝】','').replace('通用_','').slice(0,12)),datasets:[{label:'拒绝数',data:top.map(row=>row.reject),backgroundColor:'#4a7cf0',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:10}}}}}});
 }
 
 function switchPage(id, el){
