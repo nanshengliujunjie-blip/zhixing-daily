@@ -988,7 +988,7 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
         </select>
         <span id="channel-filter-status" class="channel-filter-status" aria-live="polite">正在加载渠道数据...</span>
       </div>
-      <span id="channel-source-note" class="channel-source-note">数据来自 Nexita 表 1 渠道回收明细</span>
+      <span id="channel-source-note" class="channel-source-note">正在加载 Nexita 渠道回收明细</span>
     </div>
     <div id="channel-empty" class="risk-empty" style="display:none"><b>所选日期或渠道没有投放数据</b><span>请调整顶部日期范围或选择其他渠道。</span></div>
     <div id="channel-data-content">
@@ -3251,7 +3251,7 @@ function renderChannels() {
     select.value = channels.includes(previous) ? previous : '';
   }
   const channel = select.value;
-  document.getElementById('channel-source-note').textContent = `实际可用日期：${_channelData.availableStartDate || '—'} 至 ${_channelData.availableEndDate || '—'}；Nexita 表 1，ROI = 对应节点 LTV / 消耗`;
+  document.getElementById('channel-source-note').textContent = `实际可用日期：${_channelData.availableStartDate || '—'} 至 ${_channelData.availableEndDate || '—'}；${_channelData.source || 'Nexita 渠道回收明细'}`;
   const byChannel = new Map(), byDay = new Map(), total = channelBlank();
   for (const item of _channelData.list) {
     if (item.date < from || item.date > to || (channel && item.channel !== channel)) continue;
