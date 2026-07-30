@@ -3195,14 +3195,15 @@ function channelRoiMaturityEnds(endDate) {
   return Object.fromEntries(CHANNEL_ROI_NODES.map(([,key]) => [key, channelDaysBefore(endDate, CHANNEL_ROI_MATURITY_DAYS[key])]));
 }
 function channelBlank() {
-  return {spend:0, activate:0, reg:0, payAmount:0, paidUsers:0, table1Reg:0, aiQuestions:0, enterRoom:0, mic:0, nextRetained:0, retentionReg:0, ltv3:0, ltv7:0, ltv15:0, ltv30:0, matureLtv3:0, matureLtv7:0, matureLtv15:0, matureLtv30:0, matureSpend3:0, matureSpend7:0, matureSpend15:0, matureSpend30:0, rows:0, days:new Set()};
+  return {spend:0, activate:0, reg:0, payAmount:0, roiPayAmount:0, paidUsers:0, table1Reg:0, aiQuestions:0, enterRoom:0, mic:0, nextRetained:0, retentionReg:0, ltv3:0, ltv7:0, ltv15:0, ltv30:0, matureLtv3:0, matureLtv7:0, matureLtv15:0, matureLtv30:0, matureSpend3:0, matureSpend7:0, matureSpend15:0, matureSpend30:0, rows:0, days:new Set()};
 }
 function channelAdd(summary, item, maturityEnds) {
   summary.rows++;
   summary.days.add(item.date);
   for (const key of ['spend','activate','reg','payAmount','paidUsers','table1Reg','aiQuestions','enterRoom','mic','nextRetained','retentionReg','ltv3','ltv7','ltv15','ltv30']) summary[key] += Number(item[key]) || 0;
+  if (Number(item.spend) > 0) summary.roiPayAmount += Number(item.payAmount) || 0;
   for (const [,key] of CHANNEL_ROI_NODES.slice(1)) {
-    if (!maturityEnds[key] || item.date > maturityEnds[key]) continue;
+    if (Number(item.spend) <= 0 || !maturityEnds[key] || item.date > maturityEnds[key]) continue;
     const suffix = key.slice(3);
     summary[`matureLtv${suffix}`] += Number(item[key]) || 0;
     summary[`matureSpend${suffix}`] += Number(item.spend) || 0;
@@ -3222,9 +3223,12 @@ function renderChannelInsights(rows, total, selectedName, maturityEnds) {
     const roi3 = channelRoi(row,'ltv3');
     const spendShare = total.spend > 0 ? row.spend / total.spend * 100 : 0;
     const paidRate = row.table1Reg > 0 ? row.paidUsers / row.table1Reg * 100 : 0;
-    const retention = row.retentionReg > 0 ? row.nextRetained / row.retentionReg * 100 : 0;
+    const retention = row.retentionReg > 0 ? row.nextRetained / row.retentionReg * 100 : null;
     let verdict, action;
-    if (roi3 == null) {
+    if (row.spend <= 0) {
+      verdict = '不适用投放判断';
+      action = '表 2 没有对应消耗，只能观察表 1 行为和收入，不能计算 ROI 或判断是否继续投放。';
+    } else if (roi3 == null) {
       verdict = '暂不判断回收';
       action = `ROI3 cohort 尚未成熟，先维持现有预算并等待至 ${maturityEnds.ltv3 || '数据完整'} 后再决定是否调整。`;
     } else if (roi3 >= 40) {
@@ -3241,13 +3245,13 @@ function renderChannelInsights(rows, total, selectedName, maturityEnds) {
       action = '暂停新增预算，复查素材、归因和人群质量；仅保留最小测试预算。';
     }
     if (roi3 != null && spendShare >= 60 && totalRoi3 != null && roi3 < totalRoi3) action = `该渠道占消耗 ${spendShare.toFixed(1)}% 且回收低于整体，应优先收缩预算并拆分计划排查。`;
-    const metrics = `消耗占比 ${spendShare.toFixed(1)}%，ROI0 ${channelRoiText(row,'payAmount')}，ROI3 ${channelRoiText(row,'ltv3')}（成熟至 ${maturityEnds.ltv3 || '—'}），表 1 付费率 ${paidRate.toFixed(2)}%，表 2 次日留存 ${retention.toFixed(2)}%。`;
+    const metrics = `消耗占比 ${spendShare.toFixed(1)}%，ROI0 ${channelRoiText(row,'payAmount')}，ROI3 ${channelRoiText(row,'ltv3')}（成熟至 ${maturityEnds.ltv3 || '—'}），表 1 付费率 ${paidRate.toFixed(2)}%，表 2 次日留存 ${retention == null ? '—' : retention.toFixed(2)+'%'}。`;
     conclusions.push(`<b>${channelEsc(row.channel)}｜${verdict}：</b>${metrics}${action}`);
   }
   document.getElementById('channel-insights').innerHTML = `<ul>${conclusions.map(item => `<li>${item}</li>`).join('')}</ul>`;
 }
 function channelRoi(summary, key) {
-  if (key === 'payAmount') return summary.spend > 0 ? summary.payAmount / summary.spend * 100 : null;
+  if (key === 'payAmount') return summary.spend > 0 ? summary.roiPayAmount / summary.spend * 100 : null;
   const suffix = key.slice(3);
   const spend = summary[`matureSpend${suffix}`];
   return spend > 0 ? summary[`matureLtv${suffix}`] / spend * 100 : null;
@@ -3346,8 +3350,8 @@ function renderChannels() {
     ...CHANNEL_ROI_NODES.map(([label,key])=>[label,channelRoiText(total,key),key==='payAmount'?`${label} 表 1 回收金额 / 表 2 消耗`:`${label} 成熟至 ${maturityEnds[key] || '—'} · 表 1 回收金额 / 表 2 消耗`,channelRoi(total,key)>=100?'up':''])
   ];
   document.getElementById('channel-kpis').innerHTML = cards.map(([label,value,note,tone]) => `<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
-  const headers = ['细分渠道','投放天数','消耗','注册','首日充值','付费用户','付费率','AI 提问','进房','连麦','次日留存','ROI0','ROI3（成熟）','ROI7（成熟）','ROI15（成熟）','ROI30（成熟）'];
-  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${channelMoney(row.spend)}</td><td>${channelNumber(row.reg)}</td><td>${channelMoney(row.payAmount)}</td><td>${channelNumber(row.paidUsers)}</td><td>${channelPaidRate(row)}</td><td>${channelNumber(row.aiQuestions)}</td><td>${channelNumber(row.enterRoom)}</td><td>${channelNumber(row.mic)}</td><td>${channelPct(row.nextRetained,row.retentionReg)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  const headers = ['细分渠道','投放天数','消耗（表2）','注册（表2）','注册（表1）','首日充值','付费用户','付费率','AI 提问','进房','连麦','次日留存','ROI0','ROI3（成熟）','ROI7（成熟）','ROI15（成熟）','ROI30（成熟）'];
+  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${row.spend > 0 ? channelMoney(row.spend) : '—'}</td><td>${channelNumber(row.reg)}</td><td>${channelNumber(row.table1Reg)}</td><td>${channelMoney(row.payAmount)}</td><td>${channelNumber(row.paidUsers)}</td><td>${channelPaidRate(row)}</td><td>${channelNumber(row.aiQuestions)}</td><td>${channelNumber(row.enterRoom)}</td><td>${channelNumber(row.mic)}</td><td>${channelPct(row.nextRetained,row.retentionReg)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
   renderChannelInsights(rows, total, selectedName, maturityEnds);
   channelSetCharts({days,total}, selectedName);
 }

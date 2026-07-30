@@ -41,6 +41,9 @@ function parseRows(rows) {
     return Object.fromEntries(headers.map((header, index) => [header, values[index]]));
   });
 }
+function channelName(level1, level2) {
+  return level1 === 'IOS' && level2 === 'APPSTORE' ? 'iOS / AppStore' : `${level1} / ${level2}`;
+}
 function bodyFor(sourceBody, table, start, end) {
   const body = JSON.parse(sourceBody);
   body.page = { limit: 5000, offset: 0 };
@@ -99,11 +102,12 @@ function appendRows(records, rows, table) {
       existing.ltv30 = number(row.ltv30);
       continue;
     }
-    // 表 2 尚无记录的历史日期，保留表 1 的完整回退行。
-    if (spend <= 0) continue;
+    // 表 2 尚无记录的历史日期，保留表 1 回退行；仅 AppStore 可作为无消耗行为渠道展示。
+    const isAppStore = level1 === 'IOS' && level2 === 'APPSTORE';
+    if (spend <= 0 && !isAppStore) continue;
     records.set(key, {
-      date, level1, level2, channel: `${level1} / ${level2}`,
-      spend, activate: number(row["激活设备数"]), reg: number(row["注册用户数"]),
+      date, level1, level2, channel: channelName(level1, level2),
+      spend, activate: number(row["激活设备数"]), reg: isAppStore ? 0 : number(row["注册用户数"]),
       payAmount: number(row["首日充值金额"]), paidUsers: number(row["首日付费用户数"]), table1Reg: number(row["注册用户数"]), aiQuestions: number(row["首日ai提问用户数"]),
       enterRoom: number(row["首日进房用户数"]), mic: number(row["首日连麦用户数"]),
       nextRetained: 0, retentionReg: 0,
@@ -148,7 +152,7 @@ try {
   process.stdout.write(JSON.stringify({
     updated: new Date().toISOString(), startDate, endDate,
     availableStartDate: dates[0] || null, availableEndDate: dates.at(-1) || null,
-    source: "消耗、次日留存：表 2；充值、付费率、进房、连麦、AI 提问、ROI 回收金额：表 1；ROI = 表 1 回收金额 / 表 2 消耗。",
+    source: "消耗、次日留存：表 2；充值、付费率、进房、连麦、AI 提问、ROI 回收金额：表 1；ROI = 表 1 回收金额 / 表 2 消耗。iOS / AppStore 无表 2 消耗，仅展示行为数据。",
     list,
   }));
   await context.storageState({ path: statePath });
