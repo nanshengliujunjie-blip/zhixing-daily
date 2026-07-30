@@ -3181,13 +3181,14 @@ function channelNumber(value, digits=0) {
 }
 function channelMoney(value) { return '¥' + channelNumber(value, 2); }
 function channelBlank() {
-  return {spend:0, activate:0, reg:0, payAmount:0, ltv3:0, ltv7:0, ltv15:0, ltv30:0, rows:0, days:new Set()};
+  return {spend:0, activate:0, reg:0, payAmount:0, aiQuestions:0, enterRoom:0, mic:0, nextRetained:0, retentionReg:0, ltv3:0, ltv7:0, ltv15:0, ltv30:0, rows:0, days:new Set()};
 }
 function channelAdd(summary, item) {
   summary.rows++;
   summary.days.add(item.date);
-  for (const key of ['spend','activate','reg','payAmount','ltv3','ltv7','ltv15','ltv30']) summary[key] += Number(item[key]) || 0;
+  for (const key of ['spend','activate','reg','payAmount','aiQuestions','enterRoom','mic','nextRetained','retentionReg','ltv3','ltv7','ltv15','ltv30']) summary[key] += Number(item[key]) || 0;
 }
+function channelPct(numerator, denominator) { return denominator > 0 ? (numerator / denominator * 100).toFixed(2) + '%' : '—'; }
 function channelRoi(summary, key) {
   return summary.spend > 0 ? summary[key] / summary.spend * 100 : null;
 }
@@ -3273,14 +3274,18 @@ function renderChannels() {
   const selectedName = channel || '全部渠道';
   document.getElementById('channel-spend-title').textContent = `消耗与 ROI0 趋势（${selectedName}）`;
   const cards = [
-    ['投放消耗',channelMoney(total.spend),`${channelNumber(total.rows)} 条渠道日明细`,''],
-    ['注册',channelNumber(total.reg),total.reg?`注册成本 ${channelMoney(total.spend/total.reg)}`:'',''],
-    ['首日充值',channelMoney(total.payAmount),'ROI0 回收收入','up'],
-    ...CHANNEL_ROI_NODES.map(([label,key])=>[label,channelRoiText(total,key),`${label} LTV / 消耗`,channelRoi(total,key)>=100?'up':''])
+    ['投放消耗',channelMoney(total.spend),`表 2 · ${channelNumber(total.rows)} 条渠道日明细`,''],
+    ['注册',channelNumber(total.reg),total.reg?`表 2 · 注册成本 ${channelMoney(total.spend/total.reg)}`:'',''],
+    ['首日充值',channelMoney(total.payAmount),'表 1 · ROI0 回收收入','up'],
+    ['次日留存',channelPct(total.nextRetained,total.retentionReg),'表 2 · 次日留存设备 / 注册',''],
+    ['首日进房',channelNumber(total.enterRoom),'表 1 · 首日进房用户',''],
+    ['首日连麦',channelNumber(total.mic),'表 1 · 首日连麦用户',''],
+    ['首日 AI 提问',channelNumber(total.aiQuestions),'表 1 · 首日提问用户',''],
+    ...CHANNEL_ROI_NODES.map(([label,key])=>[label,channelRoiText(total,key),`${label} 表 1 回收金额 / 表 2 消耗`,channelRoi(total,key)>=100?'up':''])
   ];
   document.getElementById('channel-kpis').innerHTML = cards.map(([label,value,note,tone]) => `<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
-  const headers = ['细分渠道','投放天数','消耗','注册','首日充值','ROI0','ROI3','ROI7','ROI15','ROI30'];
-  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${channelMoney(row.spend)}</td><td>${channelNumber(row.reg)}</td><td>${channelMoney(row.payAmount)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  const headers = ['细分渠道','投放天数','消耗','注册','首日充值','AI 提问','进房','连麦','次日留存','ROI0','ROI3','ROI7','ROI15','ROI30'];
+  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${channelMoney(row.spend)}</td><td>${channelNumber(row.reg)}</td><td>${channelMoney(row.payAmount)}</td><td>${channelNumber(row.aiQuestions)}</td><td>${channelNumber(row.enterRoom)}</td><td>${channelNumber(row.mic)}</td><td>${channelPct(row.nextRetained,row.retentionReg)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
   channelSetCharts({days,total}, selectedName);
 }
 

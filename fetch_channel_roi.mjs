@@ -69,21 +69,43 @@ function appendRows(records, rows, table) {
     const level1 = row["一级渠道"] || row.cc_level1_name || "";
     const level2 = row["二级渠道"] || row.cc_level2_name || "";
     const spend = number(table === 'table2' ? row["折后支出金额（元）"] : row["消耗"]);
-    if (!/^\d{8}$/.test(rawDate) || !level1 || !level2 || level1 === "汇总" || level2 === "汇总" || spend <= 0) continue;
+    if (!/^\d{8}$/.test(rawDate) || !level1 || !level2 || level1 === "汇总" || level2 === "汇总") continue;
     const date = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
     const key = `${date}\u0000${level1}\u0000${level2}`;
-    // 表 2 提供消耗与各回收节点的统一口径，表 1 只补齐表 2 尚无记录的历史日期。
-    if (records.has(key)) continue;
+    if (table === 'table2') {
+      if (spend <= 0) continue;
+      records.set(key, {
+        date, level1, level2, channel: `${level1} / ${level2}`,
+        spend, activate: number(row["新增激活设备数"]), reg: number(row["净注册设备数"]),
+        payAmount: 0, aiQuestions: 0, enterRoom: 0, mic: 0,
+        nextRetained: number(row["次日留存设备数"]), retentionReg: number(row["净注册设备数"]),
+        ltv3: number(row.LTV3), ltv7: number(row.LTV7), ltv15: number(row.LTV15), ltv30: number(row.LTV30),
+      });
+      kept++;
+      continue;
+    }
+    const existing = records.get(key);
+    if (existing) {
+      // 表 1 是回收金额和首日行为的权威来源，即使其消耗为 0 也要覆盖这些字段。
+      existing.payAmount = number(row["首日充值金额"]);
+      existing.aiQuestions = number(row["首日ai提问用户数"]);
+      existing.enterRoom = number(row["首日进房用户数"]);
+      existing.mic = number(row["首日连麦用户数"]);
+      existing.ltv3 = number(row.ltv3);
+      existing.ltv7 = number(row.ltv7);
+      existing.ltv15 = number(row.ltv15);
+      existing.ltv30 = number(row.ltv30);
+      continue;
+    }
+    // 表 2 尚无记录的历史日期，保留表 1 的完整回退行。
+    if (spend <= 0) continue;
     records.set(key, {
       date, level1, level2, channel: `${level1} / ${level2}`,
-      spend,
-      activate: number(table === 'table2' ? row["新增激活设备数"] : row["激活设备数"]),
-      reg: number(table === 'table2' ? row["净注册设备数"] : row["注册用户数"]),
-      payAmount: number(table === 'table2' ? row["当日充值金额（元）"] : row["首日充值金额"]),
-      ltv3: number(table === 'table2' ? row.LTV3 : row.ltv3),
-      ltv7: number(table === 'table2' ? row.LTV7 : row.ltv7),
-      ltv15: number(table === 'table2' ? row.LTV15 : row.ltv15),
-      ltv30: number(table === 'table2' ? row.LTV30 : row.ltv30),
+      spend, activate: number(row["激活设备数"]), reg: number(row["注册用户数"]),
+      payAmount: number(row["首日充值金额"]), aiQuestions: number(row["首日ai提问用户数"]),
+      enterRoom: number(row["首日进房用户数"]), mic: number(row["首日连麦用户数"]),
+      nextRetained: 0, retentionReg: 0,
+      ltv3: number(row.ltv3), ltv7: number(row.ltv7), ltv15: number(row.ltv15), ltv30: number(row.ltv30),
     });
     kept++;
   }
@@ -124,7 +146,7 @@ try {
   process.stdout.write(JSON.stringify({
     updated: new Date().toISOString(), startDate, endDate,
     availableStartDate: dates[0] || null, availableEndDate: dates.at(-1) || null,
-    source: "Nexita 表 2 优先，表 1 补齐无记录日期；ROI = 节点 LTV / 消耗。",
+    source: "消耗、次日留存：表 2；充值、进房、连麦、AI 提问、ROI 回收金额：表 1；ROI = 表 1 回收金额 / 表 2 消耗。",
     list,
   }));
   await context.storageState({ path: statePath });
