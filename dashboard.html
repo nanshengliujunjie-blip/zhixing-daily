@@ -3195,16 +3195,34 @@ function channelAdd(summary, item) {
 function channelPct(numerator, denominator) { return denominator > 0 ? (numerator / denominator * 100).toFixed(2) + '%' : '—'; }
 function channelPaidRate(summary) { return channelPct(summary.paidUsers, summary.table1Reg); }
 function renderChannelInsights(rows, total, selectedName) {
-  const spendLeader = rows[0];
-  const roi3Leader = [...rows].sort((a,b) => (channelRoi(b,'ltv3') || 0) - (channelRoi(a,'ltv3') || 0))[0];
-  const paidRateLeader = [...rows].filter(row => row.table1Reg > 0).sort((a,b) => (b.paidUsers / b.table1Reg) - (a.paidUsers / a.table1Reg))[0];
-  const spendShare = total.spend > 0 ? (spendLeader.spend / total.spend * 100).toFixed(1) : '—';
-  const scope = selectedName === '全部渠道' ? '当前筛选渠道' : selectedName;
-  const conclusions = [
-    `<b>消耗集中度：</b>${scope}中消耗最高的是 ${channelEsc(spendLeader.channel)}，占总消耗 ${spendShare}%。`,
-    `<b>回收表现：</b>ROI3 最高的是 ${channelEsc(roi3Leader.channel)}，为 ${channelRoiText(roi3Leader,'ltv3')}。`,
-    paidRateLeader ? `<b>付费转化：</b>整体表 1 付费率为 ${channelPaidRate(total)}，最高的是 ${channelEsc(paidRateLeader.channel)}（${channelPaidRate(paidRateLeader)}）。` : '<b>付费转化：</b>当前筛选范围尚无可计算的表 1 注册数据。',
-  ];
+  const totalRoi3 = channelRoi(total,'ltv3') || 0;
+  const overall = totalRoi3 >= 40
+    ? `整体 ROI3 为 ${channelRoiText(total,'ltv3')}，当前可以保留投放，并以小步实验方式验证增量。`
+    : `整体 ROI3 为 ${channelRoiText(total,'ltv3')}，当前不建议整体放量，应优先将预算从低回收渠道转向表现更好的渠道。`;
+  const conclusions = [`<b>总体建议：</b>${overall} 表 1 付费率为 ${channelPaidRate(total)}，表 2 次日留存为 ${channelPct(total.nextRetained,total.retentionReg)}。`];
+  for (const row of rows) {
+    const roi3 = channelRoi(row,'ltv3') || 0;
+    const spendShare = total.spend > 0 ? row.spend / total.spend * 100 : 0;
+    const paidRate = row.table1Reg > 0 ? row.paidUsers / row.table1Reg * 100 : 0;
+    const retention = row.retentionReg > 0 ? row.nextRetained / row.retentionReg * 100 : 0;
+    let verdict, action;
+    if (roi3 >= 40) {
+      verdict = '继续投放：可小幅扩量';
+      action = '保持现有定向，按计划分批加预算，并持续观察 ROI7 是否同步改善。';
+    } else if (roi3 >= 25) {
+      verdict = '继续投放：控量观察';
+      action = '保留稳定预算，优先测试素材、出价和人群组合，ROI7 未改善前不扩大规模。';
+    } else if (roi3 >= 15) {
+      verdict = '继续投放：仅保留优化预算';
+      action = '压缩低效计划，只保留表现较好的素材和定向，先验证回收改善再恢复预算。';
+    } else {
+      verdict = '继续投放：暂不建议加量';
+      action = '暂停新增预算，复查素材、归因和人群质量；仅保留最小测试预算。';
+    }
+    if (spendShare >= 60 && roi3 < totalRoi3) action = `该渠道占消耗 ${spendShare.toFixed(1)}% 且回收低于整体，应优先收缩预算并拆分计划排查。`;
+    const metrics = `消耗占比 ${spendShare.toFixed(1)}%，ROI0 ${channelRoiText(row,'payAmount')}，ROI3 ${channelRoiText(row,'ltv3')}，表 1 付费率 ${paidRate.toFixed(2)}%，表 2 次日留存 ${retention.toFixed(2)}%。`;
+    conclusions.push(`<b>${channelEsc(row.channel)}｜${verdict}：</b>${metrics}${action}`);
+  }
   document.getElementById('channel-insights').innerHTML = `<ul>${conclusions.map(item => `<li>${item}</li>`).join('')}</ul>`;
 }
 function channelRoi(summary, key) {

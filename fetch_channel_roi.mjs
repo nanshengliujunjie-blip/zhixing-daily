@@ -77,7 +77,7 @@ function appendRows(records, rows, table) {
       records.set(key, {
         date, level1, level2, channel: `${level1} / ${level2}`,
         spend, activate: number(row["新增激活设备数"]), reg: number(row["净注册设备数"]),
-        payAmount: 0, aiQuestions: 0, enterRoom: 0, mic: 0,
+        payAmount: 0, paidUsers: 0, table1Reg: 0, aiQuestions: 0, enterRoom: 0, mic: 0,
         nextRetained: number(row["次日留存设备数"]), retentionReg: number(row["净注册设备数"]),
         ltv3: number(row.LTV3), ltv7: number(row.LTV7), ltv15: number(row.LTV15), ltv30: number(row.LTV30),
       });
@@ -88,6 +88,8 @@ function appendRows(records, rows, table) {
     if (existing) {
       // 表 1 是回收金额和首日行为的权威来源，即使其消耗为 0 也要覆盖这些字段。
       existing.payAmount = number(row["首日充值金额"]);
+      existing.paidUsers = number(row["首日付费用户数"]);
+      existing.table1Reg = number(row["注册用户数"]);
       existing.aiQuestions = number(row["首日ai提问用户数"]);
       existing.enterRoom = number(row["首日进房用户数"]);
       existing.mic = number(row["首日连麦用户数"]);
@@ -102,7 +104,7 @@ function appendRows(records, rows, table) {
     records.set(key, {
       date, level1, level2, channel: `${level1} / ${level2}`,
       spend, activate: number(row["激活设备数"]), reg: number(row["注册用户数"]),
-      payAmount: number(row["首日充值金额"]), aiQuestions: number(row["首日ai提问用户数"]),
+      payAmount: number(row["首日充值金额"]), paidUsers: number(row["首日付费用户数"]), table1Reg: number(row["注册用户数"]), aiQuestions: number(row["首日ai提问用户数"]),
       enterRoom: number(row["首日进房用户数"]), mic: number(row["首日连麦用户数"]),
       nextRetained: 0, retentionReg: 0,
       ltv3: number(row.ltv3), ltv7: number(row.ltv7), ltv15: number(row.ltv15), ltv30: number(row.ltv30),
@@ -146,7 +148,7 @@ try {
   process.stdout.write(JSON.stringify({
     updated: new Date().toISOString(), startDate, endDate,
     availableStartDate: dates[0] || null, availableEndDate: dates.at(-1) || null,
-    source: "消耗、次日留存：表 2；充值、进房、连麦、AI 提问、ROI 回收金额：表 1；ROI = 表 1 回收金额 / 表 2 消耗。",
+    source: "消耗、次日留存：表 2；充值、付费率、进房、连麦、AI 提问、ROI 回收金额：表 1；ROI = 表 1 回收金额 / 表 2 消耗。",
     list,
   }));
   await context.storageState({ path: statePath });
