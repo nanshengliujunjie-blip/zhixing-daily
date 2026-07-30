@@ -988,14 +988,14 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
         </select>
         <span id="channel-filter-status" class="channel-filter-status" aria-live="polite">正在加载渠道数据...</span>
       </div>
-      <span id="channel-source-note" class="channel-source-note">充值按渠道、计划、日期去重</span>
+      <span id="channel-source-note" class="channel-source-note">数据来自 Nexita 表 1 渠道回收明细</span>
     </div>
     <div id="channel-empty" class="risk-empty" style="display:none"><b>所选日期或渠道没有投放数据</b><span>请调整顶部日期范围或选择其他渠道。</span></div>
     <div id="channel-data-content">
       <div id="channel-kpis" class="metric-grid channel-kpi-grid"></div>
       <div class="chart-2col">
-        <div class="chart-half"><div class="chart-half-title" id="channel-spend-title">消耗与充值趋势</div><div class="chart-half-wrap"><canvas id="channel-spend-chart"></canvas></div></div>
-        <div class="chart-half"><div class="chart-half-title">投放转化漏斗</div><div class="chart-half-wrap"><canvas id="channel-funnel-chart"></canvas></div></div>
+        <div class="chart-half"><div class="chart-half-title" id="channel-spend-title">消耗与 ROI0 趋势</div><div class="chart-half-wrap"><canvas id="channel-spend-chart"></canvas></div></div>
+        <div class="chart-half"><div class="chart-half-title">ROI 回收曲线</div><div class="chart-half-wrap"><canvas id="channel-funnel-chart"></canvas></div></div>
       </div>
       <div class="section-header"><h3>渠道明细</h3></div>
       <div class="trend-card channel-table-wrap">
@@ -3168,7 +3168,10 @@ function renderMaterials() {
 // ════════════════════════════════════════════
 // 渠道分析页
 // ════════════════════════════════════════════
-let channelSpendChart = null, channelFunnelChart = null;
+let channelSpendChart = null, channelFunnelChart = null, _channelData = null, _channelDataPromise = null;
+const CHANNEL_ROI_NODES = [
+  ['ROI0', 'payAmount'], ['ROI3', 'ltv3'], ['ROI7', 'ltv7'], ['ROI15', 'ltv15'], ['ROI30', 'ltv30'],
+];
 
 function channelEsc(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -3176,65 +3179,62 @@ function channelEsc(value) {
 function channelNumber(value, digits=0) {
   return Number(value || 0).toLocaleString('zh-CN', {minimumFractionDigits:0, maximumFractionDigits:digits});
 }
-function channelMoney(value) {
-  return '¥' + channelNumber(value, 2);
-}
-function channelPct(numerator, denominator) {
-  return denominator > 0 ? (numerator / denominator * 100).toFixed(2) + '%' : '—';
-}
-function channelRoi(summary) {
-  return summary.cost > 0 ? (summary.pay / summary.cost * 100).toFixed(2) + '%' : '—';
-}
+function channelMoney(value) { return '¥' + channelNumber(value, 2); }
 function channelBlank() {
-  return {cost:0, show:0, click:0, active:0, reg:0, pay:0, rows:0, days:new Set(), payKeys:new Set()};
+  return {spend:0, activate:0, reg:0, payAmount:0, ltv3:0, ltv7:0, ltv15:0, ltv30:0, rows:0, days:new Set()};
 }
-function channelAdd(summary, item, media) {
+function channelAdd(summary, item) {
   summary.rows++;
-  summary.days.add(item.dt);
-  summary.cost += Number(item.cost) || 0;
-  summary.show += Number(item.show) || 0;
-  summary.click += Number(item.click) || 0;
-  summary.active += Number(item.active) || 0;
-  summary.reg += Number(item.reg) || 0;
-  // 素材接口的充值按广告计划返回，多个素材可能对应同一计划；只计一次。
-  const payKey = item.ad_id ? `${media}\u0000${item.ad_id}\u0000${item.dt}` : null;
-  if (!payKey || !summary.payKeys.has(payKey)) {
-    if (payKey) summary.payKeys.add(payKey);
-    summary.pay += Number(item.pay_amt) || 0;
-  }
+  summary.days.add(item.date);
+  for (const key of ['spend','activate','reg','payAmount','ltv3','ltv7','ltv15','ltv30']) summary[key] += Number(item[key]) || 0;
 }
-function channelSetCharts(data, title) {
+function channelRoi(summary, key) {
+  return summary.spend > 0 ? summary[key] / summary.spend * 100 : null;
+}
+function channelRoiText(summary, key) {
+  const value = channelRoi(summary, key);
+  return value == null ? '—' : value.toFixed(2) + '%';
+}
+function loadChannelData() {
+  if (_channelData) return Promise.resolve(_channelData);
+  if (_channelDataPromise) return _channelDataPromise;
+  _channelDataPromise = fetch('channel_roi_data.json', {cache:'no-cache'}).then(response => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }).then(data => {
+    _channelData = data;
+    materialMaxDate = data.availableEndDate || data.endDate || materialMaxDate;
+    if (isMaterialPage(curPid())) syncDateCeiling();
+    return data;
+  }).catch(error => {
+    _channelDataPromise = null;
+    throw error;
+  });
+  return _channelDataPromise;
+}
+function channelSetCharts(data, selectedName) {
   if (channelSpendChart) channelSpendChart.destroy();
   if (channelFunnelChart) channelFunnelChart.destroy();
   channelSpendChart = channelFunnelChart = null;
   if (!data.days.length) return;
-
   channelSpendChart = new Chart(document.getElementById('channel-spend-chart'), {
-    data: {
-      labels: data.days.map(day => day.date.slice(5)),
-      datasets: [
-        {type:'bar', label:'消耗', data:data.days.map(day => day.cost), backgroundColor:'rgba(74,124,240,.66)', borderRadius:4, maxBarThickness:24},
-        {type:'line', label:'充值', data:data.days.map(day => day.pay), borderColor:'#16a34a', backgroundColor:'#16a34a', pointRadius:data.days.length > 45 ? 0 : 2, pointHoverRadius:4, borderWidth:2, tension:.28, yAxisID:'y'}
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top', labels:{boxWidth:10, usePointStyle:true, font:{size:11}}}, tooltip:{callbacks:{label:ctx => `${ctx.dataset.label}: ${channelMoney(ctx.raw)}`}}},
-      scales:{x:{grid:{display:false}, ticks:{autoSkip:true,maxTicksLimit:8,font:{size:10}}},y:{beginAtZero:true,ticks:{callback:value => '¥'+channelNumber(value),font:{size:10}},grid:{color:'rgba(15,22,40,.06)'}}}
-    }
+    data:{labels:data.days.map(day => day.date.slice(5)),datasets:[
+      {type:'bar',label:'消耗',data:data.days.map(day => day.spend),backgroundColor:'rgba(74,124,240,.66)',borderRadius:4,maxBarThickness:24,yAxisID:'y'},
+      {type:'line',label:'ROI0',data:data.days.map(day => channelRoi(day,'payAmount')),borderColor:'#16a34a',backgroundColor:'#16a34a',pointRadius:data.days.length>45?0:2,pointHoverRadius:4,borderWidth:2,tension:.28,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,usePointStyle:true,font:{size:11}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label==='消耗'?`消耗: ${channelMoney(ctx.raw)}`:`ROI0: ${Number(ctx.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{autoSkip:true,maxTicksLimit:8,font:{size:10}}},y:{beginAtZero:true,ticks:{callback:value=>'¥'+channelNumber(value),font:{size:10}},grid:{color:'rgba(15,22,40,.06)'}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{callback:value=>value+'%',font:{size:10}}}}}
   });
-
   channelFunnelChart = new Chart(document.getElementById('channel-funnel-chart'), {
     type:'bar',
-    data:{labels:['展示','点击','激活','注册'],datasets:[{label:title,data:[data.total.show,data.total.click,data.total.active,data.total.reg],backgroundColor:['#94a3b8','#4a7cf0','#14b8a6','#16a34a'],borderRadius:5}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx => channelNumber(ctx.raw)}}},scales:{x:{beginAtZero:true,grid:{color:'rgba(15,22,40,.06)'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+    data:{labels:CHANNEL_ROI_NODES.map(([label])=>label),datasets:[{label:selectedName,data:CHANNEL_ROI_NODES.map(([,key])=>channelRoi(data.total,key)),backgroundColor:['#4a7cf0','#14b8a6','#16a34a','#d97706','#8b5cf6'],borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${Number(ctx.raw).toFixed(2)}%`}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(15,22,40,.06)'},ticks:{callback:value=>value+'%',font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
   });
 }
 function initChannelsPage() {
   const status = document.getElementById('channel-filter-status');
-  if (_matData) { renderChannels(); return; }
-  status.textContent = '正在加载渠道数据...';
-  loadMaterialsData().then(() => renderChannels()).catch(() => {
+  if (_channelData) { renderChannels(); return; }
+  status.textContent = '正在加载 Nexita 渠道回收数据...';
+  loadChannelData().then(() => renderChannels()).catch(() => {
     status.textContent = '渠道数据加载失败';
     document.getElementById('channel-empty').style.display = 'block';
     document.getElementById('channel-empty').innerHTML = '<b>渠道数据加载失败</b><span>请稍后刷新页面重试。</span>';
@@ -3242,63 +3242,46 @@ function initChannelsPage() {
   });
 }
 function renderChannels() {
-  if (!_matData) { initChannelsPage(); return; }
-  const from = elFrom.value, to = elTo.value;
-  const select = document.getElementById('channel-media');
+  if (!_channelData) { initChannelsPage(); return; }
+  const from = elFrom.value, to = elTo.value, select = document.getElementById('channel-media');
   const previous = select.value;
-  const medias = [...new Set(_matData.list.map(item => item.media || '未知').filter(Boolean))].sort();
-  if (select.options.length !== medias.length + 1) {
-    select.innerHTML = '<option value="">全部渠道</option>' + medias.map(media => `<option value="${channelEsc(media)}">${channelEsc(media)}</option>`).join('');
-    select.value = medias.includes(previous) ? previous : '';
+  const channels = [...new Set(_channelData.list.map(item => item.channel))].sort();
+  if (select.options.length !== channels.length + 1) {
+    select.innerHTML = '<option value="">全部渠道</option>' + channels.map(channel => `<option value="${channelEsc(channel)}">${channelEsc(channel)}</option>`).join('');
+    select.value = channels.includes(previous) ? previous : '';
   }
-  const media = select.value;
-  const availableDates = [...new Set(_matData.list.map(item => item.dt))].sort();
-  const availableStart = _matData.availableStartDate || availableDates[0];
-  const availableEnd = _matData.availableEndDate || availableDates.at(-1);
-  document.getElementById('channel-source-note').textContent = `实际可用日期：${availableStart || '—'} 至 ${availableEnd || '—'}；充值按渠道、计划、日期去重`;
-  const byMedia = new Map(), byDay = new Map(), total = channelBlank();
-  for (const item of _matData.list) {
-    const itemMedia = item.media || '未知';
-    if (item.dt < from || item.dt > to || (media && itemMedia !== media)) continue;
-    const mediaSummary = byMedia.get(itemMedia) || channelBlank();
-    channelAdd(mediaSummary, item, itemMedia);
-    byMedia.set(itemMedia, mediaSummary);
-    const daySummary = byDay.get(item.dt) || channelBlank();
-    channelAdd(daySummary, item, itemMedia);
-    byDay.set(item.dt, daySummary);
-    channelAdd(total, item, itemMedia);
+  const channel = select.value;
+  document.getElementById('channel-source-note').textContent = `实际可用日期：${_channelData.availableStartDate || '—'} 至 ${_channelData.availableEndDate || '—'}；Nexita 表 1，ROI = 对应节点 LTV / 消耗`;
+  const byChannel = new Map(), byDay = new Map(), total = channelBlank();
+  for (const item of _channelData.list) {
+    if (item.date < from || item.date > to || (channel && item.channel !== channel)) continue;
+    const channelSummary = byChannel.get(item.channel) || channelBlank();
+    channelAdd(channelSummary, item); byChannel.set(item.channel, channelSummary);
+    const daySummary = byDay.get(item.date) || channelBlank();
+    channelAdd(daySummary, item); byDay.set(item.date, daySummary);
+    channelAdd(total, item);
   }
-  const rows = [...byMedia.entries()].map(([media, summary]) => ({media, ...summary})).sort((a,b) => b.cost - a.cost);
+  const rows = [...byChannel.entries()].map(([channel, summary]) => ({channel, ...summary})).sort((a,b) => b.spend-a.spend);
   const days = [...byDay.entries()].map(([date, summary]) => ({date, ...summary})).sort((a,b) => a.date.localeCompare(b.date));
-  const status = document.getElementById('channel-filter-status');
-  const empty = document.getElementById('channel-empty'), content = document.getElementById('channel-data-content');
+  const status = document.getElementById('channel-filter-status'), empty = document.getElementById('channel-empty'), content = document.getElementById('channel-data-content');
   if (!rows.length) {
     status.textContent = `${from || '—'} 至 ${to || '—'} 无可用数据`;
-    empty.style.display = 'block'; content.style.display = 'none';
-    channelSetCharts({days:[],total:channelBlank()}, '');
-    return;
+    empty.style.display = 'block'; content.style.display = 'none'; channelSetCharts({days:[],total:channelBlank()}, ''); return;
   }
   empty.style.display = 'none'; content.style.display = 'block';
-  status.textContent = `${rows.length} 个渠道，${days.length} 个有投放数据的自然日`;
-  const range = from === to ? from : `${from} 至 ${to}`;
-  const selectedName = media || '全部渠道';
-  document.getElementById('channel-spend-title').textContent = `消耗与充值趋势（${selectedName}）`;
+  status.textContent = `${rows.length} 个细分渠道，${days.length} 个有投放数据的自然日`;
+  const selectedName = channel || '全部渠道';
+  document.getElementById('channel-spend-title').textContent = `消耗与 ROI0 趋势（${selectedName}）`;
   const cards = [
-    ['投放消耗', channelMoney(total.cost), `${channelNumber(total.rows)} 条素材日明细`, ''],
-    ['充值金额', channelMoney(total.pay), '按计划日去重', 'up'],
-    ['ROI', channelRoi(total), '充值 / 消耗', total.pay >= total.cost ? 'up' : ''],
-    ['展示', channelNumber(total.show), `CPM ${total.show ? channelMoney(total.cost / total.show * 1000) : '—'}`, ''],
-    ['点击', channelNumber(total.click), `CTR ${channelPct(total.click, total.show)}`, ''],
-    ['激活', channelNumber(total.active), `点击激活率 ${channelPct(total.active, total.click)}`, ''],
-    ['注册', channelNumber(total.reg), `激活注册率 ${channelPct(total.reg, total.active)}`, ''],
-    ['注册成本', total.reg ? channelMoney(total.cost / total.reg) : '—', '消耗 / 注册', '']
+    ['投放消耗',channelMoney(total.spend),`${channelNumber(total.rows)} 条渠道日明细`,''],
+    ['注册',channelNumber(total.reg),total.reg?`注册成本 ${channelMoney(total.spend/total.reg)}`:'',''],
+    ['首日充值',channelMoney(total.payAmount),'ROI0 回收收入','up'],
+    ...CHANNEL_ROI_NODES.map(([label,key])=>[label,channelRoiText(total,key),`${label} LTV / 消耗`,channelRoi(total,key)>=100?'up':''])
   ];
   document.getElementById('channel-kpis').innerHTML = cards.map(([label,value,note,tone]) => `<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
-  document.getElementById('channel-table').innerHTML = `<thead><tr>${['渠道','投放天数','消耗','展示','点击','CTR','激活','点击激活率','注册','注册成本','充值','ROI'].map(name => `<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row => {
-    const roi = row.cost > 0 ? row.pay / row.cost : null;
-    return `<tr><td>${mediaBadge(channelEsc(row.media))}</td><td>${row.days.size}</td><td>${channelMoney(row.cost)}</td><td>${channelNumber(row.show)}</td><td>${channelNumber(row.click)}</td><td>${channelPct(row.click,row.show)}</td><td>${channelNumber(row.active)}</td><td>${channelPct(row.active,row.click)}</td><td>${channelNumber(row.reg)}</td><td>${row.reg ? channelMoney(row.cost/row.reg) : '—'}</td><td>${channelMoney(row.pay)}</td><td class="${roi != null && roi >= 1 ? 'roi-ok' : ''}">${roi == null ? '—' : (roi*100).toFixed(2)+'%'}</td></tr>`;
-  }).join('')}</tbody>`;
-  channelSetCharts({days, total}, range);
+  const headers = ['细分渠道','投放天数','消耗','注册','首日充值','ROI0','ROI3','ROI7','ROI15','ROI30'];
+  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${channelMoney(row.spend)}</td><td>${channelNumber(row.reg)}</td><td>${channelMoney(row.payAmount)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  channelSetCharts({days,total}, selectedName);
 }
 
 // 鼠标悬停时静音自动预览播放，移开则回到首帧
