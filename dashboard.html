@@ -128,6 +128,14 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .risk-period-btn.active{background:#4a7cf0;border-color:#4a7cf0;color:#fff}
 .risk-empty{border:1px dashed #d0d5e0;border-radius:8px;background:#f8f9fc;padding:32px 24px;text-align:center;color:#667085;font-size:13px;line-height:1.7}
 .risk-empty b{display:block;color:#344054;margin-bottom:4px}
+.channel-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 14px;margin-bottom:16px;background:#fff;border:1px solid rgba(20,28,46,.05);border-radius:12px;box-shadow:0 1px 2px rgba(20,28,46,.04),0 6px 16px -6px rgba(20,28,46,.09)}
+.channel-filter-copy{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.channel-filter-label{font-size:12px;color:#667085;font-weight:700}
+.channel-filter-status{font-size:12px;color:#8892a4}
+.channel-select{min-width:150px}
+.channel-source-note{font-size:11px;color:#8892a4}
+.channel-kpi-grid{grid-template-columns:repeat(4,1fr)}
+.channel-table-wrap{padding:0;overflow:auto;margin-top:0}
 .full-chart-card{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}
 .full-chart-card-title{font-size:13px;font-weight:600;color:#0f1628;margin-bottom:14px}
 .full-chart-wrap{position:relative;height:160px}
@@ -213,6 +221,9 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
   .risk-filter-bar{align-items:flex-start;gap:10px}
   .risk-period-buttons{width:100%}
   .risk-period-btn{flex:1;min-width:0;padding:0 7px}
+  .channel-filter-bar{align-items:flex-start}
+  .channel-source-note{width:100%}
+  .channel-kpi-grid{grid-template-columns:repeat(2,1fr)}
   .uid-result-grid{grid-template-columns:repeat(2,1fr)}
   .full-chart-card,.trend-card,.snapshot-card{padding:14px}
   /* 宽表格横向滚动 */
@@ -347,6 +358,10 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     <a class="nav-item" href="#" onclick="switchPage('trend',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       投放趋势
+    </a>
+    <a class="nav-item" href="#" onclick="switchPage('channels',this);return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7.8 7.1l2.8 8M16.2 7.1l-2.8 8M8 6h8"/></svg>
+      渠道分析
     </a>
     <a class="nav-item" href="#" onclick="switchPage('users',this);return false;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
@@ -962,6 +977,33 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     <div id="mat-empty" style="display:none;text-align:center;padding:60px 0;color:#aab0be;font-size:14px">暂无素材数据</div>
   </div>
 
+  <!-- ═══ PAGE: 渠道分析 ═══ -->
+  <div id="page-channels" class="page">
+    <div class="section-header" style="margin-top:0"><h3>渠道投放表现</h3></div>
+    <div class="channel-filter-bar">
+      <div class="channel-filter-copy">
+        <span class="channel-filter-label">渠道</span>
+        <select id="channel-media" class="mat-input channel-select" onchange="renderChannels()">
+          <option value="">全部渠道</option>
+        </select>
+        <span id="channel-filter-status" class="channel-filter-status" aria-live="polite">正在加载渠道数据...</span>
+      </div>
+      <span id="channel-source-note" class="channel-source-note">充值按渠道、计划、日期去重</span>
+    </div>
+    <div id="channel-empty" class="risk-empty" style="display:none"><b>所选日期或渠道没有投放数据</b><span>请调整顶部日期范围或选择其他渠道。</span></div>
+    <div id="channel-data-content">
+      <div id="channel-kpis" class="metric-grid channel-kpi-grid"></div>
+      <div class="chart-2col">
+        <div class="chart-half"><div class="chart-half-title" id="channel-spend-title">消耗与充值趋势</div><div class="chart-half-wrap"><canvas id="channel-spend-chart"></canvas></div></div>
+        <div class="chart-half"><div class="chart-half-title">投放转化漏斗</div><div class="chart-half-wrap"><canvas id="channel-funnel-chart"></canvas></div></div>
+      </div>
+      <div class="section-header"><h3>渠道明细</h3></div>
+      <div class="trend-card channel-table-wrap">
+        <table class="roi-table" id="channel-table"></table>
+      </div>
+    </div>
+  </div>
+
   <!-- 视频播放弹窗 -->
   <div id="video-modal" onclick="closeVideoModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;align-items:center;justify-content:center;display:none">
     <div style="position:relative;background:#1a2035;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px 28px;max-width:580px;width:calc(100vw - 32px);box-shadow:0 20px 60px rgba(0,0,0,.6)" onclick="event.stopPropagation()">
@@ -1022,11 +1064,17 @@ const elTo   = document.getElementById('dateTo');
 // elFrom.min = elTo.min = minDate;
 // elFrom.max = elTo.max = maxDate;
 
-// ── 用户数据页日期上限：独立于营销总览(FALLBACK)，因 ad_users 通常比 表1/表2 早一天 ──
-let userMaxDate = null;
+// ── 用户/素材数据页日期上限：各自独立于营销总览(FALLBACK) ──
+let userMaxDate = null, materialMaxDate = null;
 function isUserPage(pid){ return pid==='adusers'||pid==='addetail'||pid==='users'; }
+function isMaterialPage(pid){ return pid==='materials'||pid==='channels'; }
 function curPid(){ return (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-',''); }
-function activeMaxDate(){ return (isUserPage(curPid()) && userMaxDate && userMaxDate>maxDate) ? userMaxDate : maxDate; }
+function activeMaxDate(){
+  const pid=curPid();
+  if(isUserPage(pid) && userMaxDate && userMaxDate>maxDate) return userMaxDate;
+  if(isMaterialPage(pid) && materialMaxDate && materialMaxDate>maxDate) return materialMaxDate;
+  return maxDate;
+}
 function syncDateCeiling(){
   const target = activeMaxDate();
   // 仅在处于默认上限(没手动自定义)时才自动调整，避免覆盖用户手选的范围
@@ -1062,6 +1110,7 @@ function onRangeChange(){
   if(pid === 'addetail') renderAdDetailPage(elFrom.value, elTo.value);
   if(pid === 'users') renderUsersPage(elFrom.value, elTo.value);
   if(pid === 'materials') renderMaterials();
+  if(pid === 'channels') renderChannels();
   if(pid === 'risk') renderRiskPage(elFrom.value, elTo.value);
 }
 
@@ -1477,6 +1526,7 @@ function switchPage(id, el){
     addetail:  ['投放用户明细', '逐用户的注册、付费与行为明细'],
     search:    ['用户查询', '按 UID 查询用户付费记录'],
     materials: ['推广素材', '各素材的消耗、ROI 与充值表现'],
+    channels:  ['渠道分析', '按渠道查看投放消耗、转化和充值表现'],
     risk:      ['风控', '7 月文本风控通过、拒绝与策略复核情况'],
     alert:     ['ROI 预警', '首日 ROI 风险素材监控'],
   };
@@ -1497,6 +1547,7 @@ function switchPage(id, el){
   if(id === 'addetail')  renderAdDetailPage(elFrom.value, elTo.value);
   if(id === 'search')    renderSearchPage();
   if(id === 'materials') initMaterialsPage();
+  if(id === 'channels')  initChannelsPage();
   if(id === 'risk')      renderRiskPage();
 }
 
@@ -2888,7 +2939,25 @@ function renderAlertPage(dateFrom, dateTo){
 // ════════════════════════════════════════════
 // 素材页
 // ════════════════════════════════════════════
-let _matData = null;
+let _matData = null, _matDataPromise = null;
+
+function loadMaterialsData() {
+  if (_matData) return Promise.resolve(_matData);
+  if (_matDataPromise) return _matDataPromise;
+  _matDataPromise = fetch('materials.json', {cache:'no-cache'}).then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }).then(d => {
+    _matData = d;
+    materialMaxDate = d.endDate || materialMaxDate;
+    if (isMaterialPage(curPid())) syncDateCeiling();
+    return d;
+  }).catch(err => {
+    _matDataPromise = null;
+    throw err;
+  });
+  return _matDataPromise;
+}
 
 function initMaterialsPage() {
   if (_matData) return;
@@ -2896,8 +2965,7 @@ function initMaterialsPage() {
   const grid = document.getElementById('mat-grid');
   if (grid) grid.innerHTML = Array.from({length:8}).map(()=>
     `<div class="mat-skel"><div class="sk-thumb"></div><div class="sk-line"></div><div class="sk-line short"></div></div>`).join('');
-  fetch('materials.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
-    _matData = d;
+  loadMaterialsData().then(d => {
     // 初始化媒体筛选下拉
     const medias = [...new Set(d.list.map(m => m.media).filter(Boolean))].sort();
     const sel = document.getElementById('mat-media');
@@ -3095,6 +3163,142 @@ function renderMaterials() {
   }, { rootMargin: '300px', threshold: 0 });
 
   document.querySelectorAll('.mat-thumb[data-vsrc]').forEach(el => window._thumbObserver.observe(el));
+}
+
+// ════════════════════════════════════════════
+// 渠道分析页
+// ════════════════════════════════════════════
+let channelSpendChart = null, channelFunnelChart = null;
+
+function channelEsc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+function channelNumber(value, digits=0) {
+  return Number(value || 0).toLocaleString('zh-CN', {minimumFractionDigits:0, maximumFractionDigits:digits});
+}
+function channelMoney(value) {
+  return '¥' + channelNumber(value, 2);
+}
+function channelPct(numerator, denominator) {
+  return denominator > 0 ? (numerator / denominator * 100).toFixed(2) + '%' : '—';
+}
+function channelRoi(summary) {
+  return summary.cost > 0 ? (summary.pay / summary.cost * 100).toFixed(2) + '%' : '—';
+}
+function channelBlank() {
+  return {cost:0, show:0, click:0, active:0, reg:0, pay:0, rows:0, days:new Set(), payKeys:new Set()};
+}
+function channelAdd(summary, item, media) {
+  summary.rows++;
+  summary.days.add(item.dt);
+  summary.cost += Number(item.cost) || 0;
+  summary.show += Number(item.show) || 0;
+  summary.click += Number(item.click) || 0;
+  summary.active += Number(item.active) || 0;
+  summary.reg += Number(item.reg) || 0;
+  // 素材接口的充值按广告计划返回，多个素材可能对应同一计划；只计一次。
+  const payKey = item.ad_id ? `${media}\u0000${item.ad_id}\u0000${item.dt}` : null;
+  if (!payKey || !summary.payKeys.has(payKey)) {
+    if (payKey) summary.payKeys.add(payKey);
+    summary.pay += Number(item.pay_amt) || 0;
+  }
+}
+function channelSetCharts(data, title) {
+  if (channelSpendChart) channelSpendChart.destroy();
+  if (channelFunnelChart) channelFunnelChart.destroy();
+  channelSpendChart = channelFunnelChart = null;
+  if (!data.days.length) return;
+
+  channelSpendChart = new Chart(document.getElementById('channel-spend-chart'), {
+    data: {
+      labels: data.days.map(day => day.date.slice(5)),
+      datasets: [
+        {type:'bar', label:'消耗', data:data.days.map(day => day.cost), backgroundColor:'rgba(74,124,240,.66)', borderRadius:4, maxBarThickness:24},
+        {type:'line', label:'充值', data:data.days.map(day => day.pay), borderColor:'#16a34a', backgroundColor:'#16a34a', pointRadius:data.days.length > 45 ? 0 : 2, pointHoverRadius:4, borderWidth:2, tension:.28, yAxisID:'y'}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top', labels:{boxWidth:10, usePointStyle:true, font:{size:11}}}, tooltip:{callbacks:{label:ctx => `${ctx.dataset.label}: ${channelMoney(ctx.raw)}`}}},
+      scales:{x:{grid:{display:false}, ticks:{autoSkip:true,maxTicksLimit:8,font:{size:10}}},y:{beginAtZero:true,ticks:{callback:value => '¥'+channelNumber(value),font:{size:10}},grid:{color:'rgba(15,22,40,.06)'}}}
+    }
+  });
+
+  channelFunnelChart = new Chart(document.getElementById('channel-funnel-chart'), {
+    type:'bar',
+    data:{labels:['展示','点击','激活','注册'],datasets:[{label:title,data:[data.total.show,data.total.click,data.total.active,data.total.reg],backgroundColor:['#94a3b8','#4a7cf0','#14b8a6','#16a34a'],borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx => channelNumber(ctx.raw)}}},scales:{x:{beginAtZero:true,grid:{color:'rgba(15,22,40,.06)'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+function initChannelsPage() {
+  const status = document.getElementById('channel-filter-status');
+  if (_matData) { renderChannels(); return; }
+  status.textContent = '正在加载渠道数据...';
+  loadMaterialsData().then(() => renderChannels()).catch(() => {
+    status.textContent = '渠道数据加载失败';
+    document.getElementById('channel-empty').style.display = 'block';
+    document.getElementById('channel-empty').innerHTML = '<b>渠道数据加载失败</b><span>请稍后刷新页面重试。</span>';
+    document.getElementById('channel-data-content').style.display = 'none';
+  });
+}
+function renderChannels() {
+  if (!_matData) { initChannelsPage(); return; }
+  const from = elFrom.value, to = elTo.value;
+  const select = document.getElementById('channel-media');
+  const previous = select.value;
+  const medias = [...new Set(_matData.list.map(item => item.media || '未知').filter(Boolean))].sort();
+  if (select.options.length !== medias.length + 1) {
+    select.innerHTML = '<option value="">全部渠道</option>' + medias.map(media => `<option value="${channelEsc(media)}">${channelEsc(media)}</option>`).join('');
+    select.value = medias.includes(previous) ? previous : '';
+  }
+  const media = select.value;
+  const availableDates = [...new Set(_matData.list.map(item => item.dt))].sort();
+  const availableStart = _matData.availableStartDate || availableDates[0];
+  const availableEnd = _matData.availableEndDate || availableDates.at(-1);
+  document.getElementById('channel-source-note').textContent = `实际可用日期：${availableStart || '—'} 至 ${availableEnd || '—'}；充值按渠道、计划、日期去重`;
+  const byMedia = new Map(), byDay = new Map(), total = channelBlank();
+  for (const item of _matData.list) {
+    const itemMedia = item.media || '未知';
+    if (item.dt < from || item.dt > to || (media && itemMedia !== media)) continue;
+    const mediaSummary = byMedia.get(itemMedia) || channelBlank();
+    channelAdd(mediaSummary, item, itemMedia);
+    byMedia.set(itemMedia, mediaSummary);
+    const daySummary = byDay.get(item.dt) || channelBlank();
+    channelAdd(daySummary, item, itemMedia);
+    byDay.set(item.dt, daySummary);
+    channelAdd(total, item, itemMedia);
+  }
+  const rows = [...byMedia.entries()].map(([media, summary]) => ({media, ...summary})).sort((a,b) => b.cost - a.cost);
+  const days = [...byDay.entries()].map(([date, summary]) => ({date, ...summary})).sort((a,b) => a.date.localeCompare(b.date));
+  const status = document.getElementById('channel-filter-status');
+  const empty = document.getElementById('channel-empty'), content = document.getElementById('channel-data-content');
+  if (!rows.length) {
+    status.textContent = `${from || '—'} 至 ${to || '—'} 无可用数据`;
+    empty.style.display = 'block'; content.style.display = 'none';
+    channelSetCharts({days:[],total:channelBlank()}, '');
+    return;
+  }
+  empty.style.display = 'none'; content.style.display = 'block';
+  status.textContent = `${rows.length} 个渠道，${days.length} 个有投放数据的自然日`;
+  const range = from === to ? from : `${from} 至 ${to}`;
+  const selectedName = media || '全部渠道';
+  document.getElementById('channel-spend-title').textContent = `消耗与充值趋势（${selectedName}）`;
+  const cards = [
+    ['投放消耗', channelMoney(total.cost), `${channelNumber(total.rows)} 条素材日明细`, ''],
+    ['充值金额', channelMoney(total.pay), '按计划日去重', 'up'],
+    ['ROI', channelRoi(total), '充值 / 消耗', total.pay >= total.cost ? 'up' : ''],
+    ['展示', channelNumber(total.show), `CPM ${total.show ? channelMoney(total.cost / total.show * 1000) : '—'}`, ''],
+    ['点击', channelNumber(total.click), `CTR ${channelPct(total.click, total.show)}`, ''],
+    ['激活', channelNumber(total.active), `点击激活率 ${channelPct(total.active, total.click)}`, ''],
+    ['注册', channelNumber(total.reg), `激活注册率 ${channelPct(total.reg, total.active)}`, ''],
+    ['注册成本', total.reg ? channelMoney(total.cost / total.reg) : '—', '消耗 / 注册', '']
+  ];
+  document.getElementById('channel-kpis').innerHTML = cards.map(([label,value,note,tone]) => `<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
+  document.getElementById('channel-table').innerHTML = `<thead><tr>${['渠道','投放天数','消耗','展示','点击','CTR','激活','点击激活率','注册','注册成本','充值','ROI'].map(name => `<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row => {
+    const roi = row.cost > 0 ? row.pay / row.cost : null;
+    return `<tr><td>${mediaBadge(channelEsc(row.media))}</td><td>${row.days.size}</td><td>${channelMoney(row.cost)}</td><td>${channelNumber(row.show)}</td><td>${channelNumber(row.click)}</td><td>${channelPct(row.click,row.show)}</td><td>${channelNumber(row.active)}</td><td>${channelPct(row.active,row.click)}</td><td>${channelNumber(row.reg)}</td><td>${row.reg ? channelMoney(row.cost/row.reg) : '—'}</td><td>${channelMoney(row.pay)}</td><td class="${roi != null && roi >= 1 ? 'roi-ok' : ''}">${roi == null ? '—' : (roi*100).toFixed(2)+'%'}</td></tr>`;
+  }).join('')}</tbody>`;
+  channelSetCharts({days, total}, range);
 }
 
 // 鼠标悬停时静音自动预览播放，移开则回到首帧
