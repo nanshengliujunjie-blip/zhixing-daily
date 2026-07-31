@@ -2,14 +2,23 @@
 
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { request } = require("playwright");
+const skillRoot = [
+  resolve(process.env.HOME, ".agents/skills/zhixing-data-query"),
+  resolve(process.env.HOME, ".claude/skills/zhixing-data-query"),
+].find((candidate) => existsSync(resolve(candidate, "node_modules/playwright"))
+  && existsSync(resolve(candidate, ".session/nexita-storage-state.json")));
+if (!skillRoot) throw new Error("未找到 Nexita Playwright 运行时或登录会话");
+const { request } = require(resolve(skillRoot, "node_modules/playwright"));
 
-const SESSION = "/Users/oulei/.agents/skills/zhixing-data-query/.session/nexita-storage-state.json";
+const SESSION = resolve(skillRoot, ".session/nexita-storage-state.json");
 const OUTPUT = new URL("./risk_daily_data.js", import.meta.url);
 const START = process.env.RISK_START || "2026-06-01";
-const END = process.env.RISK_END || "2026-07-28";
+const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+const END = process.env.RISK_END || yesterday;
 const FOCUS_RULES = new Set([
   "数字+字母6-11字符",
   "正则-纯手机号-11位纯数字",

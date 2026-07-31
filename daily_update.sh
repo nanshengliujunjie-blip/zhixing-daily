@@ -17,6 +17,7 @@ mkdir -p "$LOG_DIR"
 if [ "$MODE" = "data" ]; then
   export SKIP_FALLBACK=1
   export SKIP_CHANNEL=1
+  export SKIP_RISK=1
 fi
 
 cd "$REPO" || exit 1

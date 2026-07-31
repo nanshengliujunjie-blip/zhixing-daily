@@ -30,6 +30,10 @@ MATERIALS_JSON = REPO / 'materials.json'
 CHANNEL_FETCH  = REPO / 'fetch_channel_roi.mjs'
 CHANNEL_DATA   = REPO / 'channel_roi_data.json'
 CHANNEL_START  = '2025-04-01'
+RISK_FETCH     = REPO / 'fetch_risk_daily.mjs'
+RISK_DATA      = REPO / 'risk_daily_data.js'
+RISK_START     = '2026-06-01'
+NEXITA_LOGIN   = Path.home() / '.agents/skills/zhixing-data-query/scripts/login.mjs'
 
 fatal_error = False
 
@@ -447,11 +451,44 @@ else:
     print('\n【Step 4.6】跳过渠道明细（data 轻量模式）')
 
 # ═══════════════════════════════════════════════════════
+# Step 4.7: 更新风控日汇总（最近完整自然日）
+# 高频 data 模式跳过，full 模式每日刷新一次。
+# ═══════════════════════════════════════════════════════
+if not os.environ.get('SKIP_RISK'):
+    print('\n【Step 4.7】更新风控日汇总...')
+    try:
+        risk_env = {**os.environ, 'RISK_START': RISK_START, 'RISK_END': yesterday.isoformat()}
+        risk_proc = subprocess.run(['node', str(RISK_FETCH)], cwd=REPO,
+                                    capture_output=True, text=True, timeout=1200, env=risk_env)
+        auth_expired = any(marker in (risk_proc.stderr or '') + (risk_proc.stdout or '')
+                           for marker in ('登陆过期', '用户未登录', 'session 已过期'))
+        if risk_proc.returncode != 0 and auth_expired and NEXITA_LOGIN.exists():
+            print('  风控接口会话已过期，刷新 Nexita 登录后重试...')
+            login_proc = subprocess.run(
+                ['node', str(NEXITA_LOGIN), '--max-wait-ms=180000'],
+                cwd=REPO, capture_output=True, text=True, timeout=240,
+            )
+            if login_proc.returncode == 0:
+                risk_proc = subprocess.run(['node', str(RISK_FETCH)], cwd=REPO,
+                                            capture_output=True, text=True, timeout=1200, env=risk_env)
+        if risk_proc.returncode != 0 or not RISK_DATA.exists():
+            fatal_error = True
+            print(f'  ❌ 风控数据抓取失败: {(risk_proc.stderr or risk_proc.stdout)[-1200:]}')
+        else:
+            print(f'  ✓ 风控日汇总已更新至 {yesterday.isoformat()}')
+    except Exception as e:
+        fatal_error = True
+        print(f'  ❌ 风控数据更新异常: {e}')
+else:
+    print('\n【Step 4.7】跳过风控日汇总（data 轻量模式）')
+
+# ═══════════════════════════════════════════════════════
 # Step 5: Git commit + push
 # ═══════════════════════════════════════════════════════
 print('\n【Step 5】Git commit & push...')
 files = ['index.html', 'dashboard.html', 'user_orders.json', 'ad_users.json',
          'consultant_data.json', 'consultant_all_data.json', 'materials.json', 'channel_roi_data.json']
+files.append('risk_daily_data.js')
 subprocess.run(['git', 'add'] + files, cwd=REPO, check=True)
 msg = f'全量自动更新 {today}: orders+ad_users+consultant+FALLBACK'
 
