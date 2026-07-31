@@ -16,6 +16,7 @@ mkdir -p "$LOG_DIR"
 
 if [ "$MODE" = "data" ]; then
   export SKIP_FALLBACK=1
+  export SKIP_CHANNEL=1
 fi
 
 cd "$REPO" || exit 1
@@ -26,7 +27,8 @@ RUN_LOG="$(mktemp)"
   echo "  [$MODE] 运行时间: $(date '+%Y-%m-%d %H:%M:%S')"
   echo "════════════════════════════════════════════════════════"
   /usr/bin/python3 "$REPO/auto_update.py"
-  echo "  退出码: $?"
+  UPDATE_STATUS=$?
+  echo "  退出码: $UPDATE_STATUS"
 } > "$RUN_LOG" 2>&1
 cat "$RUN_LOG" >> "$LOG"
 
@@ -46,3 +48,4 @@ else
   fi
 fi
 rm -f "$RUN_LOG"
+exit "${UPDATE_STATUS:-1}"

@@ -27,6 +27,11 @@ FETCH_ATTR     = REPO / 'fetch_attribution.mjs'
 FETCH_MATERIALS= REPO / 'fetch_materials.mjs'
 UPDATE_DAILY   = REPO / 'update_daily.py'
 MATERIALS_JSON = REPO / 'materials.json'
+CHANNEL_FETCH  = REPO / 'fetch_channel_roi.mjs'
+CHANNEL_DATA   = REPO / 'channel_roi_data.json'
+CHANNEL_START  = '2025-04-01'
+
+fatal_error = False
 
 today = date.today()
 yesterday = today - timedelta(days=1)
@@ -417,11 +422,36 @@ except Exception as e:
     print(f'  ⚠ 素材更新异常: {e}，继续')
 
 # ═══════════════════════════════════════════════════════
+# Step 4.6: 更新渠道明细（表1 + 表2，完整历史范围）
+# 高频 data 模式跳过，full 模式每日刷新一次。
+# ═══════════════════════════════════════════════════════
+if not os.environ.get('SKIP_CHANNEL'):
+    print('\n【Step 4.6】更新渠道明细...')
+    try:
+        channel_proc = subprocess.run(
+            ['node', str(CHANNEL_FETCH), f'--start={CHANNEL_START}', f'--end={today.isoformat()}'],
+            cwd=REPO, capture_output=True, text=True, timeout=900,
+        )
+        if channel_proc.returncode != 0 or not channel_proc.stdout.strip():
+            fatal_error = True
+            print(f'  ❌ 渠道数据抓取失败: {(channel_proc.stderr or channel_proc.stdout)[-1000:]}')
+        else:
+            channel_payload = json.loads(channel_proc.stdout)
+            CHANNEL_DATA.write_text(json.dumps(channel_payload, ensure_ascii=False, separators=(',', ':')))
+            print(f'  ✓ 渠道明细: {len(channel_payload.get("list", []))} 条，'
+                  f'{channel_payload.get("availableStartDate")}~{channel_payload.get("availableEndDate")}')
+    except Exception as e:
+        fatal_error = True
+        print(f'  ❌ 渠道数据更新异常: {e}')
+else:
+    print('\n【Step 4.6】跳过渠道明细（data 轻量模式）')
+
+# ═══════════════════════════════════════════════════════
 # Step 5: Git commit + push
 # ═══════════════════════════════════════════════════════
 print('\n【Step 5】Git commit & push...')
 files = ['index.html', 'dashboard.html', 'user_orders.json', 'ad_users.json',
-         'consultant_data.json', 'consultant_all_data.json', 'materials.json']
+         'consultant_data.json', 'consultant_all_data.json', 'materials.json', 'channel_roi_data.json']
 subprocess.run(['git', 'add'] + files, cwd=REPO, check=True)
 msg = f'全量自动更新 {today}: orders+ad_users+consultant+FALLBACK'
 
@@ -431,6 +461,16 @@ if not committed:
     print('  (无变更，跳过提交)')
 
 # 再推送，单独捕获 push 失败并给出可操作提示
+sync = subprocess.run(
+    ['git', 'pull', '--rebase', '--autostash', 'origin', 'main'],
+    cwd=REPO, env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'},
+    capture_output=True, text=True,
+)
+if sync.returncode != 0:
+    fatal_error = True
+    print('❌ 推送前同步远端失败：')
+    print('   ' + ((sync.stderr or '') + (sync.stdout or '')).strip().replace('\n', '\n   '))
+
 push = subprocess.run(
     ['git', 'push'], cwd=REPO,
     env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'},
@@ -439,6 +479,7 @@ push = subprocess.run(
 if push.returncode == 0:
     print('✅ 已推送到 GitHub Pages!')
 else:
+    fatal_error = True
     err = (push.stderr or '') + (push.stdout or '')
     if any(k in err for k in ('could not read Username', 'Authentication failed',
                                'terminal prompts disabled', '403', 'invalid credentials')):
@@ -452,4 +493,7 @@ else:
         print('❌ Push 失败：')
         print('   ' + err.strip().replace('\n', '\n   '))
 
+if fatal_error:
+    print('\n❌ 更新未完成，请查看上面的失败原因。')
+    sys.exit(1)
 print('\n✅ 全部更新完成！')
