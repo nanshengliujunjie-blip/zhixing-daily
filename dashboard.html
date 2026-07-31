@@ -1848,16 +1848,21 @@ function _computeUserStats(dateFrom, dateTo){
   if(!_orderData) return null;
   const userAmts = {};
   const orderTypes = {q:0, lm:0, zx:0};
+  const daily = {};
 
   Object.entries(_orderData).forEach(([uid, orders]) => {
     const ro = orders.filter(o => (!dateFrom || o.d >= dateFrom) && (!dateTo || o.d <= dateTo));
     if(!ro.length) return;
     userAmts[uid] = (userAmts[uid]||0) + ro.reduce((s,o)=>s+(o.amt||0), 0);
     ro.forEach(o => {
+      const d = o.d;
+      if(!daily[d]) daily[d] = {c:0, a:0, q:0, lm:0, zx:0};
+      daily[d].c++;
+      daily[d].a += Number(o.amt) || 0;
       const t = o.type||'';
-      if(t.includes('提问')) orderTypes.q++;
-      else if(t.includes('连麦')) orderTypes.lm++;
-      else orderTypes.zx++;
+      if(t.includes('提问')) { orderTypes.q++; daily[d].q++; }
+      else if(t.includes('连麦')) { orderTypes.lm++; daily[d].lm++; }
+      else { orderTypes.zx++; daily[d].zx++; }
     });
   });
 
@@ -1890,13 +1895,6 @@ function _computeUserStats(dateFrom, dateTo){
   const amtBins = [['<¥10',0,10],['¥10-50',10,50],['¥50-100',50,100],['¥100-500',100,500],['¥500+',500,Infinity]];
   const amt_dist = amtBins.map(([label,lo,hi]) =>
     [label, payingUids.filter(uid=>{ const a=userAmts[uid]; return a>=lo && a<hi; }).length]);
-
-  const daily = {};
-  if(_userData && _userData.stats.daily){
-    Object.entries(_userData.stats.daily).forEach(([d,v]) => {
-      if((!dateFrom || d>=dateFrom) && (!dateTo || d<=dateTo)) daily[d] = v;
-    });
-  }
 
   return { total_users:activeUids.length, paying_users:payingUids.length,
     avg_amt, median_amt, gender:g, age_buckets, amt_dist, order_type_total:orderTypes, daily };
