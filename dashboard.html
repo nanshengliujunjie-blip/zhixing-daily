@@ -2381,7 +2381,7 @@ function _renderAdDailyTable(users){
     const dayUsers = byDate[d].sort((a,b)=>(b[3]||0)-(a[3]||0));
     const dayTotal = Math.round(dayUsers.reduce((s,u)=>s+(u[3]||0),0)*100)/100;
     const rows = dayUsers.map((u,i)=>{
-      const cons = (_orderData && _getFirstDayCons(u[0], u[10])) || (u[9]&&u[9]!=='未知'?u[9]:'未知');
+      const cons = _getUserConsultants(u[0]) || (u[9]&&u[9]!=='未知'?u[9]:'未知');
       const amt = u[3]||0;
       const d1 = _retCell(_retStatus(u[0], u[10], 1));
       const d3 = _retCell(_retStatus(u[0], u[10], 3));
@@ -2635,13 +2635,14 @@ function renderAdDetailPage(dateFrom, dateTo){
   _renderAdDetailTable(dateFrom, dateTo);
 }
 
-function _getFirstDayCons(uid, regDate){
-  // Look up consultant from user_orders.json first-day orders (most accurate)
-  if(!_orderData || !regDate) return null;
+function _getUserConsultants(uid){
+  // 优先展示人工承接；同一用户有多位咨询师时全部保留。
+  if(!_orderData) return null;
   const orders = _orderData[String(uid)];
   if(!orders) return null;
-  const names = [...new Set(orders.filter(o=>o.d===regDate && o.c && o.c!=='未知').map(o=>o.c))];
-  return names.length ? names.join(' / ') : null;
+  const names = [...new Set(orders.map(o=>o.c).filter(c=>c && c!=='未知'))];
+  const humanNames = names.filter(name=>name!=='知小i');
+  return (humanNames.length ? humanNames : names).join(' / ') || null;
 }
 
 function _renderAdDetailTable(dateFrom, dateTo){
@@ -2677,11 +2678,11 @@ function _renderAdDetailTable(dateFrom, dateTo){
   }
   emptyEl.style.display = 'none';
 
-  // Build per-row consultant from user_orders.json first-day data
+  // Build per-row consultants from the user's full order history.
   // Also compute first-day amt from order data for accuracy
   const rowsWithCons = rows.map(u => {
     const regDate = u[10];
-    const cons = _getFirstDayCons(u[0], regDate) || (u[9]&&u[9]!=='未知' ? u[9].replace(/\n/g,' / ') : '未知');
+    const cons = _getUserConsultants(u[0]) || (u[9]&&u[9]!=='未知' ? u[9].replace(/\n/g,' / ') : '未知');
     // First-day amt from orders (more accurate than u[3] from ROI data)
     let firstAmt = u[3] || 0;
     if(_orderData && regDate){
