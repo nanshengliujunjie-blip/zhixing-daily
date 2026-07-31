@@ -5,7 +5,7 @@
  *   node fetch_orders.mjs --from=2026-06-10 --to=2026-06-10
  *   node fetch_orders.mjs --from=2026-06-10          # to 默认昨天
  *
- * 每行输出一个 JSON 对象: {"uid":"xxx","d":"2026-06-10","c":"咨询师","amt":10,"type":"提问"}
+ * 每行输出一个 JSON 对象: {"uid":"xxx","d":"2026-06-10","id":"订单ID","c":"咨询师","amt":10,"type":"提问"}
  * 最后一行输出: {"_done":true,"count":N}
  */
 
@@ -14,11 +14,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(
-  resolve(process.env.HOME, ".claude/skills/zhixing-data-query/node_modules/playwright")
+const { request } = require(
+  resolve(process.env.HOME, ".agents/skills/zhixing-data-query/node_modules/playwright")
 );
 const STATE_PATH = resolve(
-  process.env.HOME, ".claude/skills/zhixing-data-query/.session/nexita-storage-state.json"
+  process.env.HOME, ".agents/skills/zhixing-data-query/.session/nexita-storage-state.json"
 );
 const EXECUTE_URL = "https://console.nexita.net/api_web/databusi/gtd/databusi/admin/compass/bd/v4/query/execute?power_module_id=1&app_key=zhixing";
 const EXTRA_HEADERS = {
@@ -104,7 +104,7 @@ const BASE_BODY = {
 };
 
 async function executeQuery(ctx, body) {
-  const resp = await ctx.request.post(EXECUTE_URL, {
+  const resp = await ctx.post(EXECUTE_URL, {
     data: body,
     timeout: 30000,
   });
@@ -114,9 +114,8 @@ async function executeQuery(ctx, body) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
   const storageState = storageStateWithProjectContext();
-  const ctx = await browser.newContext({ storageState, extraHTTPHeaders: EXTRA_HEADERS });
+  const ctx = await request.newContext({ storageState, extraHTTPHeaders: EXTRA_HEADERS });
 
   try {
     const time = {
@@ -154,8 +153,10 @@ async function main() {
           continue;
         }
         const cols = row.split("\t");
+        if (!/^\d{8}$/.test(cols[0] || "")) continue; // 分页时可能重复返回表头
         const uid     = String(cols[1]);
         const d       = fmtDate(cols[0]);
+        const orderId = cols[9] || "";
         const type    = cols[5] || "未知";   // source_desc → 订单类型
         const starNick = cols[7] || "未知";  // stargazer_nick → 咨询师
         const amt     = parseFloat(cols[11]) || 0;  // coin_num → 金额
@@ -163,9 +164,10 @@ async function main() {
         const gStr    = cols[3] || "";
         const gender  = gStr === "女" ? 2 : gStr === "男" ? 1 : 0;
         const age     = parseInt(cols[4]) || null;  // user_age
+        const regDays = parseInt(cols[8]) || 0;     // 注册天数，0=当天新用户
 
         if (!uid || !d) continue;
-        process.stdout.write(JSON.stringify({ uid, d, c: starNick, amt, type, gender, age }) + "\n");
+        process.stdout.write(JSON.stringify({ uid, d, id: orderId, c: starNick, amt, type, gender, age, regDays }) + "\n");
         count++;
       }
 
@@ -177,7 +179,7 @@ async function main() {
 
     process.stdout.write(JSON.stringify({ _done: true, count }) + "\n");
   } finally {
-    await browser.close();
+    await ctx.dispose();
   }
 }
 

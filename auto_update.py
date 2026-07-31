@@ -81,18 +81,18 @@ print('\n【Step 2】更新 user_orders.json...')
 with open(USER_ORDERS) as f:
     orders_data = json.load(f)
 
-# 找最新订单日期
-all_dates = set()
-for orders in orders_data.values():
-    for o in orders:
-        all_dates.add(o['d'])
-last_order_date = max(all_dates) if all_dates else '2025-04-30'
-fetch_to   = today.isoformat()   # 含今天：实时累积今日订单
-fetch_from = (date.fromisoformat(last_order_date) + timedelta(days=1)).isoformat()
-if fetch_from > fetch_to:
-    fetch_from = fetch_to        # 今天已抓过，仍重抓今天以刷新(dedup去重)
+# 清理接口分页时可能混入的表头伪记录。
+for uid in list(orders_data):
+    valid_orders = [o for o in orders_data[uid] if re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(o.get('d', '')))]
+    if valid_orders: orders_data[uid] = valid_orders
+    else: del orders_data[uid]
+
+# 每次重拉最近 7 天，修正晚到的订单和咨询师承接关系。
+# 今天可能仍在回流，采用合并；已返回的历史日期采用接口结果覆盖。
+fetch_to = today.isoformat()
+fetch_from = max(date(2025, 4, 1), today - timedelta(days=7)).isoformat()
+print(f'  拉取并校正 {fetch_from} ~ {fetch_to} 的订单...')
 if True:
-    print(f'  拉取 {fetch_from} ~ {fetch_to} 的订单...')
     proc = subprocess.run(
         ['node', str(FETCH_ORDERS), f'--from={fetch_from}', f'--to={fetch_to}'],
         capture_output=True, text=True, timeout=300, cwd=REPO
@@ -100,8 +100,8 @@ if True:
     if proc.returncode != 0:
         print(f'  ⚠ fetch_orders.mjs 失败: {proc.stderr[-300:]}')
     else:
-        new_orders = 0
-        done_info = {}
+        fetched = {}
+        returned_dates = set()
         for line in proc.stdout.strip().split('\n'):
             if not line: continue
             try:
@@ -109,23 +109,36 @@ if True:
             except:
                 continue
             if obj.get('_done'):
-                done_info = obj
                 continue
             uid = obj['uid']
-            entry = {'d': obj['d'], 'c': obj['c'], 'amt': obj['amt'], 'type': obj['type']}
-            if uid not in orders_data:
-                orders_data[uid] = []
-            # 避免重复（同日期同订单）
-            existing = {(o['d'], o.get('amt'), o.get('type')) for o in orders_data[uid]}
-            key = (entry['d'], entry['amt'], entry['type'])
-            if key not in existing:
-                orders_data[uid].append(entry)
-                new_orders += 1
+            entry = {'d': obj['d'], 'id': obj.get('id', ''), 'c': obj['c'],
+                     'amt': obj['amt'], 'type': obj['type']}
+            fetched.setdefault(uid, []).append(entry)
+            returned_dates.add(entry['d'])
 
-        if new_orders > 0:
+        # 已有数据中，接口返回的历史日期以最新结果为准；今天保留旧值并合并。
+        for uid, existing_orders in list(orders_data.items()):
+            orders_data[uid] = [o for o in existing_orders
+                                if not (o.get('d') in returned_dates and o.get('d') != fetch_to)]
+        merged_orders = 0
+        for uid, entries in fetched.items():
+            orders_data.setdefault(uid, [])
+            existing_counts = {}
+            for o in orders_data[uid]:
+                key = (o.get('d'), o.get('id', ''), o.get('c'), o.get('amt'), o.get('type'))
+                existing_counts[key] = existing_counts.get(key, 0) + 1
+            for entry in entries:
+                key = (entry['d'], entry.get('id', ''), entry['c'], entry['amt'], entry['type'])
+                if existing_counts.get(key, 0):
+                    existing_counts[key] -= 1
+                    continue
+                orders_data[uid].append(entry)
+                merged_orders += 1
+
+        if merged_orders > 0 or returned_dates:
             with open(USER_ORDERS, 'w') as f:
                 json.dump(orders_data, f, ensure_ascii=False, separators=(',', ':'))
-            print(f'  ✓ user_orders.json 新增 {new_orders} 条（涉及 {len(orders_data)} 个用户）')
+            print(f'  ✓ user_orders.json 已校正 {merged_orders} 条，覆盖日期 {sorted(returned_dates)}')
         else:
             print(f'  orders 无新数据')
 
@@ -288,6 +301,25 @@ if orders_dirty:
     with open(USER_ORDERS, 'w') as f:
         json.dump(orders_data_fresh, f, ensure_ascii=False, separators=(',', ':'))
     print(f'  ✓ user_orders.json 已按权威首日付费校正')
+
+# 用用户全量订单的人工承接结果回填咨询师；多个咨询师用“ / ”合并。
+consultants_fixed = 0
+for u in ad['users']:
+    uid = str(u[0])
+    names = []
+    for order in orders_data_fresh.get(uid, []):
+        name = str(order.get('c') or '').strip()
+        if name and name != '未知' and name not in names: names.append(name)
+    human_names = [name for name in names if name != '知小i']
+    consultant = ' / '.join(human_names or names) if names else '未知'
+    if len(u) <= 9: u.extend(['未知'] * (10 - len(u)))
+    if u[9] != consultant:
+        u[9] = consultant
+        consultants_fixed += 1
+if consultants_fixed:
+    with open(AD_USERS, 'w') as f:
+        json.dump(ad, f, ensure_ascii=False, separators=(',', ':'))
+    print(f'  ✓ 已回填 {consultants_fixed} 个用户的首日咨询师（多咨询师合并）')
 
 # ═══════════════════════════════════════════════════════
 # Step 3.5: 回填近期注册用户的 gender/age（来自订单画像，幂等）
