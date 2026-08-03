@@ -3260,12 +3260,26 @@ function channelRoiText(summary, key) {
   const value = channelRoi(summary, key);
   return value == null ? '待回收' : value.toFixed(2) + '%';
 }
+function channelDataIsValid(data) {
+  return data && Array.isArray(data.list) && data.list.every(item => item && item.date && item.channel);
+}
+function fetchChannelData(url) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 20000);
+  return fetch(url, {cache:'no-cache', signal:controller.signal}).then(response => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }).then(data => {
+    if (!channelDataIsValid(data)) throw new Error('渠道数据格式异常');
+    return data;
+  }).finally(() => window.clearTimeout(timeout));
+}
 function loadChannelData() {
   if (_channelData) return Promise.resolve(_channelData);
   if (_channelDataPromise) return _channelDataPromise;
-  _channelDataPromise = fetch('channel_roi_data.json', {cache:'no-cache'}).then(response => {
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+  _channelDataPromise = fetchChannelData('channel_roi_data.json').catch(() => {
+    // A second request bypasses a stale CDN/browser entry after a transient failure.
+    return new Promise(resolve => window.setTimeout(resolve, 500)).then(() => fetchChannelData(`channel_roi_data.json?retry=${Date.now()}`));
   }).then(data => {
     _channelData = data;
     materialMaxDate = data.availableEndDate || data.endDate || materialMaxDate;
