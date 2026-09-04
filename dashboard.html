@@ -1070,20 +1070,23 @@ const elTo   = document.getElementById('dateTo');
 // elFrom.max = elTo.max = maxDate;
 
 // ── 用户/素材数据页日期上限：各自独立于营销总览(FALLBACK) ──
-let userMaxDate = null, materialMaxDate = null;
+let userMaxDate = null, materialMaxDate = null, channelMaxDate = null;
 function isUserPage(pid){ return pid==='adusers'||pid==='addetail'||pid==='users'; }
-function isMaterialPage(pid){ return pid==='materials'||pid==='channels'; }
+function isMaterialPage(pid){ return pid==='materials'; }
+function isChannelPage(pid){ return pid==='channels'; }
 function curPid(){ return (document.querySelector('.page.active')||{id:'page-overview'}).id.replace('page-',''); }
 function activeMaxDate(){
   const pid=curPid();
   if(isUserPage(pid) && userMaxDate && userMaxDate>maxDate) return userMaxDate;
   if(isMaterialPage(pid) && materialMaxDate && materialMaxDate>maxDate) return materialMaxDate;
+  if(isChannelPage(pid) && channelMaxDate && channelMaxDate>maxDate) return channelMaxDate;
   return maxDate;
 }
 function syncDateCeiling(){
   const target = activeMaxDate();
   // 仅在处于默认上限(没手动自定义)时才自动调整，避免覆盖用户手选的范围
-  const atDefault = (elTo.value === maxDate) || (userMaxDate && elTo.value === userMaxDate);
+  const atDefault = (elTo.value === maxDate) || (userMaxDate && elTo.value === userMaxDate) ||
+    (materialMaxDate && elTo.value === materialMaxDate) || (channelMaxDate && elTo.value === channelMaxDate);
   if(atDefault && elTo.value !== target){
     elTo.value = target;
     if(elFrom.value > elTo.value) elFrom.value = elTo.value;
@@ -3282,8 +3285,8 @@ function loadChannelData() {
     return new Promise(resolve => window.setTimeout(resolve, 500)).then(() => fetchChannelData(`channel_roi_data.json?retry=${Date.now()}`));
   }).then(data => {
     _channelData = data;
-    materialMaxDate = data.availableEndDate || data.endDate || materialMaxDate;
-    if (isMaterialPage(curPid())) syncDateCeiling();
+    channelMaxDate = data.availableEndDate || data.endDate || channelMaxDate;
+    if (isChannelPage(curPid())) syncDateCeiling();
     return data;
   }).catch(error => {
     _channelDataPromise = null;

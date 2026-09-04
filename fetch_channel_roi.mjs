@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 从 Nexita 表 2（双新设备）按一级/二级渠道拉取回收曲线。
- * 用法: node fetch_channel_roi.mjs --start=2025-04-01 --end=2026-07-29
+ * 用法: node fetch_channel_roi.mjs --start=2025-04-01 --end=2026-09-03
  */
 import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
@@ -118,8 +118,10 @@ function appendRows(records, rows, table) {
   return kept;
 }
 
-const startDate = arg("start") || dayAfter(new Date().toISOString().slice(0, 10), -180);
-const endDate = arg("end") || new Date().toISOString().slice(0, 10);
+const today = new Date().toISOString().slice(0, 10);
+const startDate = arg("start") || dayAfter(today, -180);
+// 渠道按昨日结算，默认不把当天实时回流纳入分析。
+const endDate = arg("end") || dayAfter(today, -1);
 const state = JSON.parse(readFileSync(statePath, "utf8"));
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({

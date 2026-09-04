@@ -465,7 +465,8 @@ if not os.environ.get('SKIP_CHANNEL'):
     print('\n【Step 4.6】更新渠道明细...')
     try:
         channel_proc = subprocess.run(
-            ['node', str(CHANNEL_FETCH), f'--start={CHANNEL_START}', f'--end={today.isoformat()}'],
+            # 渠道数据按结算口径只更新到前一天；当天数据仍在回流，不纳入渠道分析。
+            ['node', str(CHANNEL_FETCH), f'--start={CHANNEL_START}', f'--end={yesterday.isoformat()}'],
             cwd=REPO, capture_output=True, text=True, timeout=900,
         )
         if channel_proc.returncode != 0 or not channel_proc.stdout.strip():
