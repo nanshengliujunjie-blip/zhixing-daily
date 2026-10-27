@@ -132,10 +132,12 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f7;d
 .channel-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 14px;margin-bottom:16px;background:#fff;border:1px solid rgba(20,28,46,.05);border-radius:12px;box-shadow:0 1px 2px rgba(20,28,46,.04),0 6px 16px -6px rgba(20,28,46,.09)}
 .channel-filter-copy{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .channel-filter-label{font-size:12px;color:#667085;font-weight:700}
+.channel-group-row td{background:#eef3fc;color:#253858;font-weight:700;border-top:1px solid #d0d5e0}
 .channel-filter-status{font-size:12px;color:#8892a4}
 .channel-select{min-width:150px}
 .channel-source-note{font-size:11px;color:#8892a4}
 .channel-kpi-grid{grid-template-columns:repeat(4,1fr)}
+#page-channels .chart-half{min-width:0}
 .channel-table-wrap{padding:0;overflow:auto;margin-top:0}
 .channel-insights{background:#fff;border-radius:12px;padding:15px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;color:#4a5068;font-size:13px;line-height:1.7}
 .channel-insights ul{margin:0;padding-left:18px}.channel-insights li+li{margin-top:4px}.channel-insights b{color:#0f1628}
@@ -985,7 +987,13 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
     <div class="section-header" style="margin-top:0"><h3>渠道投放表现</h3></div>
     <div class="channel-filter-bar">
       <div class="channel-filter-copy">
-        <span class="channel-filter-label">渠道</span>
+        <label class="channel-filter-label" for="channel-category">大类</label>
+        <select id="channel-category" class="mat-input" onchange="renderChannels()">
+          <option value="">全部大类</option>
+          <option value="feed">信息流</option>
+          <option value="store">商店</option>
+        </select>
+        <label class="channel-filter-label" for="channel-media">渠道</label>
         <select id="channel-media" class="mat-input channel-select" onchange="renderChannels()">
           <option value="">全部渠道</option>
         </select>
@@ -993,7 +1001,7 @@ body{background:linear-gradient(180deg,#f6f8fc 0%,#ebeef5 100%)}
       </div>
       <span id="channel-source-note" class="channel-source-note">正在加载 Nexita 渠道回收明细</span>
     </div>
-    <div id="channel-empty" class="risk-empty" style="display:none"><b>所选日期或渠道没有投放数据</b><span>请调整顶部日期范围或选择其他渠道。</span></div>
+    <div id="channel-empty" class="risk-empty" style="display:none"><b>所选日期或渠道没有可用数据</b><span>请调整顶部日期范围、大类或具体渠道。</span></div>
     <div id="channel-data-content">
       <div id="channel-kpis" class="metric-grid channel-kpi-grid"></div>
       <div class="chart-2col">
@@ -3180,6 +3188,18 @@ const CHANNEL_ROI_NODES = [
   ['ROI0', 'payAmount'], ['ROI3', 'ltv3'], ['ROI7', 'ltv7'], ['ROI15', 'ltv15'], ['ROI30', 'ltv30'],
 ];
 const CHANNEL_ROI_MATURITY_DAYS = {payAmount:0, ltv3:3, ltv7:7, ltv15:15, ltv30:30};
+const CHANNEL_CATEGORIES = [['feed','信息流'], ['store','商店']];
+
+function channelCategory(item) {
+  const level1 = String(item.level1 || '').trim();
+  const name = String(item.channel || '');
+  if (level1 === '信息流' || name.startsWith('信息流 / ')) return 'feed';
+  if (level1 === '应用商店' || name.startsWith('应用商店 / ') || /appstore/i.test(String(item.level2 || '') + name)) return 'store';
+  return 'other';
+}
+function channelCategoryName(category) {
+  return CHANNEL_CATEGORIES.find(([key]) => key === category)?.[1] || '其他渠道';
+}
 
 function channelEsc(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -3221,7 +3241,7 @@ function renderChannelInsights(rows, total, selectedName, maturityEnds) {
     : totalRoi3 >= 40
     ? `整体 ROI3 为 ${channelRoiText(total,'ltv3')}，当前可以保留投放，并以小步实验方式验证增量。`
     : `整体 ROI3 为 ${channelRoiText(total,'ltv3')}，当前不建议整体放量，应优先将预算从低回收渠道转向表现更好的渠道。`;
-  const conclusions = [`<b>总体建议：</b>${overall} ROI3 仅统计至 ${maturityEnds.ltv3 || '—'} 的成熟 cohort；表 1 付费率为 ${channelPaidRate(total)}，表 2 次日留存为 ${channelPct(total.nextRetained,total.retentionReg)}。`];
+  const conclusions = [`<b>${channelEsc(selectedName)} · 总体建议：</b>${overall} ROI3 仅统计至 ${maturityEnds.ltv3 || '—'} 的成熟 cohort；表 1 付费率为 ${channelPaidRate(total)}，表 2 次日留存为 ${channelPct(total.nextRetained,total.retentionReg)}。`];
   for (const row of rows) {
     const roi3 = channelRoi(row,'ltv3');
     const spendShare = total.spend > 0 ? row.spend / total.spend * 100 : 0;
@@ -3326,18 +3346,26 @@ function initChannelsPage() {
 function renderChannels() {
   if (!_channelData) { initChannelsPage(); return; }
   const from = elFrom.value, to = elTo.value, select = document.getElementById('channel-media');
+  const category = document.getElementById('channel-category').value;
   const previous = select.value;
-  const channels = [...new Set(_channelData.list.map(item => item.channel))].sort();
-  if (select.options.length !== channels.length + 1) {
-    select.innerHTML = '<option value="">全部渠道</option>' + channels.map(channel => `<option value="${channelEsc(channel)}">${channelEsc(channel)}</option>`).join('');
-    select.value = channels.includes(previous) ? previous : '';
-  }
+  const categoryItems = _channelData.list.filter(item => !category || channelCategory(item) === category);
+  const channelGroups = [...CHANNEL_CATEGORIES, ['other','其他渠道']].map(([key,label]) => ({key,label,
+    channels:[...new Set(categoryItems.filter(item => channelCategory(item) === key).map(item => item.channel))].sort()
+  })).filter(group => group.channels.length);
+  const channels = channelGroups.flatMap(group => group.channels);
+  const channelOptions = '<option value="">全部渠道</option>' + channelGroups.map(group => `<optgroup label="${group.label}">${group.channels.map(channel => `<option value="${channelEsc(channel)}">${channelEsc(channel)}</option>`).join('')}</optgroup>`).join('');
+  if (select.innerHTML !== channelOptions) select.innerHTML = channelOptions;
+  select.value = channels.includes(previous) ? previous : '';
   const channel = select.value;
+  const selectedName = channel || (category ? channelCategoryName(category) : '全部渠道');
   const maturityEnds = channelRoiMaturityEnds(_channelData.availableEndDate || _channelData.endDate);
-  document.getElementById('channel-source-note').textContent = `实际可用日期：${_channelData.availableStartDate || '—'} 至 ${_channelData.availableEndDate || '—'}；ROI3/7/15/30 仅统计已成熟 cohort（分别至 ${maturityEnds.ltv3 || '—'} / ${maturityEnds.ltv7 || '—'} / ${maturityEnds.ltv15 || '—'} / ${maturityEnds.ltv30 || '—'}）；${_channelData.source || 'Nexita 渠道回收明细'}`;
-  const byChannel = new Map(), byDay = new Map(), total = channelBlank();
-  for (const item of _channelData.list) {
+  document.getElementById('channel-source-note').textContent = `商店包含华为、VIVO、OPPO、荣耀及 iOS / AppStore；实际可用日期：${_channelData.availableStartDate || '—'} 至 ${_channelData.availableEndDate || '—'}；ROI3/7/15/30 仅统计已成熟 cohort（分别至 ${maturityEnds.ltv3 || '—'} / ${maturityEnds.ltv7 || '—'} / ${maturityEnds.ltv15 || '—'} / ${maturityEnds.ltv30 || '—'}）；${_channelData.source || 'Nexita 渠道回收明细'}`;
+  const byChannel = new Map(), byCategory = new Map(), byDay = new Map(), total = channelBlank();
+  for (const item of categoryItems) {
     if (item.date < from || item.date > to || (channel && item.channel !== channel)) continue;
+    const itemCategory = channelCategory(item);
+    const categorySummary = byCategory.get(itemCategory) || channelBlank();
+    channelAdd(categorySummary, item, maturityEnds); byCategory.set(itemCategory, categorySummary);
     const channelSummary = byChannel.get(item.channel) || channelBlank();
     channelAdd(channelSummary, item, maturityEnds); byChannel.set(item.channel, channelSummary);
     const daySummary = byDay.get(item.date) || channelBlank();
@@ -3348,12 +3376,11 @@ function renderChannels() {
   const days = [...byDay.entries()].map(([date, summary]) => ({date, ...summary})).sort((a,b) => a.date.localeCompare(b.date));
   const status = document.getElementById('channel-filter-status'), empty = document.getElementById('channel-empty'), content = document.getElementById('channel-data-content');
   if (!rows.length) {
-    status.textContent = `${from || '—'} 至 ${to || '—'} 无可用数据`;
+    status.textContent = `${selectedName} · ${from || '—'} 至 ${to || '—'} 无可用数据`;
     empty.style.display = 'block'; content.style.display = 'none'; channelSetCharts({days:[],total:channelBlank()}, ''); return;
   }
   empty.style.display = 'none'; content.style.display = 'block';
-  status.textContent = `${rows.length} 个细分渠道，${days.length} 个有投放数据的自然日`;
-  const selectedName = channel || '全部渠道';
+  status.textContent = `${selectedName} · ${rows.length} 个细分渠道，${days.length} 个有数据的自然日`;
   document.getElementById('channel-spend-title').textContent = `消耗与 ROI0 趋势（${selectedName}）`;
   const cards = [
     ['投放消耗',channelMoney(total.spend),`表 2 · ${channelNumber(total.rows)} 条渠道日明细`,''],
@@ -3368,7 +3395,12 @@ function renderChannels() {
   ];
   document.getElementById('channel-kpis').innerHTML = cards.map(([label,value,note,tone]) => `<div class="mc"><div class="mc-head"><span class="mc-label">${label}</span><span class="mc-badge">${days.length} 日</span></div><div class="mc-val ${tone}">${value}</div><div class="mc-deltas"><div class="mc-delta">${note}</div></div></div>`).join('');
   const headers = ['细分渠道','投放天数','消耗（表2）','注册（表2）','注册（表1）','首日充值','付费用户','付费率','AI 提问','进房','连麦','次日留存','ROI0','ROI3（成熟）','ROI7（成熟）','ROI15（成熟）','ROI30（成熟）'];
-  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${row.spend > 0 ? channelMoney(row.spend) : '—'}</td><td>${channelNumber(row.reg)}</td><td>${channelNumber(row.table1Reg)}</td><td>${channelMoney(row.payAmount)}</td><td>${channelNumber(row.paidUsers)}</td><td>${channelPaidRate(row)}</td><td>${channelNumber(row.aiQuestions)}</td><td>${channelNumber(row.enterRoom)}</td><td>${channelNumber(row.mic)}</td><td>${channelPct(row.nextRetained,row.retentionReg)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  const tableRows = channelGroups.flatMap(group => {
+    if (!byCategory.has(group.key)) return [];
+    const groupRows = rows.filter(row => group.channels.includes(row.channel));
+    return [{channel:group.label + '汇总', ...byCategory.get(group.key), isGroup:true}, ...groupRows];
+  });
+  document.getElementById('channel-table').innerHTML = `<thead><tr>${headers.map(name=>`<th>${name}</th>`).join('')}</tr></thead><tbody>${tableRows.map(row=>`<tr${row.isGroup ? ' class="channel-group-row"' : ''}><td>${row.isGroup ? channelEsc(row.channel) : mediaBadge(channelEsc(row.channel))}</td><td>${row.days.size}</td><td>${row.spend > 0 ? channelMoney(row.spend) : '—'}</td><td>${channelNumber(row.reg)}</td><td>${channelNumber(row.table1Reg)}</td><td>${channelMoney(row.payAmount)}</td><td>${channelNumber(row.paidUsers)}</td><td>${channelPaidRate(row)}</td><td>${channelNumber(row.aiQuestions)}</td><td>${channelNumber(row.enterRoom)}</td><td>${channelNumber(row.mic)}</td><td>${channelPct(row.nextRetained,row.retentionReg)}</td>${CHANNEL_ROI_NODES.map(([,key])=>{const roi=channelRoi(row,key);return `<td class="${roi>=100?'roi-ok':''}">${channelRoiText(row,key)}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
   renderChannelInsights(rows, total, selectedName, maturityEnds);
   channelSetCharts({days,total}, selectedName);
 }
