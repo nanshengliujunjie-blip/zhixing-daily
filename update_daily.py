@@ -461,7 +461,7 @@ def run_fallback_fetch(dates):
             out[o['date']] = o
         except Exception:
             pass
-    if not out and proc.returncode != 0:
+    if proc.returncode != 0:
         raise RuntimeError(f'fetch_fallback 失败:\n{proc.stderr[-600:]}')
     if proc.stderr.strip():
         print('[fallback]', proc.stderr.strip()[-300:])
