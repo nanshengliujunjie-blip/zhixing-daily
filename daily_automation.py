@@ -142,7 +142,8 @@ def run_update(repo=REPO, scheduled=False):
         if scheduled and not should_run(state, instant):
             return 0
         target = (instant.date() - timedelta(days=1)).isoformat()
-        state.update(lastAttemptAt=instant.isoformat(), targetDate=target, status='running')
+        state.update(lastAttemptAt=instant.isoformat(), targetDate=target, status='running',
+                     lastExitCode=None, checks={}, nextRetryAt=None)
         write_state(repo, state)
         env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PYTHONUNBUFFERED': '1',
                'ZHIXING_DATA_END': target, 'GIT_TERMINAL_PROMPT': '0'}
@@ -172,9 +173,11 @@ def run_update(repo=REPO, scheduled=False):
             checks = {'执行任务': {'ok': False, 'reason': failure}}
         completed = now()
         success = exit_code == 0 and all(item['ok'] for item in checks.values())
+        retry_at = completed + timedelta(minutes=RETRY_MINUTES)
+        retry_at = max(retry_at, retry_at.replace(hour=START_HOUR, minute=START_MINUTE, second=0, microsecond=0))
         state.update(status='success' if success else 'retry_pending', lastExitCode=exit_code,
                      lastFinishedAt=completed.isoformat(), checks=checks,
-                     nextRetryAt=None if success else (completed + timedelta(minutes=RETRY_MINUTES)).isoformat())
+                     nextRetryAt=None if success else retry_at.isoformat())
         if success:
             state['lastSuccessDate'] = instant.date().isoformat()
             state['lastPublishedDataDate'] = target

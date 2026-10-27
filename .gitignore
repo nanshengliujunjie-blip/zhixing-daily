@@ -4,3 +4,4 @@ ad_users.json.bak
 *.bak2
 logs/
 .session_alert
+__pycache__/
