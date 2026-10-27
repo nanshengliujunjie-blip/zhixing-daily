@@ -69,7 +69,8 @@ while (true) {
 
   if (data.dm_error !== 0 || !data.data?.list) {
     process.stderr.write(`API error: ${JSON.stringify(data)}\n`);
-    break;
+    await browser.close();
+    process.exit(1);
   }
 
   const list = data.data.list;

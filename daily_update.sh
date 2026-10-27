@@ -4,12 +4,14 @@
 #   data : 只更新 投放用户画像/用户概览/投放用户明细（订单+归因+媒体），跳过营销总览  → 早上9:00
 #   full : 完整更新（含营销总览 表1+表2 FALLBACK）                                 → 中午12:15
 # 日志: ~/zhixing/logs/daily_<mode>.log
-export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export TZ="Asia/Shanghai"
+export PYTHONUNBUFFERED=1
 # 避免代理干扰 git push / node 请求
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy
 
 MODE="${1:-full}"
-REPO="$HOME/zhixing"
+REPO="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$REPO/logs"
 LOG="$LOG_DIR/daily_${MODE}.log"
 mkdir -p "$LOG_DIR"
@@ -18,10 +20,15 @@ if [ "$MODE" = "data" ]; then
   export SKIP_FALLBACK=1
   export SKIP_CHANNEL=1
   export SKIP_RISK=1
+elif [ "$MODE" = "full" ]; then
+  unset SKIP_FALLBACK SKIP_CHANNEL SKIP_RISK
+else
+  echo "用法: daily_update.sh [data|full]" >&2
+  exit 2
 fi
 
 cd "$REPO" || exit 1
-RUN_LOG="$(mktemp)"
+RUN_LOG="$LOG_DIR/daily_${MODE}_current.log"
 {
   echo ""
   echo "════════════════════════════════════════════════════════"
@@ -48,5 +55,4 @@ else
     rm -f "$FLAG"
   fi
 fi
-rm -f "$RUN_LOG"
 exit "${UPDATE_STATUS:-1}"

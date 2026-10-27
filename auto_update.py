@@ -13,6 +13,8 @@
 import json, re, subprocess, sys, os
 from datetime import date, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 REPO = Path(__file__).parent
 INDEX_HTML     = REPO / 'index.html'
@@ -37,8 +39,10 @@ NEXITA_LOGIN   = Path.home() / '.agents/skills/zhixing-data-query/scripts/login.
 
 fatal_error = False
 
-today = date.today()
+today = datetime.now(ZoneInfo('Asia/Shanghai')).date()
 yesterday = today - timedelta(days=1)
+data_end = date.fromisoformat(os.environ.get('ZHIXING_DATA_END', today.isoformat()))
+ATTR_PENDING = REPO / 'logs' / 'attribution_pending.json'
 
 print(f'\n{"="*55}')
 print(f'  知星全自动更新  {today}')
@@ -59,6 +63,7 @@ if True:
         _env['FALLBACK_ROI'] = '1'
     result = subprocess.run([sys.executable, str(UPDATE_DAILY)], cwd=REPO, env=_env)
     if result.returncode != 0:
+        fatal_error = True
         print('  ⚠ update_daily.py 失败，继续其他步骤')
     else:
         print('  ✓ index.html FALLBACK 已更新')
@@ -89,8 +94,9 @@ for uid in list(orders_data):
 
 # 每次重拉最近 7 天，修正晚到的订单和咨询师承接关系。
 # 今天可能仍在回流，采用合并；已返回的历史日期采用接口结果覆盖。
-fetch_to = today.isoformat()
-fetch_from = max(date(2025, 4, 1), today - timedelta(days=7)).isoformat()
+fetch_to = data_end.isoformat()
+last_order_date = max((o['d'] for rows in orders_data.values() for o in rows), default=fetch_to)
+fetch_from = max(date(2025, 4, 1), min(data_end - timedelta(days=7), date.fromisoformat(last_order_date))).isoformat()
 print(f'  拉取并校正 {fetch_from} ~ {fetch_to} 的订单...')
 if True:
     proc = subprocess.run(
@@ -98,6 +104,7 @@ if True:
         capture_output=True, text=True, timeout=300, cwd=REPO
     )
     if proc.returncode != 0:
+        fatal_error = True
         print(f'  ⚠ fetch_orders.mjs 失败: {proc.stderr[-300:]}')
     else:
         fetched = {}
@@ -119,7 +126,7 @@ if True:
         # 已有数据中，接口返回的历史日期以最新结果为准；今天保留旧值并合并。
         for uid, existing_orders in list(orders_data.items()):
             orders_data[uid] = [o for o in existing_orders
-                                if not (o.get('d') in returned_dates and o.get('d') != fetch_to)]
+                                if not (o.get('d') in returned_dates and o.get('d') != today.isoformat())]
         merged_orders = 0
         for uid, entries in fetched.items():
             orders_data.setdefault(uid, [])
@@ -156,8 +163,9 @@ admap = {str(u[0]): u for u in ad['users']}
 existing_reg_dates = set(u[10] for u in ad['users'] if u[10])
 last_ad_date = max(existing_reg_dates) if existing_reg_dates else '2025-04-30'
 
-fetch_attr_to   = today.isoformat()   # 含今天：实时累积今日注册/付费
-fetch_attr_from = date.fromisoformat(last_ad_date).isoformat()
+fetch_attr_to = data_end.isoformat()
+# 复查最近两天，补晚到归因；失败日期单独持久化，避免后续日期成功后跳过缺口。
+fetch_attr_from = max(date(2025, 4, 1), min(date.fromisoformat(last_ad_date), data_end) - timedelta(days=2)).isoformat()
 if fetch_attr_from > fetch_attr_to:
     fetch_attr_from = fetch_attr_to    # 今天已抓过，仍重抓今天以刷新
 
@@ -171,18 +179,33 @@ with open(USER_ORDERS) as f:
 total_ad_new = 0
 paid_fixed = 0
 orders_dirty = False
+attr_success_count = 0
+try:
+    pending_attr = set(json.loads(ATTR_PENDING.read_text()))
+except FileNotFoundError:
+    pending_attr = set()
+attr_dates = set()
+ds = fetch_attr_from
+while ds <= fetch_attr_to:
+    attr_dates.add(ds)
+    ds = (date.fromisoformat(ds) + timedelta(days=1)).isoformat()
+attr_dates.update(ds for ds in pending_attr if ds <= fetch_attr_to)
 if fetch_attr_from > fetch_attr_to:
     print(f'  ad_users 已是最新 ({last_ad_date})，跳过')
 else:
-    ds = fetch_attr_from
-    while ds <= fetch_attr_to:
+    for ds in sorted(attr_dates):
         print(f'  下载 {ds} 归因数据...')
         tmp_xlsx = os.path.join(tempfile.gettempdir(), f'attr_{ds}.xlsx')
-        r = subprocess.run(
-            ['node', str(FETCH_ATTR), f'--date={ds}', f'--out={tmp_xlsx}'],
-            capture_output=True, text=True, timeout=180, cwd=REPO
-        )
+        pending_attr.add(ds)
+        try:
+            r = subprocess.run(
+                ['node', str(FETCH_ATTR), f'--date={ds}', f'--out={tmp_xlsx}'],
+                capture_output=True, text=True, timeout=180, cwd=REPO
+            )
+        except subprocess.TimeoutExpired:
+            r = subprocess.CompletedProcess([], 1, '', '归因报表下载超时，等待下次补拉')
         if r.returncode != 0:
+            fatal_error = True
             print(f'    ⚠ 下载失败: {r.stderr[-200:]}')
         else:
             try:
@@ -287,12 +310,23 @@ else:
                     u[12] = media
 
                 print(f'    新增 {len(truly_new)} 人 / 校正付费 {len(pay_orders)} 人')
+                wb.close()
                 os.unlink(tmp_xlsx)
+                attr_success_count += 1
+                # 先保存本日结果，再清除待补拉标记，异常中断后仍可恢复。
+                AD_USERS.write_text(json.dumps(ad, ensure_ascii=False, separators=(',', ':')))
+                if orders_dirty:
+                    USER_ORDERS.write_text(json.dumps(orders_data_fresh, ensure_ascii=False, separators=(',', ':')))
+                pending_attr.discard(ds)
             except Exception as e:
+                fatal_error = True
                 print(f'    ⚠ 解析失败: {e}')
-        ds = (date.fromisoformat(ds) + timedelta(days=1)).isoformat()
+        ATTR_PENDING.parent.mkdir(exist_ok=True)
+        pending_temp = ATTR_PENDING.with_suffix('.tmp')
+        pending_temp.write_text(json.dumps(sorted(pending_attr)))
+        pending_temp.replace(ATTR_PENDING)
 
-if total_ad_new > 0 or paid_fixed > 0:
+if total_ad_new > 0 or paid_fixed > 0 or attr_success_count > 0:
     ad['users'].sort(key=lambda u: u[10] or '')
     with open(AD_USERS, 'w') as f:
         json.dump(ad, f, ensure_ascii=False, separators=(',', ':'))
@@ -332,8 +366,10 @@ try:
     r = subprocess.run([sys.executable, str(REPO / 'backfill_gender.py')],
                        cwd=REPO, env=_genv, timeout=600)
     if r.returncode != 0:
+        fatal_error = True
         print('  ⚠ backfill_gender 失败，继续')
 except Exception as e:
+    fatal_error = True
     print(f'  ⚠ backfill_gender 异常: {e}，继续')
 
 # ═══════════════════════════════════════════════════════
@@ -344,8 +380,10 @@ try:
     r = subprocess.run([sys.executable, str(REPO / 'reconcile_payments.py')],
                        cwd=REPO, timeout=120)
     if r.returncode != 0:
+        fatal_error = True
         print('  ⚠ reconcile_payments 失败，继续')
 except Exception as e:
+    fatal_error = True
     print(f'  ⚠ reconcile_payments 异常: {e}，继续')
 
 # ═══════════════════════════════════════════════════════
@@ -439,22 +477,21 @@ print(f'  ✓ consultant_all_data.json: {len(daily_all_out)} 天, {len(totals_al
 print('\n【Step 4.5】更新推广素材数据...')
 try:
     mat_proc = subprocess.run(
-        ['node', str(FETCH_MATERIALS), '--days=30'],
+        ['node', str(FETCH_MATERIALS), f'--start={(data_end - timedelta(days=29)).isoformat()}', f'--end={data_end.isoformat()}'],
         cwd=REPO, capture_output=True, timeout=300
     )
     if mat_proc.returncode == 0 and mat_proc.stdout:
         import json as _json
         _mat = _json.loads(mat_proc.stdout)
         _items = _mat.get('list', [])
-        if _items:
-            with open(MATERIALS_JSON, 'wb') as f:
-                f.write(mat_proc.stdout)
-            print(f'  ✓ materials.json: {len(_items)} 条，{_mat.get("startDate")}~{_mat.get("endDate")}')
-        else:
-            print('  ⚠ 本次素材结果为空，保留原 materials.json')
+        with open(MATERIALS_JSON, 'wb') as f:
+            f.write(mat_proc.stdout)
+        print(f'  ✓ materials.json: {len(_items)} 条，{_mat.get("startDate")}~{_mat.get("endDate")}')
     else:
+        fatal_error = True
         print(f'  ⚠ fetch_materials 失败: {mat_proc.stderr.decode()[-300:]}')
 except Exception as e:
+    fatal_error = True
     print(f'  ⚠ 素材更新异常: {e}，继续')
 
 # ═══════════════════════════════════════════════════════
@@ -526,7 +563,7 @@ subprocess.run(['git', 'add'] + files, cwd=REPO, check=True)
 msg = f'全量自动更新 {today}: orders+ad_users+consultant+FALLBACK'
 
 # 先提交（无变更则跳过）
-committed = subprocess.run(['git', 'commit', '-m', msg], cwd=REPO).returncode == 0
+committed = subprocess.run(['git', 'commit', '-m', msg, '--only', '--'] + files, cwd=REPO).returncode == 0
 if not committed:
     print('  (无变更，跳过提交)')
 
